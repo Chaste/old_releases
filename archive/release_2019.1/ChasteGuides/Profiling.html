@@ -69,7 +69,7 @@ This text output can be converted to a <tt>dot graph</tt> using several utilitie
 Running <tt>gprof2dot.py -s -n1 -e1 Test2DVertexBasedCryptRepresentativeSimulation_simulation_.gmon | dot -Tsvg -o gprof.svg</tt> produces the following image:
 </p>
 <p>
-<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gprof.svg"><img width="800px" alt="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="/chaste/tutorials/release_2019.1/ChasteGuides/Profiling/gprof.svg" /></a>
+<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gprof.svg"><img width="800px" alt="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gprof.svg" /></a>
 </p>
 <h2 id="GPerfTools">GPerfTools</h2>
 <p>
@@ -84,7 +84,7 @@ Running <tt>Test2DVertexBasedCryptRepresentativeSimulation.hpp</tt> with <tt>--s
 <ul><li><tt>Test2DVertexBasedCryptRepresentativeSimulation_simulation_.prof</tt>, a non human-readable output
 </li><li><tt>Test2DVertexBasedCryptRepresentativeSimulation_simulation_.svg</tt>, the image below (converted to png; original svg attached).
 </li></ul><p>
-<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_default.png"><img width="400px" alt="Default GPerfTools output (converted to png)" title="Default GPerfTools output (converted to png)" src="/chaste/tutorials/release_2019.1/ChasteGuides/Profiling/gperftools_default.png" /></a>
+<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_default.png"><img width="400px" alt="Default GPerfTools output (converted to png)" title="Default GPerfTools output (converted to png)" src="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_default.png" /></a>
 </p>
 <p>
 It is possible to post process results from GPerfTools using <tt>gprof2dot</tt>, however this requires setting the <tt>--&lt;ext&gt;</tt> flag to <tt>--callgrind</tt>, a format readable by <tt>gprof2dot</tt>.
@@ -93,7 +93,7 @@ It is possible to post process results from GPerfTools using <tt>gprof2dot</tt>,
 Running <tt>gprof2dot.py -f callgrind -s -n1 -e1 Test2DVertexBasedCryptRepresentativeSimulation_simulation_.cg | dot -Tsvg -o gperftools_modified.svg</tt> produces the following image:
 </p>
 <p>
-<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_modified.svg"><img width="800px" alt="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="/chaste/tutorials/release_2019.1/ChasteGuides/Profiling/gperftools_modified.svg" /></a>
+<a style="padding:0; border:none" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_modified.svg"><img width="800px" alt="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/Profiling/gperftools_modified.svg" /></a>
 </p>
 <h2 id="Post-processingtheprofilingresults">Post-processing the profiling results</h2>
 <p>
