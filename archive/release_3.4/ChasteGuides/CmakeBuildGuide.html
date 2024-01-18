@@ -1,0 +1,448 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/CmakeBuildGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#FileLayout">File Layout</a>
+  </li>
+  <li>
+    <a href="#GeneralCMakeConcepts">General CMake Concepts</a>
+  </li>
+  <li>
+    <a href="#ConfigureStep">Configure Step</a>
+    <ol>
+      <li>
+        <a href="#Windows">Windows</a>
+      </li>
+      <li>
+        <a href="#SpecifyingaCompiler">Specifying a Compiler</a>
+      </li>
+      <li>
+        <a href="#SpecifyingPETSc">Specifying PETSc</a>
+      </li>
+      <li>
+        <a href="#SpecifyingSundials">Specifying Sundials</a>
+      </li>
+      <li>
+        <a href="#SpecifyingHDF5">Specifying HDF5</a>
+      </li>
+      <li>
+        <a href="#SpecifyingVTK">Specifying VTK</a>
+      </li>
+      <li>
+        <a href="#SpecifyingBoost">Specifying Boost</a>
+      </li>
+      <li>
+        <a href="#NotesforCHASTE_DEPS_ROOT_DIR">Notes for CHASTE_DEPS_ROOT_DIR</a>
+      </li>
+      <li>
+        <a href="#ChasteConfigurationOptions">Chaste Configuration Options</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#BuildStep">Build Step</a>
+    <ol>
+      <li>
+        <a href="#BuildingSpecificTargets">Building Specific Targets</a>
+        <ol>
+          <li>
+            <a href="#Components">Components</a>
+          </li>
+          <li>
+            <a href="#Testpacks">Test packs</a>
+          </li>
+          <li>
+            <a href="#Componentlibrarywithouttests">Component library without tests</a>
+          </li>
+          <li>
+            <a href="#Specifictests">Specific tests</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Windows1">Windows</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#InstallStep">Install Step</a>
+  </li>
+  <li>
+    <a href="#TestingStep">Testing Step</a>
+  </li>
+  <li>
+    <a href="#CMakeConfigurationOptions">CMake Configuration Options</a>
+    <ol>
+      <li>
+        <a href="#Chaste_NUM_CPUS_TEST">Chaste_NUM_CPUS_TEST</a>
+      </li>
+      <li>
+        <a href="#Chaste_VERBOSE">Chaste_VERBOSE</a>
+      </li>
+      <li>
+        <a href="#Chaste_USE_VTK">Chaste_USE_VTK</a>
+      </li>
+      <li>
+        <a href="#Chaste_USE_CVODE">Chaste_USE_CVODE</a>
+      </li>
+      <li>
+        <a href="#Chaste_USE_XERCES">Chaste_USE_XERCES</a>
+      </li>
+      <li>
+        <a href="#Chaste_USE_PETSC_PARMETIS">Chaste_USE_PETSC_PARMETIS</a>
+      </li>
+      <li>
+        <a href="#Chaste_USE_PETSC_HDF5">Chaste_USE_PETSC_HDF5</a>
+      </li>
+      <li>
+        <a href="#Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS">Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS</a>
+      </li>
+      <li>
+        <a href="#Chaste_UPDATE_PROVENANCE">Chaste_UPDATE_PROVENANCE</a>
+      </li>
+      <li>
+        <a href="#RUN_TESTS">RUN_TESTS</a>
+      </li>
+      <li>
+        <a href="#CHASTE_AUTO_INSTALL_DEPS">CHASTE_AUTO_INSTALL_DEPS</a>
+      </li>
+      <li>
+        <a href="#BUILD_SHARED_LIBS">BUILD_SHARED_LIBS</a>
+      </li>
+      <li>
+        <a href="#ENABLE_CHASTE_TESTING">ENABLE_CHASTE_TESTING</a>
+      </li>
+      <li>
+        <a href="#ENABLE_CHASTE_PROJECT_TESTING">ENABLE_CHASTE_PROJECT_TESTING</a>
+      </li>
+      <li>
+        <a href="#CHASTE_DEPS_ROOT_DIR">CHASTE_DEPS_ROOT_DIR</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#BuildingProjects">Building Projects</a>
+    <ol>
+      <li>
+        <a href="#UsingChastelikeastandardlibrary">Using Chaste like a standard library</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="FileLayout">File Layout</h1>
+<p>
+The main CMake file is <tt>CMakeLists.txt</tt>. All the cmake macros and finder scripts (apart from those in the main CMake distribution) are in <tt>/cmake/</tt>. Most of these are kept in <tt>/cmake/Modules</tt>, and there is a base CMake Configure script for Chaste in <tt>/cmake/Config/</tt>. The remainder in <tt>/cmake/</tt> are left over from the old CMake setup for windows (some are still in use)
+</p>
+<h1 id="GeneralCMakeConcepts">General CMake Concepts</h1>
+<p>
+CMake is a build system generator, so splits up the build process into two steps. In the first you call <tt>cmake</tt> to configure your project. During this step you can specify a Generator. By default this is a Makefile generator, so the configure step will output a bunch of Makefiles, with which you can build you project. Other Generators include one for Microsoft Visual C++, which outputs MSVC project files during the configure step. 
+</p>
+<p>
+It is standard for CMake to build your project in a separate (empty) directory to your source tree (This can still be in a subdirectory within the source tree). The Chaste CMake system will prevent you from doing in-source builds (i.e. from trying to build using the root directory of the source tree).
+</p>
+<p>
+The standard way (for Makefile generators) to compile the Chaste project using CMake is to make a build directory, call <tt>cmake</tt> on the root of the source tree and then use <tt>make</tt> to compile. For example,
+</p>
+<pre class="wiki">mkdir /path/to/build/dir
+cd /path/to/build/dir
+cmake /path/to/source/dir
+make
+</pre><p>
+This will compile the Chaste libraries and all the tests. To run the tests you can either call <tt>make</tt> on the <tt>test</tt> target
+</p>
+<pre class="wiki">make test
+</pre><p>
+Or use <tt>ctest</tt>, which is part of CMake
+</p>
+<pre class="wiki">ctest
+</pre><p>
+Look under the <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/CmakeBuildGuide.html#TestingStep">Testing Step</a> heading below for more information
+</p>
+<h1 id="ConfigureStep">Configure Step</h1>
+<p>
+Run the CMake configuration step using
+</p>
+<pre class="wiki">cmake /path/to/source
+</pre><p>
+This should work on (at least) Ubuntu with all required dependencies installed
+</p>
+<h2 id="Windows">Windows</h2>
+<p>
+For windows (on scratch at least) you need to specify a generator (using <tt>-G</tt>) and the location of the third party libraries (using <tt>-DCHASTE_DEPS_ROOT_DIR=</tt>). So on scratch the command is
+</p>
+<pre class="wiki">cmake -DCHASTE_DEPS_ROOT_DIR=D:\chaste_windows\build\install\third_party_libs -DChaste_USE_PETSC_HDF5=OFF -DHAVE_PARMETIS=ON -GVisual Studio 10 Win64 \path\to\source
+</pre><p>
+Note you need the <tt>-DChaste_USE_PETSC_HDF5=OFF</tt> because I'm using "Petsc for Windows" for Petsc, which doesn't include hdf5 libraries.
+</p>
+<p>
+You need <tt>-DHAVE_PARMETIS=ON</tt> to skip the step which checks that Parmetis is working, it works for the main Chaste build, so not to worry (for now).
+</p>
+<h2 id="SpecifyingaCompiler">Specifying a Compiler</h2>
+<p>
+You can specify a C++ compiler by setting the CXX environment variable. eg.
+</p>
+<pre class="wiki">CXX=icpc cmake /path/to/source
+</pre><h2 id="SpecifyingPETSc">Specifying PETSc</h2>
+<p>
+You can specify a PETSc folder and Arch by setting the PETSC_DIR and PETSC_ARCH environment variables. eg.
+</p>
+<pre class="wiki">PETSC_DIR=/path/to/petsc PETSC_ARCH=linux-intel cmake /path/to/source
+</pre><h2 id="SpecifyingSundials">Specifying Sundials</h2>
+<p>
+You can specify a Sundials folder by setting the SUNDIALS_ROOT environment variables.
+</p>
+<h2 id="SpecifyingHDF5">Specifying HDF5</h2>
+<p>
+You can specify a HDF5 folder by setting the HDF5_ROOT environment variables.
+</p>
+<h2 id="SpecifyingVTK">Specifying VTK</h2>
+<p>
+You can specify a VTK directory by using the VTK_DIR CMake variable (note: NOT an environment variable). eg.
+</p>
+<pre class="wiki">cmake -DVTK_DIR=/path/to/vtk /path/to/source
+</pre><h2 id="SpecifyingBoost">Specifying Boost</h2>
+<p>
+You can specify a Boost directory by using the BOOST_ROOT CMake variable (note: NOT an environment variable)
+</p>
+<h2 id="NotesforCHASTE_DEPS_ROOT_DIR">Notes for CHASTE_DEPS_ROOT_DIR</h2>
+<p>
+(Windows only) Note that using this CMake option overwrites any specified library locations 
+</p>
+<h2 id="ChasteConfigurationOptions">Chaste Configuration Options</h2>
+<p>
+See below for a complete list of the configuration options
+</p>
+<h1 id="BuildStep">Build Step</h1>
+<p>
+For Makefile generators (this is the default) the configure step will generate a bunch of Makefiles, so you just need to run
+</p>
+<pre class="wiki">make -jN
+</pre><p>
+for <tt>N</tt> cores. 
+</p>
+<h2 id="BuildingSpecificTargets">Building Specific Targets</h2>
+<h3 id="Components">Components</h3>
+<p>
+The configure step generates a number of targets which can be built. These targets can be libraries or executables (i.e. test executables). Each component (i.e. <tt>global</tt>, <tt>pde</tt>, <tt>heart</tt> etc) is compiled into a library, with a target name given by the name of the component (so the target name for <tt>global</tt> is <tt>global</tt>)
+</p>
+<p>
+You can specify building a specific component library and all its tests by giving <tt>make</tt> the name of the component target. For example:
+</p>
+<pre class="wiki">make global   # builds the global library and all dependencies
+make io       # builds the io library and all dependencies
+make linalg   # builds the linalg (linear algebra) library and all dependencies
+make mesh     # builds the mesh library and all dependencies
+make ode      # builds the ode library and all dependencies
+make pde      # builds the pde library and all dependencies
+make heart    # builds the heart library and all dependencies
+make cell_based crypt   # builds the cell_based and crypt libraries and all their dependencies
+</pre><h3 id="Testpacks">Test packs</h3>
+<p>
+If you wish to build a specific test pack then just type <tt>make</tt> and then the name of the test pack, for example:
+</p>
+<pre class="wiki">make Continuous  # builds the Continuous test pack
+make Nightly     # builds the Nightly test pack
+make Weekly      # builds the Weekly test pack
+make Parallel    # builds the Parallel test pack
+</pre><h3 id="Componentlibrarywithouttests">Component library without tests</h3>
+<p>
+If you wish to build only the library (without tests) then you can type
+</p>
+<pre class="wiki">make chaste_${component}
+</pre><p>
+where <tt>${component}</tt> is the name of the component you wish to build.
+</p>
+<h3 id="Specifictests">Specific tests</h3>
+<p>
+You can build a specific test by using the target name for the test executable. The target name for a given test file <tt>subdir/next_subdir/testname.hpp</tt> (where <tt>subdir</tt> is the first subdirectory after the component directory, is given by <tt>$testname_$subdir_$next_subdir_Runner</tt>. So for test file <tt>heart/test/mechanics/TestCardiacElectroMechanicsOnAnnulus.hpp</tt> the command will be 
+</p>
+<pre class="wiki">make TestCardiacElectroMechanicsOnAnnulus_mechanics_Runner
+</pre><p>
+This will build an executable <tt>heart/test/TestCardiacElectroMechanicsOnAnnulus_mechanics_Runner</tt>, which you can run directly or use <tt>ctest</tt> to call the test
+</p>
+<pre class="wiki">ctest -R TestCardiacElectroMechanicsOnAnnulus_mechanics_
+</pre><h2 id="Windows1">Windows</h2>
+<p>
+Windows uses the MSVC project file generator, so you can't use <tt>make</tt>. Instead, you can use the CMake interface to run the build
+</p>
+<pre class="wiki">cmake --build . --config Debug
+</pre><p>
+Note that the windows build currently only works for the <tt>Debug</tt> configuration
+</p>
+<p>
+To build a particular target you can use the <tt>--target</tt> options. eg.
+</p>
+<pre class="wiki">cmake --build . --config Debug --target heart
+</pre><h1 id="InstallStep">Install Step</h1>
+<p>
+You can install the Chaste libraries to the CMAKE_INSTALL_PREFIX directory using
+</p>
+<pre class="wiki">make install
+</pre><p>
+Note that this step isn't necessary, you can just use the build folder.
+</p>
+<h1 id="TestingStep">Testing Step</h1>
+<p>
+You can run all tests using 
+</p>
+<pre class="wiki">ctest
+</pre><p>
+or
+</p>
+<pre class="wiki">ctest -j10
+</pre><p>
+to spread the tests over 10 cpus. Note that each individual test still only uses Chaste_NUM_CPUS_TEST cpus (except those with target names ending in <tt>Parallel</tt>, see below).
+</p>
+<p>
+To run the continuous test pack you can use
+</p>
+<pre class="wiki">ctest -L Continuous
+</pre><p>
+The <tt>-L</tt> option takes a regex expression and matches against the labels for each test. Each tests has multiple lables like <tt>Continuous</tt> <tt>Nightly</tt>, <tt>Parallel</tt>, 'heart', 'lung' etc. corresponding to the tests packs and components the test belongs to. So you could run all the global tests using 
+</p>
+<pre class="wiki">ctest -L global
+</pre><p>
+To run a specific test you can use the <tt>-R</tt> option
+</p>
+<pre class="wiki">ctest -R TestCardiacElectroMechanicsOnAnnulus_mechanics_
+</pre><p>
+The <tt>-R</tt> options takes a regex expression and matches against the CMake target name. This uses a similar format as that used to make a particular test (see above), but without the <tt>Runner</tt> at the end. You can add <tt>Parallel</tt> to the end of the target name to run the parallel version of that test (if the test is in the parallel test pack).
+</p>
+<h1 id="CMakeConfigurationOptions">CMake Configuration Options</h1>
+<p>
+These options can be set in the gui, or specified on the command line using <tt>-DOPTION=$option</tt>. eg.
+</p>
+<pre class="wiki">cmake -DChaste_NUM_CPUS_TEST=2 /path/to/source
+</pre><h2 id="Chaste_NUM_CPUS_TEST">Chaste_NUM_CPUS_TEST</h2>
+<p>
+Number of cpus to use when running tests (using mpiexec). Defaults to 1 (note that parallel tests are always run with 2 or more cpus)
+</p>
+<h2 id="Chaste_VERBOSE">Chaste_VERBOSE</h2>
+<p>
+Provide extra info when building Chaste (default OFF). Only useful for windows, sets up verbose compilation for MSVC compiler. For Makefile generators (default on linux and mac) use
+</p>
+<pre class="wiki">make VERBOSE=1
+</pre><h2 id="Chaste_USE_VTK">Chaste_USE_VTK</h2>
+<p>
+Compiles Chaste with VTK support (defaults to ON)
+</p>
+<h2 id="Chaste_USE_CVODE">Chaste_USE_CVODE</h2>
+<p>
+Compiles Chaste with Sundials support (defaults to ON)
+</p>
+<h2 id="Chaste_USE_XERCES">Chaste_USE_XERCES</h2>
+<p>
+Compiles Chaste with Xerces and XSD support (defaults to OFF for WIN32 or CYGWIN, ON for everything else)
+</p>
+<h2 id="Chaste_USE_PETSC_PARMETIS">Chaste_USE_PETSC_PARMETIS</h2>
+<p>
+Prefer to compile Chaste with Parmetis library used by PETSc (defaults to ON)
+</p>
+<h2 id="Chaste_USE_PETSC_HDF5">Chaste_USE_PETSC_HDF5</h2>
+<p>
+Prefer to compile Chaste with HDF5 library used by PETSc (defaults to ON)
+</p>
+<h2 id="Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS">Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS</h2>
+<p>
+By default all component libraries are built as shared libraries with fully resolved symbols, so you should just be able to link to them without worrying about dependencies. This changes this behaviour and builds them as shared libraries, not resolving any symbols. So if you want to use them you need to link in all dependencies manually. 
+</p>
+<p>
+Note. This must be setup to ON to link against the PETSc library compiled in the <tt>bob</tt> user account (and perhaps all the lofty ones, I havn't tested this), as otherwise you will get conflicts between the HDF5 brought in by PETSc and the HDF5 brought in by VTK)
+</p>
+<h2 id="Chaste_UPDATE_PROVENANCE">Chaste_UPDATE_PROVENANCE</h2>
+<p>
+Updates the build timestamp in the provenance (defaults to ON). Note that this will cause re-linking to the <tt>global</tt> library on every build.
+</p>
+<h2 id="RUN_TESTS">RUN_TESTS</h2>
+<p>
+Deprecated option used for current windows testing. This runs the tests during the configuration step.
+</p>
+<h2 id="CHASTE_AUTO_INSTALL_DEPS">CHASTE_AUTO_INSTALL_DEPS</h2>
+<p>
+Deprecated option used for windows. Used to build and install the third-party libraries. 
+</p>
+<h2 id="BUILD_SHARED_LIBS">BUILD_SHARED_LIBS</h2>
+<p>
+Standard CMake option (used by Chaste) that indicates whether to build static or shared libraries (defaults to OFF for WIN32 and CYGWIN, ON for everything else). Only the defaults currently work.
+</p>
+<h2 id="ENABLE_CHASTE_TESTING">ENABLE_CHASTE_TESTING</h2>
+<p>
+Enable building of tests (defaults to ON)
+</p>
+<h2 id="ENABLE_CHASTE_PROJECT_TESTING">ENABLE_CHASTE_PROJECT_TESTING</h2>
+<p>
+Enable building of project tests (defaults to ON)
+</p>
+<h2 id="CHASTE_DEPS_ROOT_DIR">CHASTE_DEPS_ROOT_DIR</h2>
+<p>
+Setup up location of third-party libraries (only used in Windows)
+</p>
+<h1 id="BuildingProjects">Building Projects</h1>
+<p>
+You can build projects as for the Scons setup, by adding a subdirectory to the <tt>projects/</tt> folder and then adding a <tt>projects/myproject/CMakeLists.txt</tt> file with something like
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components})
+chaste_do_project(myproject)
+</pre><p>
+where <tt>${components}</tt> is a list of components your project depends on. The build system then assumes you are using the standard Chaste layout for a project and builds your project accordingly
+</p>
+<p>
+If you have a <tt>test</tt> subdirectory you want built, you again need to add a <tt>projects/myproject/test/CMakeLists.txt</tt> file containing something like
+</p>
+<pre class="wiki">chaste_do_test_project(myproject)
+</pre><p>
+And if you have an <tt>apps</tt> subdirectory then you need to add a <tt>projects/myproject/apps/CMakeLists.txt</tt> file containing 
+</p>
+<pre class="wiki">chaste_do_apps_project(myproject)
+</pre><p>
+Assuming you are following the standard Chaste layout for your project, then the CMake configure step will find all your library files, tests and applications and setup build targets for them. These will be added to the default build target so they will be built along with all the other Chaste components (or you can build them individually).
+</p>
+<h2 id="UsingChastelikeastandardlibrary">Using Chaste like a standard library</h2>
+<p>
+You can also use Chaste like a standard system library. The CMake configure step will have registered Chaste on your system, so the find_package function should work from any location (if not, you can specify a path, see below). It provides the following variables once you run it
+</p>
+<ul><li>Chaste_LIBRARIES: This variable contains the Chaste libraries you need to link against (for the components you specified in the find_package function)
+</li><li>Chaste_INCLUDE_DIRS: This variable contains the Chaste include folders you need to include
+</li><li>Chaste_THIRD_PARTY_INCLUDE_DIRS: This variable contains the third-party include folders you need to include
+</li><li>Chaste_THIRD_PARTY_LIBRARIES: This variable contains the third-party libraries used to build Chaste (Note that unless you are using Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS=ON you won't need these)
+</li></ul><p>
+So an example CMakeLists.txt script would go
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components})
+include_directories(${Chaste_INCLUDE_DIRS} ${Chaste_THIRD_PARTY_INCLUDE_DIRS})
+add_executable(my_library \my\source\file.cpp)
+target_link_libraries(my_library ${Chaste_LIBRARIES})
+</pre><p>
+Note that if you have configured Chaste from more than one build folder, problems occur because you don't know which one CMake will give you. You can give a specific build directory to CMake by using the NO_DEFAULT_PATH option for find_package and the PATHS option to specify a path. e.g.
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components} PATHS ${path} NO_DEFAULT_PATH)
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

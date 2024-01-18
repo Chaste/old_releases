@@ -1,0 +1,620 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewCellKiller - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_2.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CreatingAndUsingANewCellKiller" href="/chaste/tutorials/release_2.1/UserTutorials/CreatingAndUsingANewCellKiller.html">CreatingAndUsingANewCellKiller</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingAndUsingANewCellKillerTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/10757" title="#1605 - fix tutorials for newer versions of Boost.
+
+I've implemented code ...">r10757</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcellkilleranduseitinacell-basedsimulation">An example showing how to create a new cell killer and use it in a cell-based simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how to create a new cell killer class and how this
+can be used in a cell-based simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+The first thing to do is include the following header, which allows us
+to use certain methods in our test (this header file should be included
+in any Chaste test):
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+The next two headers are used in archiving, and only need to be included
+if you want to be able to archive (save or load) the new cell killer object
+in a cell-based simulation (in this case, these headers must be included before
+any other serialisation headers).
+</p>
+<div class="code"><pre><span class="cp">#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+</span></pre></div><p>
+The next header defines a base class for cell killers, from which the new
+cell killer class will inherit.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellKiller.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell population
+simulation test: <tt>HoneycombMeshGenerator</tt> defines a helper class for
+generating a suitable mesh; <tt>CellsGenerator</tt>
+defines a helper class for generating a vector of cells and
+<tt>FixedDurationGenerationBasedCellCycleModel</tt> makes them have fixed cell
+cycle models; <tt>GeneralisedLinearSpringForce</tt> defines a force law for
+describing the mechanical interactions between neighbouring cells in the
+cell population; and <tt>CellBasedSimulation</tt> defines the class that simulates the
+evolution of a cell population.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombMeshGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "CellBasedSimulation.hpp"
+#include "CellsGenerator.hpp"
+</span></pre></div><h2 id="Definingthecellkillerclass">Defining the cell killer class</h2>
+<p>
+As an example, let us consider a cell killer which labels any cells in a
+two-dimensional cell population which lie outside the elliptical domain given in
+Cartesian coordinates by the equation (x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1. To
+implement this we define a new cell killer class, <tt>MyCellKiller</tt>,
+which inherits from <tt>AbstractCellKiller</tt> and overrides the
+<tt>TestAndLabelCellsForApoptosisOrDeath()</tt> method.
+</p>
+<p>
+Note that usually this code would be separated out into a separate declaration in
+a .hpp file and definition in a .cpp file.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">MyCellKiller</span> <span class="o">:</span> <span class="k">public</span> AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+</pre></div><p>
+You only need to include the next block of code if you want to be able
+to archive (save or load) the cell killer object in a cell-based simulation.
+The code consists of a serialize method, which in this case just archives
+the cell killer using the serialization code defined in the base class
+<tt>AbstractCellKiller</tt>.
+</p>
+<div class="code"><pre>    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+The first public method is a default constructor, which just calls the base
+constructor.
+</p>
+<div class="code"><pre><span class="k">public</span><span class="o">:</span>
+    MyCellKiller<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+        <span class="o">:</span> AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span>pCellPopulation<span class="p">)</span>
+    <span class="p">{}</span>
+</pre></div><p>
+The second public method overrides <tt>TestAndLabelCellsForApoptosisOrDeath()</tt>.
+This method iterates over all cells in the cell_population, and calls <tt>Kill()</tt> on
+any cell whose centre is located outside the ellipse (x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestAndLabelCellsForApoptosisOrDeath<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+            cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+            <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> location <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span> pow<span class="p">(</span>location<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>location<span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">)</span>
+            <span class="p">{</span>
+                cell_iter<span class="o">-&gt;</span>Kill<span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div><p>
+The final public method you need to include overrides <tt>OutputCellKillerParameters()</tt>.
+This method allow you to output parameters to the results.params file in the
+results directory.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> OutputCellKillerParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+This outputs any parameters if any to the file
+</p>
+<div class="code"><pre>        <span class="c">//*rParamsFile &lt;&lt; "\t\t\t&lt;radius&gt;" &lt;&lt; radius &lt;&lt; "&lt;/radius&gt; \n";
+</span></pre></div><p>
+You now call the parent class to output any parameters stored there
+</p>
+<div class="code"><pre>        AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputCellKillerParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+You need to include the next block of code if you want to be able to archive (save or load)
+the cell killer object in a cell-based simulation.  It is also required for writing out
+the parameters file describing the settings for a simulation - it provides the unique
+identifier for our new cell killer.  Thus every cell killer class must provide this,
+or you'll get errors when running simulations.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellKiller<span class="p">)</span>
+</pre></div><p>
+Since we're defining the new cell killer within the test file, we need to include the
+following stanza as well, to make the code work with newer versions of the Boost libraries.
+Normally the above export declaration would occur in the cell killer's .hpp file, and
+the following lines would appear in the .cpp file.  See <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a> for
+more information.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellKiller<span class="p">)</span>
+</pre></div><p>
+You only need to include the next block of code if you want to be able to archive (save or load)
+the cell killer object in a cell-based simulation. We define <tt>save_construct_data</tt> and
+<tt>load_construct_data</tt> methods, which archive the cell killer constructor input argument(s)
+(in this case, a <tt>CellPopulation</tt>).
+</p>
+<div class="code"><pre><span class="k">namespace</span> boost
+<span class="p">{</span>
+    <span class="k">namespace</span> serialization
+    <span class="p">{</span>
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> save_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> <span class="k">const</span> MyCellKiller <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> BOOST_PFTO <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Save data required to construct instance
+</span>            <span class="k">const</span> AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_cell_population <span class="o">=</span> t<span class="o">-&gt;</span>GetCellPopulation<span class="p">();</span>
+            ar <span class="o">&lt;&lt;</span> p_cell_population<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> load_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> MyCellKiller <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Retrieve data from archive required to construct new instance
+</span>            AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_cell_population<span class="p">;</span>
+            ar <span class="o">&gt;&gt;</span> p_cell_population<span class="p">;</span>
+            <span class="c">// Invoke inplace constructor to initialise instance
+</span>            <span class="o">::</span><span class="k">new</span><span class="p">(</span>t<span class="p">)</span>MyCellKiller<span class="p">(</span>p_cell_population<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div><p>
+This completes the code for <tt>MyCellKiller</tt>. Note that usually this code
+would be separated out into a separate declaration in a .hpp file and definition
+in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellKillerTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><h2 id="Testingthecellkiller">Testing the cell killer</h2>
+<p>
+We begin by testing that our new cell cycle model is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestMyCellKiller<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+The first thing to do is to set up the start time.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+</pre></div><p>
+Get the mesh using the <tt>GetMesh()</tt> method.
+</p>
+<div class="code"><pre>        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we can use a static method on the <tt>CellsGenerator</tt> helper class.
+The <tt>&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt;</tt> defines the
+cell-cycle model and that it is in 2d. We create an empty vector of cells
+and pass this into the method along with the mesh. The <tt>cells</tt> vector is
+populated once the method <tt>GenerateBasic</tt> is called.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the cell population. The
+constructor takes in the mesh and the cells vector.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We now use the cell population to construct a cell killer object.
+</p>
+<div class="code"><pre>        MyCellKiller my_cell_killer<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+</pre></div><p>
+To test that we have implemented the cell killer correctly, we call the
+overridden method <tt>TestAndLabelCellsForApoptosisOrDeath</tt>...
+</p>
+<div class="code"><pre>        my_cell_killer<span class="p">.</span>TestAndLabelCellsForApoptosisOrDeath<span class="p">();</span>
+</pre></div><p>
+... and check that any cell whose centre is located outside the ellipse
+(x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1 has indeed been labelled as dead.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span> pow<span class="p">(</span>x<span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>y<span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">)</span>
+            <span class="p">{</span>
+                TS_ASSERT_EQUALS<span class="p">(</span>cell_iter<span class="o">-&gt;</span>IsDead<span class="p">(),</span> <span class="kc">true</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                TS_ASSERT_EQUALS<span class="p">(</span>cell_iter<span class="o">-&gt;</span>IsDead<span class="p">(),</span> <span class="kc">false</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div><p>
+As an extra test, we now remove any dead cells and check that all
+remaining cells are indeed located within the ellipse.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>RemoveDeadCells<span class="p">();</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+            TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span>pow<span class="p">(</span>x<span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>y<span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+The last chunk of code provides an archiving test for the cell killer.
+We create an output archive, save the existing cell killer object via
+a pointer, then create an input archive and load the cell killer. If
+the cell killer had any member variables, then we would test that these
+were correctly initialised when the cell killer is loaded.
+</p>
+<div class="code"><pre>        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>    <span class="c">// don't erase contents of folder
+</span>        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_cell_killer.arch"</span><span class="p">;</span>
+        <span class="p">{</span>
+            <span class="c">// Create an output archive
+</span>            MyCellKiller my_cell_killer<span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+            <span class="c">// Serialize via pointer
+</span>            MyCellKiller<span class="o">*</span> <span class="k">const</span> p_cell_killer <span class="o">=</span> <span class="o">&amp;</span>my_cell_killer<span class="p">;</span>
+            output_arch <span class="o">&lt;&lt;</span> p_cell_killer<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="p">{</span>
+            <span class="c">// Create an input archive
+</span>            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+            MyCellKiller<span class="o">*</span> p_cell_killer<span class="p">;</span>
+            <span class="c">// Restore from the archive
+</span>            input_arch <span class="o">&gt;&gt;</span> p_cell_killer<span class="p">;</span>
+            <span class="k">delete</span> p_cell_killer<span class="p">;</span>
+        <span class="p">}</span>
+</pre></div><p>
+We conclude the test by calling <tt>Destroy()</tt> on any singleton classes.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><h2 id="Usingthecellkillerinacell-basedsimulation">Using the cell killer in a cell-based simulation</h2>
+<p>
+We now provide a test demonstrating how <tt>MyCellKiller</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestCellBasedSimulationWithMyCellKiller<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+The first thing to do, as before, is to set up the start time.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+</pre></div><p>
+Get the mesh using the <tt>GetMesh()</tt> method.
+</p>
+<div class="code"><pre>        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we can use a static method on the <tt>CellsGenerator</tt> helper class.
+The <tt>&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt;</tt> defines the
+cell-cycle model and that it is in 2d. We create an empty vector of cells
+and pass this into the method along with the mesh. The <tt>cells</tt> vector is
+populated once the method <tt>GenerateBasic</tt> is called.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the cell population. The
+constructor takes in the mesh and the cells vector.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We now use the cell population to construct a cell killer object.
+</p>
+<div class="code"><pre>        MyCellKiller my_cell_killer<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+</pre></div><p>
+We pass in the cell population into a <tt>CellBasedSimulation</tt>.
+</p>
+<div class="code"><pre>        CellBasedSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+</pre></div><p>
+We set the output directory and end time.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestCellBasedSimulationWithMyCellKiller"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of
+the cell population. For this test, we assume that a cell experiences a force from each
+neighbour that can be represented as a linear overdamped spring, and so use
+a <tt>GeneralisedLinearSpringForce</tt> object. We pass a pointer to this force
+into a vector. Note that we have called the method <tt>SetCutOffLength</tt> on the
+<tt>GeneralisedLinearSpringForce</tt> before passing it into the collection of force
+laws - this modifies the force law so that two neighbouring cells do not impose
+a force on each other if they are located more than 3 units (=3 cell widths)
+away from each other. This modification is necessary when no ghost nodes are used,
+for example to avoid artificially large forces between cells that lie close together
+on the cell population boundary.
+We create a force law and pass it to the <tt>CellBasedSimulation</tt>.
+</p>
+<div class="code"><pre>        GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> linear_force<span class="p">;</span>
+        linear_force<span class="p">.</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span><span class="o">&amp;</span>linear_force<span class="p">);</span>
+</pre></div><p>
+We now pass the cell killer into the cell-based simulation.
+</p>
+<div class="code"><pre>        MyCellKiller<span class="o">*</span> p_killer <span class="o">=</span> <span class="k">new</span> MyCellKiller<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+</pre></div><p>
+Test that the Solve() method does not throw any exceptions.
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>simulator<span class="p">.</span>Solve<span class="p">());</span>
+</pre></div><p>
+We conclude the test by calling <tt>Destroy()</tt> on any singleton classes.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewCellKillerTutorial.hpp">File name TestCreatingAndUsingANewCellKillerTutorial.hpp</h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+
+#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+
+#include "AbstractCellKiller.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "CellBasedSimulation.hpp"
+#include "CellsGenerator.hpp"
+</span><span class="k">class</span> <span class="nc">MyCellKiller</span> <span class="o">:</span> <span class="k">public</span> AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="k">public</span><span class="o">:</span>
+
+    MyCellKiller<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+        <span class="o">:</span> AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span>pCellPopulation<span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="kt">void</span> TestAndLabelCellsForApoptosisOrDeath<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+            cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+            <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> location <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span> pow<span class="p">(</span>location<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>location<span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">)</span>
+            <span class="p">{</span>
+                cell_iter<span class="o">-&gt;</span>Kill<span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> OutputCellKillerParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">//*rParamsFile &lt;&lt; "\t\t\t&lt;radius&gt;" &lt;&lt; radius &lt;&lt; "&lt;/radius&gt; \n";
+</span>
+        AbstractCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputCellKillerParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+<span class="cp">
+#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellKiller<span class="p">)</span>
+<span class="cp">
+#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellKiller<span class="p">)</span>
+
+<span class="k">namespace</span> boost
+<span class="p">{</span>
+    <span class="k">namespace</span> serialization
+    <span class="p">{</span>
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> save_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> <span class="k">const</span> MyCellKiller <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> BOOST_PFTO <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Save data required to construct instance
+</span>            <span class="k">const</span> AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_cell_population <span class="o">=</span> t<span class="o">-&gt;</span>GetCellPopulation<span class="p">();</span>
+            ar <span class="o">&lt;&lt;</span> p_cell_population<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> load_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> MyCellKiller <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// Retrieve data from archive required to construct new instance
+</span>            AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_cell_population<span class="p">;</span>
+            ar <span class="o">&gt;&gt;</span> p_cell_population<span class="p">;</span>
+
+            <span class="c">// Invoke inplace constructor to initialise instance
+</span>            <span class="o">::</span><span class="k">new</span><span class="p">(</span>t<span class="p">)</span>MyCellKiller<span class="p">(</span>p_cell_population<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellKillerTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+
+    <span class="kt">void</span> TestMyCellKiller<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        MyCellKiller my_cell_killer<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+
+        my_cell_killer<span class="p">.</span>TestAndLabelCellsForApoptosisOrDeath<span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+            <span class="k">if</span> <span class="p">(</span> pow<span class="p">(</span>x<span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>y<span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">)</span>
+            <span class="p">{</span>
+                TS_ASSERT_EQUALS<span class="p">(</span>cell_iter<span class="o">-&gt;</span>IsDead<span class="p">(),</span> <span class="kc">true</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                TS_ASSERT_EQUALS<span class="p">(</span>cell_iter<span class="o">-&gt;</span>IsDead<span class="p">(),</span> <span class="kc">false</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        cell_population<span class="p">.</span>RemoveDeadCells<span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> cell_population<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+            TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span>pow<span class="p">(</span>x<span class="o">/</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> pow<span class="p">(</span>y<span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>    <span class="c">// don't erase contents of folder
+</span>        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_cell_killer.arch"</span><span class="p">;</span>
+
+        <span class="p">{</span>
+            <span class="c">// Create an output archive
+</span>            MyCellKiller my_cell_killer<span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            <span class="c">// Serialize via pointer
+</span>            MyCellKiller<span class="o">*</span> <span class="k">const</span> p_cell_killer <span class="o">=</span> <span class="o">&amp;</span>my_cell_killer<span class="p">;</span>
+            output_arch <span class="o">&lt;&lt;</span> p_cell_killer<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">{</span>
+            <span class="c">// Create an input archive
+</span>            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            MyCellKiller<span class="o">*</span> p_cell_killer<span class="p">;</span>
+
+            <span class="c">// Restore from the archive
+</span>            input_arch <span class="o">&gt;&gt;</span> p_cell_killer<span class="p">;</span>
+
+            <span class="k">delete</span> p_cell_killer<span class="p">;</span>
+        <span class="p">}</span>
+
+        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestCellBasedSimulationWithMyCellKiller<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        MyCellKiller my_cell_killer<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+
+        CellBasedSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestCellBasedSimulationWithMyCellKiller"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> linear_force<span class="p">;</span>
+        linear_force<span class="p">.</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span><span class="o">&amp;</span>linear_force<span class="p">);</span>
+
+        MyCellKiller<span class="o">*</span> p_killer <span class="o">=</span> <span class="k">new</span> MyCellKiller<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>simulator<span class="p">.</span>Solve<span class="p">());</span>
+
+        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

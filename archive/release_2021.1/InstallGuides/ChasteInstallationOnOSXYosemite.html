@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ChasteInstallationOnOSXYosemite - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonOSXyosemite">Installing Chaste on OSX yosemite</h1>
+<p>
+<strong>Warning: we're currently writing this guide and currently it only allows the use of 'cell based' code</strong>
+</p>
+<p>
+This install guide is based upon a fresh install of OSX Yosemite in October 2014.
+</p>
+<p>
+It has been tested on El Capitan in June 2016
+</p>
+<h2 id="Xcode">Xcode</h2>
+<p>
+Install Xcode from app store. (Version 7.3)
+</p>
+<ul><li>Xcode comes with Subversion version 1.7.1.  Alternatively, Homebrew has version 1.8 of Subversion.
+</li><li>Xcode provides the "g++" compiler
+</li></ul><h2 id="HomeBrew">Home Brew</h2>
+<p>
+see <a class="ext-link" href="http://mxcl.github.com/homebrew/"><span class="icon">​</span>http://mxcl.github.com/homebrew/</a>
+</p>
+<pre class="wiki">ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+</pre><p>
+Later libraries (PETSc, METIS, VTK and parMETIS) need a "science" repository
+</p>
+<pre class="wiki">brew tap homebrew/science
+</pre><p>
+If you're using the cell based code only you can roll the next few installs together.  <strong>However</strong>, some of these (PETSc and Sundials) need some configuration to build in the correct way to work for all of the code base (see Mountain Lion instructons).  It will take a while.
+</p>
+<pre class="wiki">brew install wget scons xerces-c petsc parmetis metis vtk 
+</pre><pre class="wiki">brew install sundials --with-mpi
+</pre><pre class="wiki">brew install hdf5 --with-mpi
+</pre><p>
+vtk5 is no longer supported but can be installed with
+</p>
+<pre class="wiki">brew install rdeits/director/vtk5
+</pre><h2 id="CodesynthesisXSD">Codesynthesis XSD</h2>
+<p>
+Codesynthesis XSD is not available in homebrew and must be installed directly:
+</p>
+<pre class="wiki">wget http://www.codesynthesis.com/download/xsd/3.3/macosx/i686/xsd-3.3.0-i686-macosx.tar.bz2
+tar xvfz xsd-3.3.0-i686-macosx.tar.bz2
+#These instructions assume that homebrew has created /usr/local/ and that the current user has permission to write to it.
+cp xsd-3.3.0-i686-macosx/bin/xsd /usr/local/bin/
+cp -r xsd-3.3.0-i686-macosx/libxsd /usr/local/opt/
+</pre><p>
+You also need to change the call <tt>setg (b, b, e)</tt> on line 35 of xsd/cxx/zc-istream.txx like this:
+</p>
+<pre class="wiki">bash-3.2$ diff -u /usr/local/opt/libxsd/xsd/cxx/zc-istream.txx.orig /usr/local/opt/libxsd/xsd/cxx/zc-istream.txx
+--- /usr/local/lib/libxsd/xsd/cxx/zc-istream.txx.orig   2013-07-10 11:00:23.000000000 +0100
++++ /usr/local/lib/libxsd/xsd/cxx/zc-istream.txx        2013-07-10 11:00:59.000000000 +0100
+@@ -32,7 +32,7 @@
+       C* b (const_cast&lt;C*&gt; (str_.data ()));
+       C* e (b + str_.size ());
+ 
+-      setg (b, b, e);
++      std::streambuf::setg (b, b, e);
+     }
+</pre><h2 id="Getthesourcecode">Get the source code</h2>
+<p>
+See
+</p>
+<p>
+<a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository">https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository</a>
+</p>
+<h2 id="HostConfig">Host Config</h2>
+<p>
+Use <a class="attachment" href="/chaste/tutorials/release_2021.1/InstallGuides/ChasteInstallationOnOSXYosemite/local.py" title="Attachment 'local.py' in InstallGuides/ChasteInstallationOnOSXYosemite">attachment:local.py</a><a class="trac-rawlink" href="/chaste/tutorials/release_2021.1/InstallGuides/ChasteInstallationOnOSXYosemite/local.py" title="Download">​</a> (experimental) for your <a class="missing wiki">host config?</a>.
+Save it as python/hostconfig/local.py.
+</p>
+<p>
+<strong>GOT TO HERE and cell_based works.</strong>
+</p>
+<p>
+TODO:  openmpi valgrind
+</p>
+<h2 id="PythonXMLtoolsupport">Python XML tool support</h2>
+<p>
+Libraries needed by <tt>PyCml</tt>, the heart component and the Functional Curation bolt-on project.
+</p>
+<pre class="wiki"># Note that Amara at version 2 is not suitable, so version 1.2 is forced.
+sudo easy_install https://pypi.python.org/packages/2.5/A/Amara/Amara-1.2.0.2-py2.5.egg
+sudo easy_install rdflib
+sudo easy_install lxml
+</pre><hr />
+<h2 id="Moreforthedeveloper">More for the developer</h2>
+<h3 id="Eclipse">Eclipse</h3>
+<ul><li>Download  <a class="ext-link" href="http://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/kepler/R/eclipse-cpp-kepler-R-macosx-cocoa-x86_64.tar.gz"><span class="icon">​</span>the Eclipse IDE for C++ developers</a> (or a more appropriate file) from <a class="ext-link" href="http://www.eclipse.org/downloads/"><span class="icon">​</span>http://www.eclipse.org/downloads/</a> 
+</li><li>Open the resulting tar file to produce a folder named "eclipse"
+</li><li>Drag and drop the "eclipse" folder to "Applications" in FileFinder
+</li><li>Open from Applications -&gt; eclipse -&gt; Eclipse 
+<ul><li>(You might be prompted to install a Java runtime when you first run Eclipse)
+</li></ul></li><li>If you want to alias or add the path, the location is /Applications/eclipse/eclipse
+</li></ul><h3 id="Valgrind">Valgrind</h3>
+<p>
+Valgrind version 3.8.1 (not necessary, but useful to the serious developer)
+</p>
+<pre class="wiki">brew install valgrind
+</pre><h2 id="Handythings">Handy things</h2>
+<p>
+To be able to see the tmp folder in finder use 
+</p>
+<pre class="wiki">sudo chflags nohidden /tmp
+</pre><p>
+Useful aliases to add to <tt>~/.bash_profile</tt>
+</p>
+<pre class="wiki">nano ~/.bash_profile
+</pre><pre class="wiki">alias eclipse=/Applications/eclipse/eclipse
+alias cdchaste='cd /Users/chaste/eclipse/workspace/Chaste' #Or similar
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

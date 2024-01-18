@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/MeshConvert - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="MakingtheMeshConvertutilityandusingittohelpproducescalablemeshloading">Making the <tt>MeshConvert</tt> utility and using it to help produce scalable mesh loading</h1>
+<h3 id="Whatitsfor">What it's for</h3>
+<p>
+When you run Chaste on large clusters or supercomputers the part of the simulation that might
+scale least well is the initial mesh load.  
+</p>
+<ul><li>Traditional mesh files come in ASCII format with a variable amount of characters per line.  
+</li><li>Because random access into ASCII files is difficult each process must spool through unwanted lines
+</li><li>This means each file is read in its entirety by all processes causing file contention
+</li></ul><p>
+ 
+This page shows you how to convert from a given 3D mesh format (<a class="missing wiki">Tetgen/Memfem?</a>/CARP/VTK) to 
+our special binary version of the <a class="missing wiki">Triangle/Tetgen?</a> format.
+</p>
+<ul><li>This allows for random access when running in parallel
+</li><li>This also produces a "node connectivity list" <tt>(.ncl)</tt> file which is a map from node indices
+to containing element indices.  The presence of this file cuts the calculation cost at mesh load time.
+</li><li>If a Chaste format fibre file (.axi or .ortho) is associated with the mesh then this will also be converted to our binary format.
+</li></ul><h3 id="Makingtheexecutables">Making the executable(s)</h3>
+<p>
+It is assumed that as you are running on a parallel cluster or supercomputer you have access to the Chaste 
+source code.  You can produce all executables (including the standalone Chaste program) using:
+</p>
+<div class="code"><pre>scons <span class="nv">chaste_libs</span><span class="o">=</span>1 <span class="nv">compile_only</span><span class="o">=</span>1 <span class="nv">exe</span><span class="o">=</span>1 <span class="nv">build</span><span class="o">=</span>GccOpt apps
+</pre></div><p>
+Binaries <tt>Chaste, MeshConvert...</tt> are made in <tt>apps/src</tt>.
+</p>
+<p>
+You may get a speed improvement from using a "no debug" build-type like <tt>build=GccOpt_ndebug</tt>, but
+this is at the expense of doing less error checking.
+</p>
+<h3 id="Runningtheconverter">Running the converter</h3>
+<p>
+You may want to download and save the attached file <a class="attachment" href="/chaste/tutorials/release_2019.1/UserTutorials/CardiacExecutable/MeshConvert/MeshConvert.tgz" title="Attachment 'MeshConvert.tgz' in UserTutorials/CardiacExecutable/MeshConvert">MeshConvert.tgz</a><a class="trac-rawlink" href="/chaste/tutorials/release_2019.1/UserTutorials/CardiacExecutable/MeshConvert/MeshConvert.tgz" title="Download">​</a> and 
+unpack the files for testing purposes. Either use an Archive Manager to extract the content to disk or save it and then unpack it with
+</p>
+<div class="code"><pre>tar xvfz  MeshConvert.tgz
+</pre></div><p>
+These files are just test ASCII mesh data.  Run the converter like so:
+</p>
+<div class="code"><pre>./apps/src/MeshConvert MeshConvert/simple_cube
+</pre></div><p>
+The argument <tt>MeshConvert/simple_cube</tt> should be the full relative path to the place where you unpacked the
+mesh files.  Note that no suffix is given.  If you have compiled with VTK enabled then you will be able to 
+convert a single <tt>.vtu</tt> file into a binary-format file.
+</p>
+<p>
+You will see the usual Chaste Copyright notice and information about the compilation details followed by:
+</p>
+<pre class="wiki">...
+Note: for VTK reading, give the full file path (including '.vtu' extension)
+Opening simple_cube mesh file(s).
+Writing  simple_cube_bin.node etc. mesh file in [PATH_TO_OUTPUT]
+Done.
+</pre><p>
+You can control the location of the folder for the output using <tt>$CHASTE_TEST_OUTPUT</tt>:  The space 
+labelled <tt>[PATH_TO_OUTPUT]</tt> in the above will be taken from the environmental variable
+<tt>$CHASTE_TEST_OUTPUT</tt>, if it is set, but will be <tt>./testoutput</tt> otherwise.
+</p>
+<pre class="wiki">ls ./testoutput
+simple_cube_bin.axi  simple_cube_bin.ele  simple_cube_bin.face  simple_cube_bin.ncl  simple_cube_bin.node
+</pre><h3 id="Runninginparallel">Running in parallel</h3>
+<p>
+If you run the program in parallel then the original mesh is loaded (in a non-scalable way) and then
+partitioned before writing back out.  This means that the original node ordering may be permuted.
+The advantage to pre-processing by running this converter in parallel (on <tt>n</tt> processes) is that 
+mesh partitioning may be faster when the Chaste code is run live (also on <tt>n</tt> processes).
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/Propagation3d - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="a3Donarealisticcardiacgeometry">3D on a realistic cardiac geometry</h1>
+<h3 id="Gettingthedata">Getting the data</h3>
+<p>
+Download and save the attached file <a class="attachment" href="/chaste/tutorials/release_2018.1/UserTutorials/CardiacExecutable/Propagation3d/Propagation3d.tgz" title="Attachment 'Propagation3d.tgz' in UserTutorials/CardiacExecutable/Propagation3d">Propagation3d.tgz</a><a class="trac-rawlink" href="/chaste/tutorials/release_2018.1/UserTutorials/CardiacExecutable/Propagation3d/Propagation3d.tgz" title="Download">​</a>.
+Either use an Archive Manager to extract the content to disk or save it and then unpack it with
+</p>
+<div class="code"><pre>tar xvfz  Propagation3d.tgz
+</pre></div><h3 id="Runningthesimulation">Running the simulation</h3>
+<p>
+Change directory to <tt>Propagation3d</tt>
+</p>
+<div class="code"><pre><span class="nb">cd </span>Propagation3d
+</pre></div><p>
+In this folder you will find the following files:
+</p>
+<ul><li><tt>ChasteParameters.xml</tt> -- this file describes the simulation, and can be used to override the <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2018.1/HeartConfigDefaults_8hpp.html">default parameter values</a> (in releases of the executable up to and including version 2.0, the default parameters were read in from another xml file, <tt>ChasteDefaults.xml</tt>).
+</li><li><tt>ChasteParameters_2_1.xsd</tt> -- XML schema for input validation (in general never has to be altered or touched).
+</li></ul><p>
+Run the simulation by doing
+</p>
+<pre class="wiki">&lt;path_to_chaste&gt;/Chaste.sh ChasteParameters.xml
+</pre><p>
+<strong>Note:</strong> in releases up to and including version 2.0, the executable would be called directly (ie: <tt>&lt;path_to_chaste&gt;/Chaste ChasteParameters.xml</tt>), in release 2.1 the executable should be called via the shell script <tt>Chaste.sh</tt>; as above.
+</p>
+<p>
+A folder called <tt>testoutput</tt> will appear once the simulation has finished.
+</p>
+<h3 id="Visualisingtheresults">Visualising the results</h3>
+<p>
+Move into the newly created output folder
+</p>
+<div class="code"><pre><span class="nb">cd </span>testoutput/ChasteResults
+</pre></div><p>
+In this folder you will find the following files and folders:
+</p>
+<ul><li><tt>progress_status.txt</tt>  -- this file can be viewed whilst the simulation is running to gauge how long it will take
+</li><li><tt>3dResults.h5</tt> -- the output of the simulation, in HDF5 format
+</li><li><tt>output</tt> (folder) -- contains the output converted into Meshalyzer format
+</li><li><tt>cmgui_output</tt> (folder) -- contains the output converted into CMGUI format
+</li><li><tt>vtk_output</tt> (folder) -- contains the output converted into Paraview (VTK) format
+</li></ul><p>
+There are more details on visualising your results at <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/VisualisationGuides.html">ChasteGuides/VisualisationGuides</a>.
+</p>
+<h3 id="VisualisingwithMeshalyzer">Visualising with Meshalyzer</h3>
+<p>
+For Meshalyzer visualisation, now move into the Meshalyzer-compatible output folder 
+</p>
+<div class="code"><pre><span class="nb">cd </span>output
+</pre></div><p>
+Launch Meshalyzer with
+</p>
+<pre class="wiki">&lt;path_to_meshalyzer&gt;/meshalyzer 3dResults_mesh
+</pre><p>
+and visualise the results by loading the <tt>3dResults_V.dat</tt> file.
+</p>
+<h3 id="VisualisingwithCmgui">Visualising with Cmgui</h3>
+<p>
+For Cmgui visualisation, now move into the Cmgui-compatible output folder 
+</p>
+<div class="code"><pre><span class="nb">cd </span>cmgui_output
+</pre></div><p>
+Launch the cmgui visualiser with
+</p>
+<pre class="wiki">&lt;path_to_cmgui&gt;/cmgui script.com
+</pre><p>
+The script will ensure that all the time-step files are loaded into Cmgui.
+</p>
+<h3 id="VisualisingtheVTKdatawithParaview">Visualising the VTK data with Paraview</h3>
+<p>
+For Paraview visualisation, now move into the VTK output folder 
+</p>
+<div class="code"><pre><span class="nb">cd </span>vtk_output
+</pre></div><p>
+For easy animation of cardiac simulations, we have written a Python script to add Paraview-specific
+time annotation features to the standard VTK output.  Run this with
+</p>
+<pre class="wiki">&lt;path_to_Chaste&gt;/python/utils/AddVtuTimeAnnotations.py 3dResults.vtu 3dResultsAnnotated.vtu
+</pre><p>
+Launch Paraview with
+</p>
+<div class="code"><pre>paraview --data<span class="o">=</span>3dResultsAnnotated.vtu
+</pre></div><h3 id="UnderstandingtheXMLparametersfile">Understanding the XML parameters file</h3>
+<p>
+Open <tt>ChasteParameters.xml</tt> (it is sensible to do this in a web-browser or XML editor in order to get syntax highlighting).
+The file should be reasonably readable; it defines: 
+</p>
+<ul><li>a 3D simulation that lasts for 5ms
+</li><li>the use of the monodomain model 
+<ul><li>to use bidomain, the only thing that needs to be done is to change <tt>Mono</tt> to <tt>Bi</tt>
+</li></ul></li><li>a <tt>LuoRudyIBackwardEuler</tt> cell model as the default cell model
+</li><li>a 3D mesh generated from an anatomical geometry. The are three files defining the mesh <tt>OxfordRabbitHeart_482um</tt>(<tt>.node</tt>, <tt>.ele</tt>, <tt>.face</tt>) representing respectively nodes elements and faces files.
+</li><li>an axisymmetric orientation of the fibres is used and is given in the file <tt>OxfordRabbitHeart_482um.axi</tt> where the longitudinal direction of the fibres is defined in each element.
+</li><li>a stimulated region  is defined in the apex. It starts at the beginning of the simulation and its duration is 2ms.
+</li><li>output directory and filenames
+</li><li>an <tt>OutputVisualizer</tt> element giving which visualiser formats to write
+</li><li>physiological parameters: conductivities, capacitance, surface-area-to-volume ratio
+<ul><li>in monodomain problems, the defined intracellular conductivity is used, <strong>not</strong> a harmonic mean of intra and extracellular conductivities. 
+</li></ul></li><li>Numerical parameters including ODE, PDE and printing timesteps
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

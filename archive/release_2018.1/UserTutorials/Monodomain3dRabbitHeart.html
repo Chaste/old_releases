@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/Monodomain3dRabbitHeart - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file heart/test/tutorials/TestMonodomain3dRabbitHeartTutorial.hpp at revision <a class="changeset" href="/trac/changeset/4f69b9f/git_repo" title="Copyright Mayhem!
+">4f69b9f/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="a3Dmonodomainrabbitheartexample">3D monodomain rabbit heart example</h1>
+<p>
+This tutorial runs a simulation on a whole rabbit heart mesh. Note that this
+mesh is far too coarse for converged simulations, but provides a useful example.
+</p>
+<p>
+First include the headers, <tt>MonodomainProblem</tt> this time.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+#include "LuoRudy1991BackwardEuler.hpp"
+#include "GenericMeshReader.hpp"
+#include "SimpleStimulus.hpp"
+#include "DistributedTetrahedralMesh.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="cm">/** TEMPORARY FOR DEBUGGING */</span>
+<span class="c1">///\todo #2739
+</span><span class="cp">#include &lt;unistd.h&gt;
+#include &lt;sys/resource.h&gt;
+</span><span class="c1">//#include "Debug.hpp"
+</span>
+</pre></div><p>
+Here we define a cell factory that gives stimuli to all cells
+below height z = 0.042... this corresponds to the apex of the heart.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">RabbitHeartCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    RabbitHeartCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">80000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span>z <span class="o">&lt;=</span> <span class="mf">0.05</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellMLBackwardEuler<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellMLBackwardEuler<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+Now define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestMonodomain3dRabbitHeartTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">double</span> GetMemoryUsage<span class="p">()</span>
+    <span class="p">{</span>
+       <span class="k">struct</span> rusage rusage<span class="p">;</span>
+       getrusage<span class="p">(</span> RUSAGE_SELF<span class="p">,</span> <span class="o">&amp;</span>rusage <span class="p">);</span>
+
+       <span class="k">return</span> <span class="p">(</span><span class="kt">double</span><span class="p">)(</span>rusage<span class="p">.</span>ru_maxrss<span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1024</span><span class="p">);</span><span class="c1">// Convert KB to MB
+</span>    <span class="p">}</span>
+
+    <span class="kt">void</span> TestMonodomain3dRabbitHeart<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"apps/texttest/weekly/Propagation3d/OxfordRabbitHeart_482um"</span><span class="p">,</span>
+                                                 cp<span class="o">::</span>media_type<span class="o">::</span>Axisymmetric<span class="p">);</span>
+
+<span class="c1">//        HeartConfig::Instance()-&gt;SetMeshFileName("OxfordRabbitHeart_ascii",
+//                                                         cp::media_type::Axisymmetric);
+</span>
+</pre></div><p>
+Specify the conductivity vector to use in the simulation. Since this is going to be
+a monodomain simulation, we only specify intra-cellular conductivities.
+Additionally, because this is an Axi-symmetric mesh then we must specify
+conductivity along the sheet and normal directions to be the same (an exception will be
+thrown if not).
+</p>
+<p>
+The 3rd entry would be different for an orthotropic mesh with fibre, sheet and
+normal directions. For a simulation without fibre directions, there should be one value.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">));</span>
+
+</pre></div><p>
+Set the simulation duration, output directory, filename and VTK visualization.
+</p>
+<p>
+We have set the simulation duration to be very short here so this tutorial runs
+quickly, increase it to see decent propagation of the wavefront.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dRabbitHeart"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithVtk<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+</pre></div><p>
+The ODE and PDE timesteps should be refined when using this code for real
+scientific simulations. The values here are sufficient to ensure stability
+in this case, but not sufficient for converged numerical behaviour.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+</pre></div><p>
+Here we create an instance of our cell factory, which will tell the <tt>MonodomainProblem</tt>
+class which action potential models to use at which nodes. The rest of the problem is set up
+identically to <a class="wiki" href="/chaste/tutorials/release_2018.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a>.
+</p>
+<div class="code"><pre>        RabbitHeartCellFactory cell_factory<span class="p">;</span>
+        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+We can access nodes in the mesh using a <tt>NodeIterator</tt>. Here, we check that each node
+has not been assigned to bath, and throw an error if it has. This is not a particularly useful test,
+but it does demonstrate the principle.
+</p>
+<div class="code"><pre>        AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span>monodomain_problem<span class="p">.</span>rGetMesh<span class="p">());</span>
+
+        <span class="cm">/** \todo #2739
+        double before_init = GetMemoryUsage();
+        monodomain_problem.Initialise();
+        double after_init = GetMemoryUsage();
+        PRINT_VARIABLE(after_init - before_init);
+        */</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorBegin<span class="p">();</span>
+                         iter <span class="o">!=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorEnd<span class="p">();</span> <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>HeartRegionCode<span class="o">::</span>IsRegionBath<span class="p">(</span> iter<span class="o">-&gt;</span>GetRegion<span class="p">()</span> <span class="p">),</span> <span class="nb">false</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+<strong>Note</strong> if you were doing a 'real' scientific simulation you would want to use a higher
+resolution mesh. A version of this can be found on the <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/download.html"><span class="icon">​</span>Chaste download website</a>
+</p>
+<p>
+Navigate to the "Data" tab, and download either
+</p>
+<ul><li><a class="source" href="/trac/browser/data/public/OxfordRabbitHeart/OxfordRabbitHeart_binary.tgz">OxfordRabbitHeart_binary.tgz</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/data/public/OxfordRabbitHeart/OxfordRabbitHeart_binary.tgz" title="Download">​</a>  - 599MB, or
+</li><li><a class="source" href="/trac/browser/data/public/OxfordRabbitHeart/OxfordRabbitHeartWithBath_binary.tgz">OxfordRabbitHeartWithBath_binary.tgz</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/data/public/OxfordRabbitHeart/OxfordRabbitHeartWithBath_binary.tgz" title="Download">​</a>  - 846MB.
+</li></ul><p>
+ 
+These will probably require HPC resources, and finer ODE and PDE time steps than we used here.
+</p>
+<p>
+To visualize these results, see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac.html">ChasteGuides/VisualisationGuides/ParaviewForCardiac</a>. The colour axes in Paraview
+may need to be rescaled in order to see the voltage changes.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestMonodomain3dRabbitHeartTutorial.hpp">File name <tt>TestMonodomain3dRabbitHeartTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+#include "LuoRudy1991BackwardEuler.hpp"
+#include "GenericMeshReader.hpp"
+#include "SimpleStimulus.hpp"
+#include "DistributedTetrahedralMesh.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="cm">/** TEMPORARY FOR DEBUGGING */</span>
+<span class="c1">///\todo #2739
+</span><span class="cp">#include &lt;unistd.h&gt;
+#include &lt;sys/resource.h&gt;
+</span><span class="c1">//#include "Debug.hpp"
+</span>
+<span class="k">class</span> <span class="nc">RabbitHeartCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    RabbitHeartCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">80000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span>z <span class="o">&lt;=</span> <span class="mf">0.05</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellMLBackwardEuler<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellMLBackwardEuler<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">class</span> <span class="nc">TestMonodomain3dRabbitHeartTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">double</span> GetMemoryUsage<span class="p">()</span>
+    <span class="p">{</span>
+       <span class="k">struct</span> rusage rusage<span class="p">;</span>
+       getrusage<span class="p">(</span> RUSAGE_SELF<span class="p">,</span> <span class="o">&amp;</span>rusage <span class="p">);</span>
+
+       <span class="k">return</span> <span class="p">(</span><span class="kt">double</span><span class="p">)(</span>rusage<span class="p">.</span>ru_maxrss<span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1024</span><span class="p">);</span><span class="c1">// Convert KB to MB
+</span>    <span class="p">}</span>
+
+    <span class="kt">void</span> TestMonodomain3dRabbitHeart<span class="p">()</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"apps/texttest/weekly/Propagation3d/OxfordRabbitHeart_482um"</span><span class="p">,</span>
+                                                 cp<span class="o">::</span>media_type<span class="o">::</span>Axisymmetric<span class="p">);</span>
+
+<span class="c1">//        HeartConfig::Instance()-&gt;SetMeshFileName("OxfordRabbitHeart_ascii",
+//                                                         cp::media_type::Axisymmetric);
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">));</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dRabbitHeart"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithVtk<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+        RabbitHeartCellFactory cell_factory<span class="p">;</span>
+        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span>monodomain_problem<span class="p">.</span>rGetMesh<span class="p">());</span>
+
+        <span class="cm">/** \todo #2739
+        double before_init = GetMemoryUsage();
+        monodomain_problem.Initialise();
+        double after_init = GetMemoryUsage();
+        PRINT_VARIABLE(after_init - before_init);
+        */</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorBegin<span class="p">();</span>
+                         iter <span class="o">!=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorEnd<span class="p">();</span> <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>HeartRegionCode<span class="o">::</span>IsRegionBath<span class="p">(</span> iter<span class="o">-&gt;</span>GetRegion<span class="p">()</span> <span class="p">),</span> <span class="nb">false</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

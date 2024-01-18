@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ChasteInstallationOnMountainLion - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ChasteonMountainLion">Chaste on Mountain Lion</h1>
+<p>
+<strong>Warning this currently experimental with OSX Mavericks let us know if you have issues.</strong>
+</p>
+<h2 id="Xcode">Xcode</h2>
+<p>
+Install Xcode from app store.
+</p>
+<ul><li>In Xcode select <tt>preferences-&gt;downloads</tt> and install "Command Line Tools"
+<ul><li>Xcode command line tools comes with Subversion version 1.6.  Alternatively, Homebrew has version 1.8 of Subversion.
+</li><li>Xcode command line tools provides the "g++" compiler
+</li></ul></li></ul><h2 id="HomeBrew">Home Brew</h2>
+<p>
+see <a class="ext-link" href="http://mxcl.github.com/homebrew/"><span class="icon">​</span>http://mxcl.github.com/homebrew/</a>
+</p>
+<pre class="wiki">ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+# Later libraries (PETSc, METIS, VTK and parMETIS) need a "science" repository
+brew tap homebrew/science
+</pre><p>
+You can roll the next few installs together if you wish.  <strong>However</strong>, some of these (PETSc and Sundials) need some configuration to build in the correct way (see below).  It will take a while.
+</p>
+<pre class="wiki">brew install wget scons boost gfortran openmpi valgrind xerces-c petsc parmetis metis vtk sundials
+brew install hdf5 --enable-parallel
+</pre><h3 id="SCons">SCons</h3>
+<p>
+Homebrew has version 2.3.0 of Scons:
+</p>
+<pre class="wiki">brew install scons
+</pre><h3 id="Boost">Boost</h3>
+<p>
+Homebrew has version 1.53.0 of boost:
+</p>
+<pre class="wiki">brew install boost
+</pre><h3 id="OpenMPI">OpenMPI</h3>
+<p>
+Homebrew has version 1.6.5 of OpenMPI: needs fortran compiler
+</p>
+<pre class="wiki">brew install gfortran
+brew install openmpi
+</pre><h3 id="Xerces-c">Xerces-c</h3>
+<p>
+Xerces-c 3.1.1 is available on homebrew:
+</p>
+<pre class="wiki">brew install xerces-c
+</pre><h3 id="wget">wget</h3>
+<p>
+To simplify later downloads install wget (v1.14):
+</p>
+<pre class="wiki">brew install wget
+</pre><h3 id="PETScfromhome-brewscience">PETSc (from home-brew/science)</h3>
+<p>
+Homebrew has version 3.3.p5 of PETSc.
+</p>
+<p>
+<strong>Important</strong>: Some parts of Chaste require shared libraries so you should edit the configuration of PETSc to build shared libraries for you.
+</p>
+<pre class="wiki">brew edit petsc
+</pre><p>
+Add the <tt>--with-shared-libraries</tt> flag at line 13:
+</p>
+<pre class="wiki">-      system "./configure", "--with-debugging=0", "--prefix=#{prefix}"
++      system "./configure", "--with-debugging=0", "--with-shared-libraries", "--prefix=#{prefix}"
+</pre><p>
+Now install:
+</p>
+<pre class="wiki">brew install petsc
+</pre><h3 id="ParMETISandMETIS">ParMETIS and METIS</h3>
+<p>
+Building ParMETIS also builds METIS so, if the installer worked better, you ought to be able to install both in a single line.  However here we 
+take the dangerous approach of install both separately.  This is only dangerous if the versions go out of sync.  Calls into METIS are soon to be deprecated...
+</p>
+<p>
+<strong>Important</strong>: Some parts of Chaste require shared libraries so you should edit the configuration of ParMETIS and METIS to build shared libraries for you.
+</p>
+<p>
+ParMETIS 4.0.2
+</p>
+<pre class="wiki">brew edit parmetis
+</pre><p>
+Add the <tt>shared=1</tt> flag at line 12:
+</p>
+<pre class="wiki">-   system "make", "config", "prefix=#{prefix}"
++   system "make", "config", "shared=1", "prefix=#{prefix}"
+</pre><p>
+METIS 5.0.2
+</p>
+<pre class="wiki">brew install parmetis
+</pre><pre class="wiki">brew edit parmetis
+</pre><p>
+Add the <tt>shared=1</tt> flag at line 14:
+</p>
+<pre class="wiki">-   system "make", "config", "prefix=#{prefix}"
++   system "make", "config", "shared=1", "prefix=#{prefix}"
+</pre><pre class="wiki">brew install metis
+</pre><h3 id="VTK">VTK</h3>
+<p>
+VTK 5.10.1
+</p>
+<pre class="wiki">brew install vtk
+</pre><p>
+NOTE if you are using Mavericks then you should install VTK5 as the default version (6.0) has some incompatibilities
+</p>
+<pre class="wiki">brew install vtk5
+</pre><p>
+You will also need to edit the local.py file to replace the line 
+</p>
+<pre class="wiki">ldflags='-framework vecLib'
+</pre><p>
+with 
+</p>
+<pre class="wiki">ldflags='-framework Accelerate'
+</pre><p>
+and to remove <tt>vtkFiltering</tt> and <tt>vtkzlib</tt> from the <tt>other_libraries</tt>.
+</p>
+<h2 id="CVODESundials">CVODE (Sundials)</h2>
+<p>
+Sundials 2.5.0
+</p>
+<p>
+<strong>Important</strong>: Some parts of Chaste require shared libraries so you should edit the configuration of Sundials to build shared libraries for you.
+</p>
+<pre class="wiki">brew edit sundials
+</pre><p>
+Add the <tt>-enable-shared</tt> flag at line 10:
+</p>
+<pre class="wiki">    system "./configure", "--disable-debug", "--disable-dependency-tracking",
+-                          "--prefix=#{prefix}"
++                          "-enable-shared", "--prefix=#{prefix}"
+</pre><pre class="wiki">brew install sundials
+</pre><h3 id="HDF5">HDF5</h3>
+<p>
+Homebrew has version 1.8.11 of HDF5:
+</p>
+<pre class="wiki">brew install hdf5 --enable-parallel
+</pre><h2 id="CodesynthesisXSD">Codesynthesis XSD</h2>
+<p>
+Codesynthesis XSD is not available in Macports and must be installed directly:
+</p>
+<pre class="wiki">wget http://www.codesynthesis.com/download/xsd/3.3/macosx/i686/xsd-3.3.0-i686-macosx.tar.bz2
+tar xvfz xsd-3.3.0-i686-macosx.tar.bz2
+#These instructions assume that homebrew has created /usr/local/ and that the current user has permission to write to it.
+cp xsd-3.3.0-i686-macosx/bin/xsd /usr/local/bin/
+cp -r xsd-3.3.0-i686-macosx/libxsd /usr/local/opt/
+</pre><p>
+You also need to change the call <tt>setg (b, b, e)</tt> on line 35 of xsd/cxx/zc-istream.txx like this:
+</p>
+<pre class="wiki">bash-3.2$ diff -u /usr/local/opt/libxsd/xsd/cxx/zc-istream.txx.orig /usr/local/opt/libxsd/xsd/cxx/zc-istream.txx
+--- /usr/local/lib/libxsd/xsd/cxx/zc-istream.txx.orig   2013-07-10 11:00:23.000000000 +0100
++++ /usr/local/lib/libxsd/xsd/cxx/zc-istream.txx        2013-07-10 11:00:59.000000000 +0100
+@@ -32,7 +32,7 @@
+       C* b (const_cast&lt;C*&gt; (str_.data ()));
+       C* e (b + str_.size ());
+ 
+-      setg (b, b, e);
++      std::streambuf::setg (b, b, e);
+     }
+</pre><h2 id="PythonXMLtoolsupport">Python XML tool support</h2>
+<p>
+Libraries needed by <tt>PyCml</tt>, the heart component and the Functional Curation bolt-on project.
+</p>
+<pre class="wiki"># Note that Amara at version 2 is not suitable, so version 1.2 is forced.
+sudo easy_install https://pypi.python.org/packages/2.5/A/Amara/Amara-1.2.0.2-py2.5.egg
+sudo easy_install rdflib
+sudo easy_install lxml
+</pre><h2 id="HostConfig">Host Config</h2>
+<p>
+Use <a class="attachment" href="/chaste/tutorials/release_3.4/InstallGuides/ChasteInstallationOnMountainLion/local.py" title="Attachment 'local.py' in InstallGuides/ChasteInstallationOnMountainLion">attachment:local.py</a><a class="trac-rawlink" href="/chaste/tutorials/release_3.4/InstallGuides/ChasteInstallationOnMountainLion/local.py" title="Download">​</a> (experimental) for your <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">host config</a>.
+Save it as python/hostconfig/local.py.
+</p>
+<hr />
+<h2 id="Moreforthedeveloper">More for the developer</h2>
+<h3 id="Eclipse">Eclipse</h3>
+<ul><li>Download  <a class="ext-link" href="http://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/kepler/R/eclipse-cpp-kepler-R-macosx-cocoa-x86_64.tar.gz"><span class="icon">​</span>the Eclipse IDE for C++ developers</a> (or a more appropriate file) from <a class="ext-link" href="http://www.eclipse.org/downloads/"><span class="icon">​</span>http://www.eclipse.org/downloads/</a> 
+</li><li>Open the resulting tar file to produce a folder named "eclipse"
+</li><li>Drag and drop the "eclipse" folder to "Applications" in FileFinder
+</li><li>Open from Applications -&gt; eclipse -&gt; Eclipse 
+<ul><li>(You might be prompted to install a Java runtime when you first run Eclipse)
+</li></ul></li><li>If you want to alias or add the path, the location is /Applications/eclipse/eclipse
+</li></ul><h3 id="Valgrind">Valgrind</h3>
+<p>
+Valgrind version 3.8.1 (not necessary, but useful to the serious developer)
+</p>
+<pre class="wiki">brew install valgrind
+</pre><h2 id="Handythings">Handy things</h2>
+<p>
+To be able to see the tmp folder in finder use 
+</p>
+<pre class="wiki">sudo chflags nohidden /tmp
+</pre><p>
+Useful aliases to add to <tt>~/.bashrc</tt>
+</p>
+<pre class="wiki">alias eclipse=/Applications/eclipse/eclipse
+alias cdchaste='cd /Users/chaste/eclipse/workspace/Chaste' #Or similar
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

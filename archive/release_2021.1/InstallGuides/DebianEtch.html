@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/DebianEtch - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonDebianEtch">Installing Chaste on Debian Etch</h1>
+<p>
+Most things can be installed from Debian packages, but a few bits I've installed manually.  This may or may not be necessary.  Etch has fairly similar versions of the necessary software as the core Chaste machines, so hopefully there should be fewer incompatibility issues.
+</p>
+<p>
+See the section for machine 'finarfin' in <a class="source" href="/trac/browser/trunk/SConstruct">source:trunk/SConstruct</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/SConstruct" title="Download">​</a> for my path settings.
+</p>
+<h2 id="Debianpackages">Debian packages</h2>
+<p>
+This list may miss some things, since I did an upgrade from a sarge system, so didn't have to install everything needed from scratch.
+</p>
+<pre class="wiki">aptitude install lapack3-dev atlas3-sse2 mpich-shmem-bin libmpich-shmem1.0-dev scons g++ valgrind subversion sun-java5-jdk sun-java5-bin libxerces27-dev libxerces27 libsvn-java eclipse
+</pre><h3 id="Eclipse">Eclipse</h3>
+<p>
+eclipse pulls in the gcj version by default as well; you don't need this since we use Sun's Java.
+</p>
+<p>
+Don't forget to <a class="wiki" href="/trac/wiki/InstallEclipsePlugins">InstallEclipsePlugins</a> and set certain preferences:
+</p>
+<ul><li>Go to Window-&gt;Preferences-&gt;C/C++-&gt;Editor-&gt;Appearance and select "Insert spaces for tabs".
+</li></ul><h3 id="XSD">XSD</h3>
+<p>
+The XML tools do have a debian package, but it's not in the standard repositories.  However, downloading from <a class="ext-link" href="http://codesynthesis.com/download/xsd/2.3/linux-gnu/i686/xsd_2.3.1-1_i386.deb"><span class="icon">​</span>http://codesynthesis.com/download/xsd/2.3/linux-gnu/i686/xsd_2.3.1-1_i386.deb</a> and installing with <tt>dpkg -i</tt> seems to work.
+</p>
+<h2 id="Manuallyinstalled">Manually installed</h2>
+<h3 id="PETSc2.3.1-p19">PETSc 2.3.1-p19</h3>
+<p>
+Download and unpack somewhere sensible, and change into the <tt>petsc-2.3.1-p19</tt> (or whatever) directory.
+</p>
+<pre class="wiki">export PETSC_DIR=$PWD
+./config/configure.py --with-x=false -PETSC_ARCH=linux-gnu --with-clanguage=cxx --with-shared=1
+make all
+./config/configure.py --with-x=false -PETSC_ARCH=linux-gnu-opt --with-clanguage=cxx --with-shared=1  --with-debugging=0
+make all
+</pre><p>
+Other 2.3.x versions of PETSc should be similar.  Debian etch does have packages for 2.3.2, which will probably work as well; the library/include paths would need to be altered in your SConstruct of course.
+</p>
+<h2 id="Notyetinstalledortested">Not yet installed or tested</h2>
+<ul><li>Meshalyzer
+</li><li>tetgen &amp; tetview
+</li><li>Google profile tools
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

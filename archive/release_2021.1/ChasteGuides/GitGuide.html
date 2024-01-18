@@ -1,0 +1,571 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/GitGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#GitGuide">Git Guide</a>
+  </li>
+  <li>
+    <a href="#QuickStart">Quick Start</a>
+  </li>
+  <li>
+    <a href="#CloningaRepository">Cloning a Repository</a>
+    <ol>
+      <li>
+        <a href="#OfficialChasteRepositoryLocations">Official Chaste Repository Locations</a>
+      </li>
+      <li>
+        <a href="#Commands">Commands</a>
+        <ol>
+          <li>
+            <a href="#Codedeveloper">Code developer</a>
+          </li>
+          <li>
+            <a href="#Codeuser">Code user</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#LocalRepositoryChanges">Local Repository Changes</a>
+    <ol>
+      <li>
+        <a href="#Committing">Committing</a>
+      </li>
+      <li>
+        <a href="#InspectingtheHistory">Inspecting the History</a>
+      </li>
+      <li>
+        <a href="#UndoingChanges">Undoing Changes</a>
+      </li>
+      <li>
+        <a href="#Alteringyourhistory-ResetversusRevert">Altering your history - Reset versus Revert</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#MergingChanges">Merging Changes</a>
+    <ol>
+      <li>
+        <ol>
+          <li>
+            <a href="#MergeConflict">Merge Conflict</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#WorkingwithRemoteRepositories">Working with Remote Repositories</a>
+    <ol>
+      <li>
+        <a href="#SettingRemotes">Setting Remotes</a>
+      </li>
+      <li>
+        <a href="#GettingandSendingchanges">Getting and Sending changes</a>
+        <ol>
+          <li>
+            <a href="#PullandFetch">Pull and Fetch</a>
+          </li>
+          <li>
+            <a href="#Push">Push</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#Ticketworkflow">Ticket workflow</a>
+    <ol>
+      <li>
+        <a href="#Openingabrandnewticket">Opening a brand new ticket</a>
+        <ol>
+          <li>
+            <a href="#Localrepo">Local repo</a>
+          </li>
+          <li>
+            <a href="#Mainrepo">Main repo</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Workingonapre-existingticket">Working on a pre-existing ticket</a>
+        <ol>
+          <li>
+            <a href="#CommitMessages">Commit Messages</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Mergethechangesintodevelop">Merge the changes into develop</a>
+        <ol>
+          <li>
+            <a href="#Testlocally">Test locally</a>
+          </li>
+          <li>
+            <a href="#Localrepo1">Local repo</a>
+          </li>
+          <li>
+            <a href="#Mainrepo1">Main repo</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Closingaticket">Closing a ticket</a>
+        <ol>
+          <li>
+            <a href="#Localrepo2">Local repo</a>
+          </li>
+          <li>
+            <a href="#Mainrepo2">Main repo</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#Userprojects">User projects</a>
+  </li>
+  <li>
+    <a href="#Tipstricksandtroubleshooting">Tips, tricks and troubleshooting</a>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="GitGuide">Git Guide</h1>
+<p>
+Before you start, if you are Chaste User, and never want to contribute back to the source code, you might want to consider just downloading one of the release versions of Chaste.
+</p>
+<p>
+This page is a brief guide on using Git, designed primarily for developers that are already used to Subversion. 
+</p>
+<p>
+For instructions on installation and global config of git see <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/InstallGit.html">InstallGuides/InstallGit</a>.
+</p>
+<p>
+Before you let yourself loose in the depths of Chaste and git, you might like to read some of this <a class="ext-link" href="https://git-scm.com/book/en/v2/Getting-Started-Git-Basics"><span class="icon">​</span>Git Guide</a>.
+</p>
+<h1 id="QuickStart">Quick Start</h1>
+<p>
+Assuming all you want to do is get the Chaste source code, make a few commits and push these back to the main repo, you can do something like this
+</p>
+<pre class="wiki">$ git clone -b develop https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
+$ cd Chaste
+$ edit cell_based/src/cell/Cell.cpp
+ ... compile and run tests ...
+$ git commit -a -m "#1234 Fix problems with `Cell.cpp`"
+$ git push
+</pre><h1 id="CloningaRepository">Cloning a Repository</h1>
+<p>
+Cloning a Git repository is similar to checking out a subversion repository, but 
+instead of getting only a particular subversion commit, you end up with a full 
+independent Git repository that contains the <strong>entire</strong> history of the Git 
+repository that you are cloning.
+</p>
+<h2 id="OfficialChasteRepositoryLocations">Official Chaste Repository Locations</h2>
+<p>
+Note that <a class="ext-link" href="https://github.com/Chaste/Chaste"><span class="icon">​</span>https://github.com/Chaste/Chaste</a> is just a mirror for the first of these, and isn't set up for accepting pushes, so if you want to develop code for Chaste, then you have to set up the one below as your remote. 
+</p>
+<ul><li><a href="https://chaste.cs.ox.ac.uk/git/chaste.git">https://chaste.cs.ox.ac.uk/git/chaste.git</a> -- New Chaste repository for development, only contains history since Version 3.0
+</li><li><a href="https://chaste.cs.ox.ac.uk/git/chaste_history.git">https://chaste.cs.ox.ac.uk/git/chaste_history.git</a> -- Full Chaste repository, contains all history
+</li><li><a href="https://chaste.cs.ox.ac.uk/git/project/">https://chaste.cs.ox.ac.uk/git/project/</a>&lt;your_project_name_here&gt;.git -- Project repositories
+</li></ul><p>
+If you just want a copy of Chaste, to use as a library that you can keep up to date but don't want to develop code for, then cloning the github repo <tt>https://github.com/Chaste/Chaste.git</tt> is a nice way to do it.
+</p>
+<h2 id="Commands">Commands</h2>
+<h3 id="Codedeveloper">Code developer</h3>
+<p>
+All Chaste development should occur from the <tt>develop</tt> branch. If you want to have your default local branch point be <tt>develop</tt>, so you can start editing and committing to this branch straight away, you can use the <tt>-b</tt> flag to specify a branch to clone:
+</p>
+<pre class="wiki">$ git clone -b develop https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
+</pre><p>
+Note that only really minor changes should directly edit <tt>develop</tt>, most ticket work should proceed as per <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/GitGuide.html#Ticketworkflow">the ticket workflow</a>
+</p>
+<h3 id="Codeuser">Code user</h3>
+<pre class="wiki">$ git clone -b release https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
+</pre><p>
+Note that this command will setup your local branch to point to the <tt>release</tt> branch of the remote repository, which is what we would recommend if you are using Chaste for the basis of a paper and want your paper to use the latest release of Chaste at the time of publication. There are other options you can use. 
+</p>
+<p>
+You may also want to use a <tt>master</tt> branch for one that should pass all tests but will have some newer features - you may have to update your code more frequently to keep it in sync with the latest chaste code. If you need even newer features, then ascend the following list as far as you have to!:
+</p>
+<table class="wiki">
+<tr><td> <strong>Branch</strong> </td><td> <strong>What it's for</strong> </td><td> <strong>Checked Out by above command</strong> 
+</td></tr><tr><td> <tt>develop</tt> </td><td> Bleeding-edge development code, new feature (ticket) branches should branch off here to minimise conflicts </td><td> 
+</td></tr><tr><td style="text-align: left"><tt>passed_continuous</tt> </td><td> latest code that passed continuous tests and isn't disastrous </td><td> 
+</td></tr><tr><td> <tt>passed_nightly</tt> </td><td> latest code that passed above tests, plus some longer nightly ones including coverage and memory testing </td><td> 
+</td></tr><tr><td> <tt>passed_portability</tt> </td><td> latest code that passed above tests, plus our suite of tests for different dependency versions </td><td> 
+</td></tr><tr><td>  <tt>master</tt> </td><td> Latest release-candidate quality code that has passed all tests </td><td> 
+</td></tr><tr><td> <tt>release</tt> </td><td> Latest full release of the code </td><td> &lt;- 
+</td></tr><tr><td> Release Tags </td><td> Released code for past Chaste versions (e.g. v3.4), also accessible from <a class="ext-link" href="https://github.com/Chaste/Chaste/releases"><span class="icon">​</span>https://github.com/Chaste/Chaste/releases</a> with nice instructions and zips/tar files </td><td> 
+</td></tr></table>
+<h1 id="LocalRepositoryChanges">Local Repository Changes</h1>
+<p>
+This is just like svn, you commit to one repository (the local copy/clone of a git repository).
+</p>
+<h2 id="Committing">Committing</h2>
+<p>
+Inspecting your current local changes is similar to subversion:
+</p>
+<pre class="wiki">$ git status
+$ git diff
+</pre><p>
+You can add and remove files using the <tt>add</tt> and <tt>rm</tt> commands:
+</p>
+<pre class="wiki">$ git add &lt;file&gt;
+$ git rm &lt;file&gt;
+</pre><p>
+If you want to commit <strong>all</strong> your local changes, you can use:
+</p>
+<pre class="wiki">$ git commit -a -m "message"
+</pre><p>
+The <tt>-a</tt> tells git to commit all changes. However, if you use this method you 
+are missing out on the benefits of Git's staging area, which allows you to add 
+individual files (or lines of a file) to the staging area. This allows you to , 
+for example, only add changes that belong to a particular ticket.
+</p>
+<pre class="wiki">$ git add &lt;file1&gt; &lt;file2&gt;
+$ git add &lt;directory&gt;
+$ git add -p &lt;file3&gt;
+</pre><p>
+Unlike Subversion, committing your changes does not send them to the remote 
+repository. To do this you must use the <tt>push</tt> command. Assuming you want to 
+push back to the repository you have cloned, you can use <tt>push</tt> with no 
+arguments
+</p>
+<pre class="wiki">$ git push
+</pre><h2 id="InspectingtheHistory">Inspecting the History</h2>
+<ul><li>Use <tt>log</tt> to inspect history. Use <tt>--oneline</tt> for a brief summary.
+</li></ul><pre class="wiki">$ git log
+$ git log --oneline
+</pre><ul><li>Use the <tt>diff</tt> command to see the differences between the working directory 
+and the staging area. 
+</li><li>The <tt>--staged</tt> option shows changes between the staging area and the last 
+commit. 
+</li><li>Use the <tt>HEAD</tt> pointer to see the changes between the working directory and 
+the last commit
+</li></ul><pre class="wiki">$ git diff &lt;file&gt; 
+$ git diff --staged 
+$ git diff HEAD
+</pre><h2 id="UndoingChanges">Undoing Changes</h2>
+<ul><li>Reset &lt;file&gt; (not yet added to staging area) to the last committed version:
+</li></ul><pre class="wiki">$ git checkout &lt;file&gt;
+</pre><ul><li>You can amend the current commit (e.g. change commit message, commit new changes etc)
+</li></ul><pre class="wiki">$ git commit --amend
+</pre><ul><li>You can remove a file from the staging area (i.e. after using <tt>git add</tt>)
+</li></ul><pre class="wiki">$ git reset HEAD &lt;file&gt;
+</pre><h2 id="Alteringyourhistory-ResetversusRevert">Altering your history - Reset versus Revert</h2>
+<ul><li>You can reset your history (soft reset) and optionally your working directory (hard reset) to a specified &lt;commit&gt;:
+</li></ul><pre class="wiki">$ git reset &lt;commit&gt;
+$ git reset --hard &lt;commit&gt;
+</pre><ul><li>You can remove a specified commit from the history (a new commit is made with the necessary changes)
+</li></ul><pre class="wiki">$ git revert &lt;commit&gt;
+</pre><p>
+Altering your history is best avoided unless you know what you are doing! And should DEFINITELY be avoided if you are messing with any commits that have already made it to the Chaste remote repositories.
+</p>
+<h1 id="MergingChanges">Merging Changes</h1>
+<p>
+You can provide the name of the branch you want to integrate to the <tt>git merge</tt> 
+command
+</p>
+<pre class="wiki">$ git checkout &lt;this-branch&gt;
+$ git merge &lt;name-of-other-branch-to-merge-into-this-one&gt;
+</pre><p>
+For example, say you are working on the <tt>develop</tt> branch and want to write a new 
+feature. So you create a new branch to work on and make and commit a few changes 
+like so 
+</p>
+<pre class="wiki">$ git checkout -b new_feature_name develop
+$ edit file1.cpp
+$ commit -a -m "my wow new feature"
+</pre><p>
+Now assume you have tested and are happy with the new changes. So you then go 
+back to the <tt>develop</tt> branch and merge the feature
+</p>
+<pre class="wiki">$ git checkout develop
+$ git merge new_feature_name
+</pre><h3 id="MergeConflict">Merge Conflict</h3>
+<p>
+If you haven't been making new commits to <tt>develop</tt> then this will work fine. 
+However, if there are conflicting edits on <tt>develop</tt> and <tt>new_feature_name</tt> you 
+might get an error message like so
+</p>
+<pre class="wiki">Auto-merging file1.cpp
+CONFLICT (content): Merge conflict in file1.cpp
+Automatic merge failed; fix conflicts and then commit the result.
+</pre><p>
+If you open <tt>file1.cpp</tt>, you will see standard conflict-resolution markers like 
+this:
+</p>
+<pre class="wiki">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+This is the new line in develop 
+=======
+This is the new line in new_feature_name
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; new_feature_name
+</pre><p>
+Now you need to edit the file to resolve the merge, and then commit the result
+</p>
+<pre class="wiki">$ git add file1.cpp
+$ git commit -m "merged new_feature_branch into develop"
+</pre><p>
+or
+</p>
+<pre class="wiki">$  git commit -a -m "merged new_feature_branch into develop"
+</pre><ul><li>If you want to see which files are still unmerged at any point, you can use 
+<tt>git status</tt> to see the current state of the merge
+</li></ul><h1 id="WorkingwithRemoteRepositories">Working with Remote Repositories</h1>
+<p>
+Git is a distributed version control system. You can happily commit, branch and 
+merge to your heart's content on your own, local, Git repository. But eventually 
+you will want to send these changes to the main Chaste repository or to another 
+developer.
+</p>
+<h2 id="SettingRemotes">Setting Remotes</h2>
+<p>
+These will be set automatically if you clone a remote repository, but you can manually change them too.
+</p>
+<p>
+Your local repository has links to a number of remote repositories, you can get 
+a list using
+</p>
+<pre class="wiki">$ git remote -v
+</pre><p>
+Assuming you cloned your local repository from the main Chaste repo, you should 
+see something like
+</p>
+<pre class="wiki">origin  https://chaste.cs.ox.ac.uk/git/chaste.git (fetch)
+origin  https://chaste.cs.ox.ac.uk/git/chaste.git (push)
+</pre><p>
+<tt>origin</tt> is the name of the remote (the cloned repo is always given this name by default). 
+</p>
+<p>
+You can add a remote repo using the <tt>remote</tt> command
+</p>
+<pre class="wiki">$ git remote add &lt;name&gt; &lt;url&gt;
+</pre><h2 id="GettingandSendingchanges">Getting and Sending changes</h2>
+<p>
+Firstly, you should make sure you've done all the local changes you want (i.e. committed, see above).
+</p>
+<h3 id="PullandFetch">Pull and Fetch</h3>
+<p>
+You can get commits from a remote using the <tt>pull</tt> command
+</p>
+<pre class="wiki">$ git pull
+</pre><p>
+To get commits from a remote <strong>without</strong> merging them into your local 
+repository, use the <tt>fetch</tt> command instead
+</p>
+<pre class="wiki">$ git fetch
+</pre><p>
+The <tt>branch</tt> command will then show both the local and remote branches
+</p>
+<pre class="wiki">$ git fetch
+$ git branch -a
+* master
+remotes/origin/master
+</pre><p>
+You can then merge any changes the remote branch (<tt>origin/master</tt>) into the 
+current local branch (<tt>master</tt>)
+</p>
+<pre class="wiki">$ git merge origin/master
+</pre><h3 id="Push">Push</h3>
+<p>
+To send your new commits to the default remote (normally <tt>origin</tt>), you can use 
+the <tt>push</tt> command
+</p>
+<pre class="wiki">$ git push
+</pre><p>
+Say you have created a new branch <tt>&lt;branch&gt;</tt> that you want to share, then you 
+can push it to <tt>&lt;remote&gt;</tt> using
+</p>
+<pre class="wiki">$ git push &lt;remote&gt; &lt;branch&gt;
+</pre><p>
+If you want to get a new branch pushed by another developer, you can use the 
+<tt>checkout</tt> command to create a new branch and set it up to track the correct 
+remote branch
+</p>
+<p>
+For convenience on your own machine you can get git to remember your username for the Chaste repositories.
+(Search for <tt>git credential</tt> to find out how to store passwords securely on your OS too.)
+</p>
+<pre class="wiki">$ git config --global credential.https://chaste.cs.ox.ac.uk.username &lt;your-username&gt;
+</pre><h1 id="Ticketworkflow">Ticket workflow</h1>
+<p>
+Unlike Subversion, Git branches do not use directories to manage branches and 
+are lightweight and considerably faster to use and merge with each other. Each 
+branch is simply a pointer to the commit at the head of the branch.
+</p>
+<p>
+Note that Git does not have a <tt>trunk</tt>, you are always working on a branch, 
+although typically the <tt>master</tt> branch fulfils the role of the <tt>trunk</tt>. Note 
+that for the Chaste project, all development must occur from the <tt>develop</tt> branch.
+</p>
+<p>
+The rough idea is that from now on <strong>every ticket's commits will appear on a feature branch (branched out from <tt>develop</tt>), until the ticket is ready to be closed, and then they'll be merged back in to develop</strong>.
+</p>
+<h2 id="Openingabrandnewticket">Opening a brand new ticket</h2>
+<p>
+First, make sure you've made a new trac ticket. This will have a number (at the time of writing, a four digit number!) let's say XXXX. So the git branch will be called <tt>ticket_XXXX</tt>, wherever you see this below replace it with the number of your trac ticket!
+</p>
+<p>
+<strong>Note:</strong> only do this if the ticket has never been worked on before, and a <tt>&lt;ticket_XXXX&gt;</tt> branch doesn't exist in the main repository already. 
+If you haven't just opened the trac ticket so you aren't sure whether it exists, you can type:
+</p>
+<pre class="wiki">$ git branch -a
+</pre><p>
+which will display all local and remote branches that are available. If &lt;ticket_XXXX&gt; does exist, skip down to the <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/GitGuide.html#Workingonapre-existingticket">next section</a>.
+</p>
+<h3 id="Localrepo">Local repo</h3>
+<p>
+When you start work on a new ticket, you first need to create a branch on your local repository, as discussed here. 
+If instead you want to use a pre-existing feature branch that's on the Chaste repo, see below.
+</p>
+<p>
+You can pass the <tt>-b</tt> flag to the <tt>git checkout</tt> command to create and 
+switch to a new branch in one action:
+</p>
+<pre class="wiki">$ git checkout -b &lt;ticket_XXXX&gt; develop
+</pre><p>
+To list all the available (local) branches/tickets:
+</p>
+<pre class="wiki">$ git branch
+</pre><h3 id="Mainrepo">Main repo</h3>
+<p>
+If you've made a new feature branch locally, you should then immediately make a copy of that on the central Chaste git repository, so do:
+</p>
+<pre class="wiki">$ git checkout &lt;ticket_XXXX&gt;        # Just makes sure the branch you want to push is the one currently checked out locally.
+$ git push -u &lt;remote&gt; &lt;ticket_XXXX&gt;   # Push a copy to the main Chaste repo. &lt;remote&gt; is probably just = origin. The -u should make git track the pushed branch as the new remote.
+</pre><p>
+This will make a copy, with the same name, on the main Chaste repo that other people can work on too, by checking it out as below.
+</p>
+<h2 id="Workingonapre-existingticket">Working on a pre-existing ticket</h2>
+<p>
+If a ticket feature branch already exists, and you just want to grab a copy of it on your local repository just do:
+</p>
+<pre class="wiki">$ git checkout --track &lt;remote&gt;/&lt;branch&gt;
+</pre><p>
+e.g.
+</p>
+<pre class="wiki">$ git checkout --track origin/&lt;ticket_XXXX&gt;
+</pre><p>
+Note that after a branch is setup to <tt>--track</tt> a remote branch, every subsequent use 
+of <tt>git pull</tt> and <tt>git push</tt> with no additional arguments will pull/push 
+changes between the local and remote branches.
+</p>
+<p>
+Note for all recent versions of Git (&gt;1.6.6), as long as you have previously fetched the remote branch (run the above commands once), you can simply use
+</p>
+<pre class="wiki">$ git checkout &lt;ticket_XXXX&gt;
+$ git pull
+</pre><p>
+Then make all the local commits you need and push them to the server, as above.
+</p>
+<h3 id="CommitMessages">Commit Messages</h3>
+<p>
+All commits to the main repo to do with your ticket should start with the ticket number, prefixed with a hash symbol, e.g.
+</p>
+<pre class="wiki">git commit -m "#&lt;XXXX&gt; an informative message describing the changes."
+</pre><p>
+e.g.
+</p>
+<pre class="wiki">git commit -m "#3057 added special case for python3.5 to prevent upgrade of pip to incompatible version."
+</pre><p>
+This means that things are nicely cross-referenced when looking at the timeline and doing detective work!
+</p>
+<h2 id="Mergethechangesintodevelop">Merge the changes into develop</h2>
+<p>
+For the ticket's changes to be shared with everyone and automatically run through the test suite, we merge them into <tt>develop</tt>. Best to think of this in a few stages:
+</p>
+<h3 id="Testlocally">Test locally</h3>
+<p>
+Before you merge in changes from your ticket branch, it probably makes sense to locally test your code with any changes that have happened in <tt>develop</tt> since you branched off. So get any changes to develop with:
+</p>
+<pre class="wiki">$ git checkout develop
+$ git pull
+</pre><p>
+Now go to your ticket branch, and merge in these changes
+</p>
+<pre class="wiki">$ git checkout &lt;ticket_XXXX&gt;
+$ git pull     # Get any changes that other people have done in the meantime!
+$ git merge develop
+</pre><p>
+sort out any conflicts that arise, and run local test suite.
+</p>
+<h3 id="Localrepo1">Local repo</h3>
+<p>
+Merges can become very messy (despite git's advocates telling you otherwise!) if you are behind in the history, so do:
+</p>
+<pre class="wiki">$ git checkout develop
+$ git pull
+</pre><p>
+To get your develop branch up to date (sort out any conflicts - there shouldn't be any if you've been doing work in ticket branches!)
+</p>
+<p>
+Then the main command is simply
+</p>
+<pre class="wiki">$ git merge &lt;ticket_XXXX&gt;
+</pre><h3 id="Mainrepo1">Main repo</h3>
+<p>
+Finally, send the change to <tt>develop</tt> to the main server with:
+</p>
+<pre class="wiki">$ git push
+</pre><h2 id="Closingaticket">Closing a ticket</h2>
+<p>
+<strong>Wait</strong>! after tickets are merged into master, it makes sense to leave the branches in place until the testing is complete (and you are sure the changes have made it into the <tt>master</tt> branch). The last thing we should do on each trac ticket now should be to delete the branches from the repo.
+</p>
+<p>
+Make sure that the trac ticket references all the relevant commits, you can use the following Trac Wiki syntax to link to commits:
+e.g. 
+</p>
+<pre class="wiki">[changeset:95cc5411b/git_repo 95cc5411b]
+</pre><h3 id="Localrepo2">Local repo</h3>
+<pre class="wiki">$ git branch -d &lt;ticket_XXX&gt;
+</pre><p>
+Note this only works if all the changes have been merged into <tt>develop</tt> (clever!). If for any reason you have extra local changes, but definitely don't want them merging in, you need to use an extra <tt>--force</tt> flag.
+</p>
+<h3 id="Mainrepo2">Main repo</h3>
+<p>
+There's a special command for this (because <tt>git push</tt> just refers to the branch you're on, not the whole repo):
+</p>
+<pre class="wiki">$ git push origin --delete &lt;ticket_XXXX&gt;
+</pre><p>
+works on recent git clients. If your <tt>git --version</tt> is &lt; 1.7.0 you need to use <tt>git push origin :&lt;ticket_XXXX&gt;</tt>.
+</p>
+<h1 id="Userprojects">User projects</h1>
+<p>
+See <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/CheckoutUserProject.html">InstallGuides/CheckoutUserProject</a> for a guide on how to make new git user projects, or to convert existing svn ones to git.
+</p>
+<h1 id="Tipstricksandtroubleshooting">Tips, tricks and troubleshooting</h1>
+<ul><li><strong>"Local <tt>.gitignore</tt>"</strong>: The <tt>.gitignore</tt> file tells a repository the names of any files that should always be ignored for any/all copies of the repository. But sometimes it's useful to have some local changes that you don't want to involve in commits, or force on everyone with <tt>.gitignore</tt>.
+<ul><li><strong>Changes to files that are in the repository</strong>: in this case, a command like this:
+<pre class="wiki">git update-index --assume-unchanged &lt;file&gt;
+</pre>does the trick. 
+</li><li><strong>New files not in git repo</strong>: then use the <tt>.git/info/excludes</tt> file <a class="ext-link" href="http://stackoverflow.com/questions/1753070/git-ignore-files-only-locally"><span class="icon">​</span>as explained here</a>.
+</li></ul></li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

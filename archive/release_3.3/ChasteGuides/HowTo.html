@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/HowTo - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ChasteHOWTOIndex">Chaste HOWTO Index</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#ChasteHOWTOIndex">Chaste HOWTO Index</a>
+    <ol>
+      <li>
+        <a href="#Cardiac">Cardiac</a>
+        <ol>
+          <li>
+            <a href="#CellModels">Cell Models</a>
+          </li>
+          <li>
+            <a href="#Electro-mechanics">Electro-mechanics</a>
+          </li>
+          <li>
+            <a href="#Output">Output</a>
+          </li>
+          <li>
+            <a href="#Post-processing">Post-processing</a>
+          </li>
+          <li>
+            <a href="#Problemdefinition">Problem definition</a>
+          </li>
+          <li>
+            <a href="#Solver">Solver</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#CellBased">Cell Based</a>
+        <ol>
+          <li>
+            <a href="#Simulation">Simulation</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Continuummechanics">Continuum mechanics</a>
+        <ol>
+          <li>
+            <a href="#Ventilation">Ventilation</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#General">General</a>
+        <ol>
+          <li>
+            <a href="#Archiving">Archiving</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Mesh">Mesh</a>
+      </li>
+      <li>
+        <a href="#PDE">PDE</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#CreatingnewHOWTOs">Creating new HOWTOs</a>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+As well as ensuring that Chaste functions as expected, the many Chaste tests can
+be effective for learning how to use Chaste.  There are often aspects of Chaste's
+capabilities that do not warrant a full user tutorial, but are still worth noting.
+Equally, users often ask "how do I do...", and in many cases there is already a
+test that does something similar and can be used as a basis.
+</p>
+<p>
+This page contains a (probably partial) index of links to useful code.  Some of
+the links are to code in tutorials.  The others are links to test code.  For the
+latter, note that since tests are written primarily for checking functionality,
+they are not commented to the same degree as user tutorials.  Never-the-less they
+should be reasonably readable and useful.
+</p>
+<p>
+Note that this page is generated automatically based on tags in the Chaste code.
+Do not edit it manually, as your changes will be overwritten!
+</p>
+<hr />
+<h2 id="Cardiac">Cardiac</h2>
+<h3 id="CellModels">Cell Models</h3>
+<ul><li> Get a cardiac cell model to (roughly) a steady state, given a regular stimulus, using the <tt>SteadyStateRunner</tt> class. -- see <a class="missing source">line 100 of heart/test/ionicmodels/TestSteadyStateRunner.hpp</a>
+</li></ul><h3 id="Electro-mechanics">Electro-mechanics</h3>
+<ul><li> Run basic electro-mechanics simulations; specify different models, boundary conditions, fibres -- see <a class="missing source">line 117 of heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp</a>
+</li><li> Run electro-mechanical simulations using bidomain instead of monodomain -- see <a class="missing source">line 217 of heart/test/mechanics/TestCardiacElectroMechanicsProblem.hpp</a>
+</li><li> Run electro-mechanics with inflation pressures -- see <a class="missing source">line 273 of heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp</a>
+</li><li> Run electro-mechanics with mechano-electric feedback -- see <a class="missing source">line 100 of heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp</a>
+</li><li> Set heterogeneous contraction models by using a contraction cell factory. -- see <a class="missing source">line 148 of heart/test/TestAbstractContractionCellFactory.hpp</a>
+</li><li> Visualise results in Cmgui (very brief description) -- see <a class="missing source">line 205 of heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp</a>
+</li></ul><h3 id="Output">Output</h3>
+<ul><li> Calculating and outputting ionic currents ('derived quantities') in a single cell simulation using <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classOdeSolution.html" title="Documentation for the OdeSolution class"><span class="icon">​</span>class:OdeSolution</a> - see also <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">this page</a>. -- see <a class="missing source">line 362 of heart/test/ionicmodels/TestCvodeCells.hpp</a>
+</li><li> Calculating and outputting ionic currents ('derived quantities') in a tissue simulation using <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classHeartConfig.html" title="Documentation for the HeartConfig class"><span class="icon">​</span>class:HeartConfig</a> - see also <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">this page</a>. -- see <a class="missing source">line 238 of heart/test/monodomain/TestMonodomainProblem.hpp</a>
+</li><li> Collect and print timings to benchmark different parts of the cardiac code. -- see <a class="missing source">line 124 of heart/test/bidomain/TestBidomain3D.hpp</a>
+</li><li> Only output data for particular nodes -- see <a class="missing source">line 580 of heart/test/bidomain/TestBidomainProblem.hpp</a>
+</li><li> Output all cell model state variables for the cell model used in a particular simulation -- see <a class="missing source">line 949 of heart/test/bidomain/TestBidomainProblem.hpp</a>
+</li><li> Specify output formats (for different visualisers) -- see <a class="missing source">line 133 of heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp</a>
+</li><li> Use the <tt>SingleTraceOutputModifier</tt> to output based on a global index (index AFTER any permutation has been applied) -- see <a class="missing source">line 1047 of heart/test/bidomain/TestBidomainProblem.hpp</a>
+</li></ul><h3 id="Post-processing">Post-processing</h3>
+<ul><li> Compute action potential properties (APD50, APD90, max upstroke velocities, etc) given voltage traces. -- see <a class="missing source">line 57 of heart/test/postprocessing/TestCellProperties.hpp</a>
+</li><li> Compute pseudo-ECGs -- see <a class="missing source">line 59 of heart/test/postprocessing/TestPseudoEcgCalculator.hpp</a>
+</li><li> Convert already generated simulation (HDF5) results to Cmgui format. -- see <a class="missing source">line 61 of heart/test/postprocessing/TestHdf5ToVisualizerConverters.hpp</a>
+</li><li> Convert already generated simulation (HDF5) results to text, VTK or Meshalyzer format. -- see <a class="missing source">line 64 of pde/test/utilities/TestHdf5Converters.hpp</a>
+</li></ul><h3 id="Problemdefinition">Problem definition</h3>
+<ul><li> Do a monodomain simulation with equivalent conductivities to a bidomain simulation. -- see <a class="missing source">line 233 of heart/test/tutorials/TestEquivalentMonoAndBidomainTutorial.hpp</a>
+</li><li> Fix phi_e at particular nodes (note: this is not required) -- see <a class="missing source">line 266 of heart/test/bidomain/TestBidomainProblem.hpp</a>
+</li><li> Generate a slab (cuboid) mesh rather than read a mesh in, and pass it to solver -- see <a class="missing source">line 102 of heart/test/tutorials/TestMonodomain3dExampleTutorial.hpp</a>
+</li><li> Generate fibre field definitions for cardiac geometries using a mathematical rule approach -- see <a class="missing source">line 48 of heart/test/fibres/TestStreeterFibreGenerator.hpp</a>
+</li><li> Read in a mesh from file, via <tt>HeartConfig</tt>. -- see <a class="missing source">line 100 of heart/test/tutorials/TestMonodomain3dRabbitHeartTutorial.hpp</a>
+</li><li> Run bidomain simulations with a perfusing bath, and apply shocks using electrodes -- see <a class="missing source">line 47 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a>
+</li><li> Save ('checkpoint') and reload simulations -- see <a class="missing source">line 49 of heart/test/tutorials/TestCardiacCheckpointingAndRestartingTutorial.hpp</a>
+</li><li> Set discrete <strong>cuboid</strong> areas to have heterogeneous (intra- and/or extra-cellular) conductivity tensors. -- see <a class="missing source">line 82 of heart/test/TestHeterogeneousConductivities.hpp</a>
+</li><li> Set discrete <strong>ellipsoid</strong> areas to have heterogeneous (intra- and/or extra-cellular) conductivity tensors. -- see <a class="missing source">line 271 of heart/test/bidomain/TestBidomainTissue.hpp</a>
+</li><li> Set up and run basic bidomain simulations -- see <a class="missing source">line 48 of heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp</a>
+</li><li> Specify fibre directions -- see <a class="missing source">line 87 of heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp</a>
+</li><li> Tell Chaste that a mesh has been modified -- see <a class="missing source">line 179 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a>
+</li><li> Use a CVODE adaptor solver in a tissue simulation -- see <a class="missing source">line 122 of heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp</a>
+</li><li> Use a genuinely Neumann intracellular stimulus, rather than default volume stimulus -- see <a class="missing source">line 54 of heart/test/stimuli/TestNeumannStimulus.hpp</a>
+</li><li> Use a native CVODE cell in a tissue simulation -- see <a class="missing source">line 169 of heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp</a>
+</li><li> Use different cell models, defined using cellml files -- see <a class="missing source">line 76 of heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp</a>
+</li></ul><h3 id="Solver">Solver</h3>
+<ul><li> Run using (simple, user-defined) time-adaptivity -- see <a class="missing source">line 51 of heart/test/monodomain/TestMonodomainWithTimeAdaptivity.hpp</a>
+</li><li> Run using operator-splitting -- see <a class="missing source">line 58 of heart/test/monodomain/TestOperatorSplittingMonodomainSolver.hpp</a>
+</li><li> Use <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/StateVariableInterpolation.html">state-variable interpolation</a> to improve accuracy -- see <a class="missing source">line 118 of heart/test/bidomain/TestBidomainWithSvi.hpp</a>
+</li><li> Using specialised Backward Euler implementation to solve the cell models (allows for much larger timesteps) -- see <a class="missing source">line 64 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a>
+</li></ul><h2 id="CellBased">Cell Based</h2>
+<h3 id="Simulation">Simulation</h3>
+<ul><li> Save and load ('checkpoint') a cell-based simulation to file. -- see <a class="missing source">line 132 of crypt/test/simulation/TestGenerateSteadyStateCrypt.hpp</a>
+</li><li> Time various aspects of a cell-based simulation using <tt>CellBasedEventHandler</tt>. -- see <a class="missing source">line 434 of crypt/test/simulation/TestCryptSimulation2dNightly.hpp</a>
+</li></ul><h2 id="Continuummechanics">Continuum mechanics</h2>
+<ul><li> Get or output stresses during a solve -- see <a class="missing source">line 638 of continuum_mechanics/test/TestIncompressibleNonlinearElasticitySolver.hpp</a>
+</li><li> Solve Stokes' flow problems (this functionality is work-in-progress). -- see <a class="missing source">line 51 of continuum_mechanics/test/TestStokesFlowSolver.hpp</a>
+</li><li> Solve nonlinear elasticity problems -- see <a class="missing source">line 107 of continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp</a>
+</li><li> Specify more complicated boundary conditions in elasticity problems -- see <a class="missing source">line 77 of continuum_mechanics/test/TestSolvingMoreElasticityProblemsTutorial.hpp</a>
+</li><li> Visualise nonlinear elasticity problems solutions, including visualisng strains -- see <a class="missing source">line 222 of continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp</a>
+</li><li> Write strain after solve -- see <a class="missing source">line 946 of continuum_mechanics/test/TestCompressibleNonlinearElasticitySolver.hpp</a>
+</li></ul><h3 id="Ventilation">Ventilation</h3>
+<ul><li> Solve a simple ventilation problem defined in a file. -- see <a class="missing source">line 444 of lung/test/ventilation/TestVentilationProblem.hpp</a>
+</li><li> Solve a simple ventilation problem with no time variation. -- see <a class="missing source">line 337 of lung/test/ventilation/TestVentilationProblem.hpp</a>
+</li></ul><h2 id="General">General</h2>
+<ul><li> Read and use parameters from the command line -- see <a class="missing source">line 46 of global/test/TestCommandLineArguments.hpp</a>
+</li><li> Use mock/pretend command line arguments -- see <a class="missing source">line 264 of global/test/TestCommandLineArguments.hpp</a>
+</li></ul><h3 id="Archiving">Archiving</h3>
+<ul><li> Use a binary rather than ascii boost archive format, for speed and smaller file sizes. -- see <a class="missing source">line 390 of global/test/TestArchiving.hpp</a>
+</li></ul><h2 id="Mesh">Mesh</h2>
+<ul><li> Apply transformations to meshes -- see <a class="missing source">line 49 of mesh/test/TestTransformations.hpp</a>
+</li><li> Convert a linear tetrahedral mesh to quadratic and write back to file. -- see <a class="missing source">line 783 of mesh/test/TestQuadraticMesh.hpp</a>
+</li><li> Write meshes to file -- see <a class="missing source">line 58 of mesh/test/writer/TestMeshWriters.hpp</a>
+</li></ul><h2 id="PDE">PDE</h2>
+<ul><li> Define and solve a particular type of coupled ODE/PDE system -- see <a class="missing source">line 47 of pde/test/tutorials/TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp</a>
+</li><li> Define and solve linear elliptic or parabolic PDEs -- see <a class="missing source">line 47 of pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp</a>
+</li><li> Define and solve nonlinear elliptic PDEs -- see <a class="missing source">line 52 of pde/test/tutorials/TestSolvingNonlinearPdesTutorial.hpp</a>
+</li><li> Evaluate integrals (using a solution from a PDE solve say) over a finite element mesh -- see <a class="missing source">line 49 of pde/test/utilities/TestAbstractFunctionalCalculator.hpp</a>
+</li><li> Output results to file for time-dependent PDE solvers -- see <a class="missing source">line 341 of pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp</a>
+</li><li> Write a solver for coupled nonlinear PDEs (advanced) -- see <a class="missing source">line 53 of pde/test/TestSolvingCoupledNonlinearPdes.hpp</a>
+</li><li> Write new PDE solvers (especially for linear coupled elliptic/parabolic systems) -- see <a class="missing source">line 54 of pde/test/tutorials/TestWritingPdeSolversTutorial.hpp</a>
+</li></ul><hr />
+<h1 id="CreatingnewHOWTOs">Creating new HOWTOs</h1>
+<p>
+Any C-style block comment found in a test file that looks like the following
+will be given an entry in the index.
+</p>
+<pre class="wiki"> * HOW_TO_TAG Section/Subsection
+ * Short description (ideally one-liner)
+</pre><p>
+The short description may run over multiple lines; it will be considered to end
+either at the end of the comment, or at a blank comment line, whichever comes first.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

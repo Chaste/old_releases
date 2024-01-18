@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingNewCellBasedWriters - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestCreatingAndUsingNewCellBasedWritersTutorial.hpp at revision <a class="changeset" href="/trac/changeset/5e8c8d7218a9/git_repo" title="Copyright mayhem!">5e8c8d7218a9/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcellwriteranduseitinacell-basedsimulation">An example showing how to create a new cell writer and use it in a cell-based simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+This tutorial assumes you have already read <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
+</p>
+<p>
+In <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a> we showed how to create a new cell
+property class, <tt>MotileCellProperty</tt>, and how this can be used in a cell-based simulation.
+In this tutorial, we show how to create a new cell writer class, which can be used to output
+different data from a cell-based simulation. Our example will be a writer class for outputting
+information about those cells in a simulation that have the <tt>MotileCellProperty</tt>.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header file and
+archiving headers. For simplicity, we duplicate the code presented in <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>
+that defines the <tt>MotileCellProperty</tt> class. As before, note that usually this code would be
+separated out into a declaration in a .hpp file and a definition in a .cpp file.
+We also include some header files defining classes to be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "AbstractCellProperty.hpp"
+#include "AbstractForce.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "NodesOnlyMesh.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "CellLabel.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MotileCellProperty</span> <span class="o">:</span> <span class="k">public</span> AbstractCellProperty
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="kt">unsigned</span> mColour<span class="p">;</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellProperty<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        archive <span class="o">&amp;</span> mColour<span class="p">;</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    MotileCellProperty<span class="p">(</span><span class="kt">unsigned</span> colour<span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="o">:</span> AbstractCellProperty<span class="p">(),</span>
+          mColour<span class="p">(</span>colour<span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="o">~</span>MotileCellProperty<span class="p">()</span>
+    <span class="p">{}</span>
+
+    <span class="kt">unsigned</span> GetColour<span class="p">()</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">return</span> mColour<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h2 id="Definingacellwriterclass">Defining a cell writer class</h2>
+<p>
+We next define a class that writes information about each cell in the population, using
+the public methods of the population class.
+Note that usually this code would be separated out into a declaration in a .hpp file and
+definition in a .cpp file.
+</p>
+<p>
+We inherit from the base class, <tt>AbstractCellWriter</tt>, whose header we must include.
+This abstract class encapsulates how files are written.
+To specify how this writer should act on each cell, we implement the <tt>VisitCell()</tt> method.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellWriter.hpp"
+</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEMENT_DIM<span class="p">,</span> <span class="kt">unsigned</span> SPACE_DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">CellMotilityWriter</span> <span class="o">:</span> <span class="k">public</span> AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+</pre></div><p>
+The <tt>serialize()</tt> method defines how a cell writer object itself can be written to file.
+In almost all cases it should just call the base class serializer, using the code below.
+If the new cell writer class has any data members, they should be serialized in this method
+after calling the base class serializer.
+</p>
+<div class="code"><pre>    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+</pre></div><p>
+The constructor method calls the base class constructor, with the name of the output file as
+a parameter. In this case the filename written to will be "cellmotilityresults.dat".
+</p>
+<div class="code"><pre>    CellMotilityWriter<span class="p">()</span>
+        <span class="o">:</span> AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span><span class="p">(</span><span class="s">"cellmotilityresults.dat"</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The next method provides functionality that will be used in future for outputting data to VTK.
+</p>
+<div class="code"><pre>    <span class="kt">double</span> <span class="nf">GetCellDataForVtkOutput</span><span class="p">(</span>CellPtr pCell<span class="p">,</span> AbstractCellPopulation<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> pCell<span class="o">-&gt;</span>HasCellProperty<span class="o">&lt;</span>MotileCellProperty<span class="o">&gt;</span><span class="p">();</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The implementation of the <tt>VisitCell()</tt> method defines the data this writer commits to the file.
+Data can be streamed into the member variable <tt>mpOutputStream</tt> using the <tt>&lt;&lt;</tt> operator.
+These data are then written to file.
+In this example, for each cell <tt>pCell</tt> in <tt>pCellPopulation</tt>, we write its
+location index, followed by a space, followed by its location coordinates (space separated)
+followed by a 0 or 1 indicating whether the cell has the motile property.
+The base class handles writing the timestamp and newline for each simulation timestep, so we
+don't need to worry about that.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">VisitCell</span><span class="p">(</span>CellPtr pCell<span class="p">,</span> AbstractCellPopulation<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> pCellPopulation<span class="o">-&gt;</span>GetLocationIndexUsingCell<span class="p">(</span>pCell<span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> cell_location <span class="o">=</span> pCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span>pCell<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>SPACE_DIM<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> cell_location<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> pCell<span class="o">-&gt;</span>HasCellProperty<span class="o">&lt;</span>MotileCellProperty<span class="o">&gt;</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+As mentioned in previous cell-based Chaste tutorials, we need to include the next block
+of code to be able to archive the cell property and writer objects in a cell-based simulation,
+and to obtain a unique identifier for our new classes for when writing results to file.
+</p>
+<p>
+Identifiers for both classes are defined together here, since we can only have each #include once
+in this source file.  Normally the first #include and export would go in each respective class's header file, and the second
+include and export in its source file.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MotileCellProperty<span class="p">)</span>
+EXPORT_TEMPLATE_CLASS_ALL_DIMS<span class="p">(</span>CellMotilityWriter<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MotileCellProperty<span class="p">)</span>
+EXPORT_TEMPLATE_CLASS_ALL_DIMS<span class="p">(</span>CellMotilityWriter<span class="p">)</span>
+
+</pre></div><p>
+This completes the code for <tt>MotileCellProperty</tt> and  <tt>CellMotilityWriter</tt>.
+</p>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt> and
+demonstrates how <tt>MotileCellProperty</tt> and <tt>CellMotilityWriter</tt> can be used in
+a cell-based simulation.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingNewCellBasedWritersTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMotileCellPropertyAndWriters<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We begin by creating a <tt>NodeBasedCellPopulation</tt>, just as in <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
+We add the <tt>MotileCellProperty</tt> to a random selection of cells.
+We also add the <tt>CellLabel</tt> to these cells so that we can easily visualize the different cell types.
+</p>
+<div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>MotileCellProperty<span class="p">,</span> p_motile<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>CellLabel<span class="p">,</span> p_label<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            FixedG1GenerationalCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> FixedG1GenerationalCellCycleModel<span class="p">();</span>
+
+            CellPropertyCollection collection<span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.2</span><span class="p">)</span>
+            <span class="p">{</span>
+                collection<span class="p">.</span>AddProperty<span class="p">(</span>p_motile<span class="p">);</span>
+                collection<span class="p">.</span>AddProperty<span class="p">(</span>p_label<span class="p">);</span>
+            <span class="p">}</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> collection<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span>
+                                    <span class="p">(</span>p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span> <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">());</span>
+
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+In order to write cell motility data using our writer, we must add it to the list of writers
+used by the population. This is achieved using the <tt>AddCellWriter()</tt> method,
+which is templated.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellMotilityWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple, and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMotileCellPropertyAndWriters"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+Next we create a force law and pass it to the <tt>OffLatticeSimulation</tt>, and call <tt>Solve()</tt> to run the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+As in <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>, when you visualize the results with
+</p>
+<p>
+<tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestOffLatticeSimulationWithMotileCellPropertyAndWriters/results_from_time_0</tt>
+</p>
+<p>
+you should see a collection of cells with the <tt>MotileCellProperty</tt> (labelled dark blue) moving towards the origin.
+</p>
+<p>
+Upon running this test, the output file <tt>cellmotilityresults.dat</tt> should be created in the folder
+<tt>tmp/$USER/testoutput/TestOffLatticeSimulationWithMotileCellPropertyAndWriters/results_from_time_0</tt>.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingNewCellBasedWritersTutorial.hpp">File name <tt>TestCreatingAndUsingNewCellBasedWritersTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "AbstractCellProperty.hpp"
+#include "AbstractForce.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "NodesOnlyMesh.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "CellLabel.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MotileCellProperty</span> <span class="o">:</span> <span class="k">public</span> AbstractCellProperty
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="kt">unsigned</span> mColour<span class="p">;</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellProperty<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        archive <span class="o">&amp;</span> mColour<span class="p">;</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    MotileCellProperty<span class="p">(</span><span class="kt">unsigned</span> colour<span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="o">:</span> AbstractCellProperty<span class="p">(),</span>
+          mColour<span class="p">(</span>colour<span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="o">~</span>MotileCellProperty<span class="p">()</span>
+    <span class="p">{}</span>
+
+    <span class="kt">unsigned</span> GetColour<span class="p">()</span> <span class="k">const</span>
+    <span class="p">{</span>
+        <span class="k">return</span> mColour<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "AbstractCellWriter.hpp"
+</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEMENT_DIM<span class="p">,</span> <span class="kt">unsigned</span> SPACE_DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">CellMotilityWriter</span> <span class="o">:</span> <span class="k">public</span> AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    CellMotilityWriter<span class="p">()</span>
+        <span class="o">:</span> AbstractCellWriter<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span><span class="p">(</span><span class="s">"cellmotilityresults.dat"</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="kt">double</span> GetCellDataForVtkOutput<span class="p">(</span>CellPtr pCell<span class="p">,</span> AbstractCellPopulation<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> pCell<span class="o">-&gt;</span>HasCellProperty<span class="o">&lt;</span>MotileCellProperty<span class="o">&gt;</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> VisitCell<span class="p">(</span>CellPtr pCell<span class="p">,</span> AbstractCellPopulation<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> pCellPopulation<span class="o">-&gt;</span>GetLocationIndexUsingCell<span class="p">(</span>pCell<span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> cell_location <span class="o">=</span> pCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span>pCell<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>SPACE_DIM<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> cell_location<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="o">*</span><span class="k">this</span><span class="o">-&gt;</span>mpOutStream <span class="o">&lt;&lt;</span> pCell<span class="o">-&gt;</span>HasCellProperty<span class="o">&lt;</span>MotileCellProperty<span class="o">&gt;</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MotileCellProperty<span class="p">)</span>
+EXPORT_TEMPLATE_CLASS_ALL_DIMS<span class="p">(</span>CellMotilityWriter<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MotileCellProperty<span class="p">)</span>
+EXPORT_TEMPLATE_CLASS_ALL_DIMS<span class="p">(</span>CellMotilityWriter<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingNewCellBasedWritersTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMotileCellPropertyAndWriters<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>MotileCellProperty<span class="p">,</span> p_motile<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>CellLabel<span class="p">,</span> p_label<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            FixedG1GenerationalCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> FixedG1GenerationalCellCycleModel<span class="p">();</span>
+
+            CellPropertyCollection collection<span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.2</span><span class="p">)</span>
+            <span class="p">{</span>
+                collection<span class="p">.</span>AddProperty<span class="p">(</span>p_motile<span class="p">);</span>
+                collection<span class="p">.</span>AddProperty<span class="p">(</span>p_label<span class="p">);</span>
+            <span class="p">}</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> collection<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span>
+                                    <span class="p">(</span>p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span> <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">());</span>
+
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellMotilityWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMotileCellPropertyAndWriters"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/UbuntuBuildMachine - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="SettingupanUbuntuBuildMachine">Setting up an Ubuntu Build Machine</h1>
+<p>
+This is the setup that we performed to get <tt>dizzy.cs.ox.ac.uk</tt> working.
+You will need to be the super user for this / have root permissions.
+</p>
+<p>
+The following steps are needed:
+</p>
+<ol><li>Install 64 bit Ubuntu Server Long Term Support (LTS) <a class="ext-link" href="http://www.ubuntu.com/download/server/download"><span class="icon">​</span>http://www.ubuntu.com/download/server/download</a>. The following worked for Lucid 10.04, but is expected to work for 12.04 too.
+</li><li>Install the Chaste Ubuntu package as usual via <a class="wiki" href="/chaste/tutorials/release_2017.1/InstallGuides/UbuntuPackage.html">InstallGuides/UbuntuPackage</a>, following the developer instructions, be sure to get all the "suggests" too.
+<ul><li>On newer Ubuntu (12.04), you'll need to install <tt>google-perftools</tt> for running a <tt>GoogleProfile</tt> build, and add the line "<tt>tools['pprof'] = '/usr/bin/google-pprof'</tt>" to your hostconfig file.
+</li></ul></li><li>Follow the instructions on <a class="missing wiki">AutomatedBuilds?</a> for setting up a <tt>bob</tt> account, which can remotely log in to run builds (despite svn keys being set up as per <a class="missing wiki">AutomatedBuilds?</a> we had to login from <tt>chaste.cs</tt> once manually, to say 'yes' to the fingerprint key).
+</li><li>Install Intel compiler as detailed below, and manually re-install PETSc to use the Intel compiler.
+</li><li>Add details of the Intel compiler to a new <tt>python/hostconfig</tt> file, based upon <tt>ubuntu.py</tt> (see <tt>dizzy.py</tt> for an example). You should just need to add:
+<pre class="wiki"># Intel paths etc.
+petsc_build_name_production = 'linux-intel-opt-mkl'
+intel_path = '/opt/intel'
+blas_lapack_production = ['mkl_intel_lp64', 'mkl_core', 'mkl_sequential']
+other_libpaths = ['/opt/intel/composerxe/mkl/lib/intel64']
+</pre></li></ol><h2 id="InstallingtheIntelCompilerversion12or13">Installing the Intel Compiler version 12 or 13</h2>
+<pre class="wiki">scp chaste@scoop.cs.ox.ac.uk:src/l_ccompxe_intel64_2011.9.293.tgz .
+tar -zxf l_ccompxe_intel64_2011.9.293.tgz
+./l_ccompxe_intel64_2011.9.293/install.sh
+</pre><pre class="wiki">scp chaste@scoop.cs.ox.ac.uk:src/l_ccompxe_intel64_2013.0.079.tgz .
+tar -zxf l_ccompxe_intel64_2013.0.079.tgz
+./l_ccompxe_intel64_2013.0.079/install.sh
+</pre><p>
+We followed the "install using sudo" route, and gave "28519@&hellip;" as the license server to use (see below).  Everything was installed into <tt>/opt/intel</tt>.
+</p>
+<p>
+Add to .bashrc (for yourself and <tt>bob</tt>):
+</p>
+<pre class="wiki">export LD_LIBRARY_PATH=/home/bob/eclipse/workspace/Chaste/lib
+source /opt/intel/bin/compilervars.sh intel64
+export INTEL_LICENSE_FILE="28519@flexlm.nsms.ox.ac.uk"
+</pre><h2 id="InstallPETSc">Install PETSc</h2>
+<pre class="wiki">wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.1-p8.tar.gz
+tar -zxf petsc-3.1-p8.tar.gz
+cd petsc-3.1-p8
+export PETSC_DIR=`pwd`
+</pre><h3 id="PETScwithsupportforGCCbuilds">PETSc with support for GCC builds</h3>
+<pre class="wiki">export PETSC_ARCH=linux-gnu
+./config/configure.py --with-x=false --with-clanguage=cxx --download-openmpi=yes --download-hdf5=yes --download-parmetis=yes --download-c-blas-lapack=1 --with-shared --with-fortran=0
+make all
+
+export PETSC_ARCH=linux-gnu-opt
+./config/configure.py --with-x=false --with-clanguage=cxx --download-openmpi=yes --download-hdf5=yes --download-parmetis=yes --download-c-blas-lapack=1 --with-shared --with-fortran=0 --with-debugging=0
+make all
+
+export PETSC_ARCH=linux-gnu-profile 
+./config/configure.py --with-x=false --with-clanguage=cxx --download-openmpi=yes --download-hdf5=yes --download-parmetis=yes --download-c-blas-lapack=1 --with-shared --with-fortran=0  --CXXFLAGS=-pg --CFLAGS=-pg -LDFLAGS=-pg
+make all
+</pre><h3 id="PETScwithsupportforIntelbuild">PETSc with support for Intel build</h3>
+<pre class="wiki">export PETSC_ARCH=linux-intel
+./config/configure.py --with-cxx=icpc --with-cc=icc --with-vendor-compiler=intel --with-x=false --with-clanguage=cxx --download-openmpi=yes --CXXFLAGS=-fPIC --CFLAGS=-fPIC --download-hdf5=yes --download-parmetis=yes --with-shared --with-fortran=0 --download-c-blas-lapack=1
+make all
+</pre><h3 id="PETScwithsupportforIntelProductionbuild">PETSc with support for IntelProduction build</h3>
+<pre class="wiki">export PETSC_ARCH=linux-intel-opt-mkl
+./config/configure.py --with-cxx=icpc --with-cc=icc --with-vendor-compiler=intel --with-x=false --with-clanguage=cxx --download-openmpi=yes --CXXFLAGS=-fPIC --CFLAGS=-fPIC --download-hdf5=yes --download-parmetis=yes --with-shared --with-fortran=0  --with-debugging=0 --with-blas-lapack-dir=/opt/intel/composerxe/mkl/lib/intel64 --with-static-mpi=1
+make all
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/BoostSerialization - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.0/">Release 3.0</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.0/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/BoostSerialization" href="/chaste/tutorials/release_3.0/ChasteGuides/BoostSerialization.html">BoostSerialization</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="BoostSerialization">Boost Serialization</h1>
+<p>
+In order to checkpoint and save/resume simulations, we use the <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/index.html"><span class="icon">&nbsp;</span>Serialization</a> library from <a class="ext-link" href="http://www.boost.org/"><span class="icon">&nbsp;</span>Boost</a>.  This page contains some notes on how to use this functionality well in Chaste.  Full documentation can be found at <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/index.html"><span class="icon">&nbsp;</span>http://www.boost.org/libs/serialization/doc/index.html</a>
+</p>
+<p>
+</p><div class="wiki-toc"><ol><li><a href="#BoostSerialization">Boost Serialization</a><ol><li><a href="#Headerfiles">Header files</a></li><li>
+<a href="#Classhierarchies">Class hierarchies</a><ol><li><a href="#Abstractclasses">Abstract classes</a></li><li>
+<a href="#Derivedclasses">Derived classes</a></li></ol></li><li>
+<a href="#Avoidingtheneedforspecialconstructors">Avoiding the need for special constructors</a></li><li>
+<a href="#Singletonclasses">Singleton classes</a></li><li>
+<a href="#LoadingarchivescreatedbyolderChasteversions">Loading archives created by older Chaste versions</a></li><li>
+<a href="#Testingthearchiving">Testing the archiving</a></li><li>
+<a href="#Parallelarchiving">Parallel archiving</a><ol><li><a href="#Cardiacsimulations">Cardiac simulations</a></li></ol></li><li>
+<a href="#Othernotes">Other notes</a><ol><li><a href="#Anexampleofcompressingtheoutput">An example of compressing the output</a></li></ol></li></ol></li></ol></div><p>
+</p>
+<h2 id="Headerfiles">Header files</h2>
+<p>
+One important point to note is that <strong>only</strong> code which needs to <strong>create</strong> archive objects should include the <tt>*archive.hpp</tt> headers.  This allows the serialization code in our classes to be (largely) independent of the type of archive being written to/read from.
+</p>
+<p>
+All header files of the form <tt>&lt;boost/archive/*archive.hpp&gt;</tt> are <strong>required</strong> to precede the header file <tt>&lt;boost/serialization/export.hpp&gt;</tt>.  It is good practice therefore for tests of archiving to include:
+</p>
+<pre class="wiki">#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+</pre><p>
+first, then include Chaste classes.  See <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/BoostSerialization.html#Derivedclasses">below</a> for details on how to use the export header.
+</p>
+<p>
+The main header file that classes with serialization methods will need is
+</p>
+<pre class="wiki">#include "ChasteSerialization.hpp"
+</pre><p>
+Other headers are also needed for dealing with <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/BoostSerialization.html#Classhierarchies">abstract and derived classes; see below</a>.
+</p>
+<p>
+For serializing vectors, add <tt>#include &lt;boost/serialization/vector.hpp&gt;</tt>.  Similar headers exist for other STL collections.
+</p>
+<p>
+There are cases where Chaste code needs to create archives, for example to provide <tt>Save</tt> and <tt>Load</tt> functionality for tissue simulations, or heart simulation checkpointing.  The easiest way to handle this is to create a separate helper class (in its own source files) which does this.  For examples see <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/cell_based/src/simulation/TissueSimulationArchiver.hpp">source:trunk/cell_based/src/simulation/TissueSimulationArchiver.hpp</a> and <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/heart/src/problem/CardiacSimulationArchive.hpp">source:trunk/heart/src/problem/CardiacSimulationArchive.hpp</a>.  This source file then needs to be included before any other Chaste headers (that might include serialization headers).
+</p>
+<p>
+Trying to have save and load functionality in different places will almost certainly lead to problems such as:
+</p>
+<pre class="wiki">heart/build/debug/src/problem/AbstractCardiacProblem.o:
+    multiple definition of `boost::archive::detail::guid_initializer&lt;SimpleStimulus&gt;::instance'
+heart/build/debug/bidomain/TestBidomainArchiveKSPRunner.o:
+    first defined here
+</pre><p>
+The cause of this is multiple definitions of the unique IDs needed to properly serialize derived classes through a pointer (see below).  If multiple .cpp files include both an archive header (<tt>&lt;boost/archive/*archive.hpp&gt;</tt>) and  <tt>&lt;boost/serialization/export.hpp&gt;</tt>, either directly or indirectly, then each corresponding object file (or library) will define the same unique ID, hence the error.
+It is OK to have archive headers in multiple files, provided that the export header follows in at most one case of files being linked together.
+</p>
+<h2 id="Classhierarchies">Class hierarchies</h2>
+<p>
+Some extra work is needed to deal properly with serializing objects from a class hierarchy.
+</p>
+<h3 id="Abstractclasses">Abstract classes</h3>
+<p>
+While many compilers can automatically detect abstract classes, some do not, and so need them to be indicated explicitly.  Since the interface for doing this changed in Boost 1.36, we have written a wrapper interface in <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ClassIsAbstract.hpp">source:trunk/global/src/checkpointing/ClassIsAbstract.hpp</a>.  When writing an abstract base class (i.e. one with pure virtual methods), include this header (<tt>#include "ClassIsAbstract.hpp"</tt>) and use the macro
+</p>
+<pre class="wiki">CLASS_IS_ABSTRACT(class_name)
+</pre><p>
+after the class definition, to indicate to the serialization library that it should not try to instantiate the class, thus avoiding compiler errors on some systems.
+</p>
+<p>
+Note that this macro should <strong><i>only</i></strong> be used for classes with <strong><i>pure virtual</i></strong> methods.  If they only have virtual methods with implementations, then the class can actually be instantiated, and the macro should not be used.  Including the macro unnecessarily can lead to segfaults!
+</p>
+<p>
+If the abstract class is templated, the above macro will not work.  There are convenience macros for common scenarios, or you may have to expand the underlying definition manually.  See <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ClassIsAbstract.hpp">source:trunk/global/src/checkpointing/ClassIsAbstract.hpp</a> for details.
+</p>
+<h3 id="Derivedclasses">Derived classes</h3>
+<p>
+Derived classes must make sure to serialize their base parts, by including <tt>&lt;boost/serialization/base_object.hpp&gt;</tt> and using
+</p>
+<pre class="wiki">archive &amp; boost::serialization::base_object&lt;base_class_name&gt;(*this);
+</pre><p>
+as the first instruction in their <tt>serialize</tt> method.  See <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/serialization.html#base"><span class="icon">&nbsp;</span>Boost docs</a>.
+</p>
+<p>
+If serializing a derived class through a base class pointer or reference, the library will need some help to know which class to instantiate when loading from the archive.  This is done by defining a globally unique identifier for the class using the <tt>BOOST_CLASS_EXPORT</tt> macro from <tt>&lt;boost/serialization/export.hpp&gt;</tt>.  Due to changes in this macro between Boost versions, we provide wrapper macros in <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/SerializationExportWrapper.hpp">source:trunk/global/src/checkpointing/SerializationExportWrapper.hpp</a> and <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/SerializationExportWrapperForCpp.hpp">source:trunk/global/src/checkpointing/SerializationExportWrapperForCpp.hpp</a>.
+</p>
+<p>
+Chaste header files that declare derived classes should include something like the following <i>after</i> the class block in the .hpp file:
+</p>
+<pre class="wiki">#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(class_name)
+</pre><p>
+The corresponding .cpp file must include something like the following after any other includes (I suggest putting it at the end of the file for consistency):
+</p>
+<pre class="wiki">#include "SerializationExportWrapperForCpp.hpp"
+CHASTE_CLASS_EXPORT(class_name)
+</pre><p>
+Note that the name given to <tt>CHASTE_CLASS_EXPORT</tt> <strong>must</strong> match that used in the .hpp file.
+</p>
+<p>
+<strong>Note that this macro is not needed for <i>abstract</i> base classes</strong>, only the derived classes, since no instances of the base itself will be serialized.  See <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/special.html#export"><span class="icon">&nbsp;</span>here</a> and <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/serialization.html#derivedpointers"><span class="icon">&nbsp;</span>here</a> for further information.
+</p>
+<p>
+With templated classes, this simple invocation doesn't work.  A fully general export macro approach <a class="ext-link" href="http://lists.boost.org/boost-users/2005/05/11731.php"><span class="icon">&nbsp;</span>seems impossible</a>.
+The header <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/SerializationExportWrapper.hpp">source:trunk/global/src/checkpointing/SerializationExportWrapper.hpp</a> provides macros for where a derived class is templated over dimension (either a single dimension, or both element and space dimension, or including PROBLEM_DIM).  See <a class="changeset" href="/cgi-bin/trac.cgi/changeset/2266" title="#389 - archiving of the cell killers.  Not really tested yet though, but ...">r2266</a>, <a class="changeset" href="/cgi-bin/trac.cgi/changeset/6952" title="#1007 Compatibility with Boost 1-36">r6952</a>, <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/models/src/crypt/killers/RandomCellKiller.hpp?rev=2266#L74">source:trunk/models/src/crypt/killers/RandomCellKiller.hpp@2266#L74</a> and <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/mesh/src/common/TetrahedralMesh.hpp?rev=6952#L467">source:trunk/mesh/src/common/TetrahedralMesh.hpp@6952#L467</a> for examples of its use.
+</p>
+<h2 id="Avoidingtheneedforspecialconstructors">Avoiding the need for special constructors</h2>
+<p>
+It is undesirable to have to write a special constructor for classes just for the use of the archiving code.  There are two ways around this.
+</p>
+<p>
+One is to write separate functions <tt>save_construct_data</tt> and <tt>load_construct_data</tt> for the class.  These save/load the parameters needed for an existing constructor.  See also <a class="ext-link" href="http://www.boost.org/libs/serialization/doc/serialization.html#constructors"><span class="icon">&nbsp;</span>the official documentation</a>, and <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/cell_based/src/tissue/cell/TissueCell.hpp?rev=7488#L305">source:trunk/cell_based/src/tissue/cell/TissueCell.hpp@7488#L305</a> for an example.
+</p>
+<p>
+Note that the example in the documentation seems to suggest that you can directly access private member data from a <tt>save_construct_data</tt> function.  This is incorrect.  You'll either need public accessor methods for the data you require, or a public helper method to save the data to the archive.
+</p>
+<p>
+The other method is to create a <i>private default constructor</i> which does nothing, as is done in <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/heart/src/problem/Electrodes.hpp">source:trunk/heart/src/problem/Electrodes.hpp</a>.  All the work can then be done by the <tt>serialize</tt> method.
+</p>
+<h2 id="Singletonclasses">Singleton classes</h2>
+<p>
+In order for singleton classes to remain singletons, they must be serialized properly.  The <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/SerializableSingleton.hpp">SerializableSingleton</a> class makes doing so easier, without requiring any special handling for the first serialization of a singleton.  Any singleton class which needs to be serialized should inherit from this base, which provides both part of the "singleton-ness" (by inheriting from boost::noncopyable), and also a method <tt>GetSerializationWrapper()</tt>.  Users of the singleton which wish to serialize it should not do so directly.  Instead, they should call <tt>GetSerializationWrapper</tt> and serialize the returned pointer.  Doing so will ensure that only a single global instance of the singleton is maintained when loading from an archive.  For more information see the <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.0/classSerializableSingleton.html">class doxygen</a>.
+</p>
+<p>
+It is also advisable for singleton classes to <tt>assert(mpInstance==NULL)</tt> in their constructor, in order to trap cases where serialization has not been performed correctly.
+</p>
+<h2 id="LoadingarchivescreatedbyolderChasteversions">Loading archives created by older Chaste versions</h2>
+<p>
+As Chaste evolves, classes gain new data members, or members change, disappear, etc.  However, ideally each release of Chaste should still be able to load checkpoints created by the previous release.  In some cases this may not be possible, e.g. a new object added that doesn't have a sensible default.  However, in cases where it is possible, Boost provides the functionality to handle this, via the <tt>version</tt> parameter passed to serialization methods.
+</p>
+<p>
+For each class in which the serialization changes, include the header <tt>ChasteSerializationVersion.hpp</tt>.  Within your serialize method, test the <tt>version</tt> parameter and act accordingly.  Finally, use the macro
+</p>
+<pre class="wiki">BOOST_CLASS_VERSION(ClassName, VersionNumber) 
+</pre><p>
+after your class definition to specify the current version number - increase it by 1 each time there is a change in how the class is archived (it defaults to 0 if the macro is not given).
+</p>
+<p>
+See <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/heart/src/odes/AbstractCardiacCell.hpp">source:trunk/heart/src/odes/AbstractCardiacCell.hpp</a> and <a class="ext-link" href="http://www.boost.org/doc/libs/1_37_0/libs/serialization/doc/tutorial.html#versioning"><span class="icon">&nbsp;</span>Boost's tutorial</a> for examples.
+</p>
+<p>
+For templated classes, the macro will not work, and you have to expand <a class="ext-link" href="http://www.boost.org/doc/libs/1_37_0/libs/serialization/doc/traits.html#version"><span class="icon">&nbsp;</span>its definition</a> yourself.  For example,
+</p>
+<pre class="wiki">namespace boost { 
+namespace serialization {
+/**
+ * Specify a version number for archive backwards compatibility.
+ * 
+ * This is how to do BOOST_CLASS_VERSION(AbstractCardiacPde, 1)
+ * with a templated class.
+ */
+template &lt;unsigned ELEMENT_DIM, unsigned SPACE_DIM&gt;
+struct version&lt;AbstractCardiacPde&lt;ELEMENT_DIM, SPACE_DIM&gt; &gt;
+{
+    CHASTE_VERSION_CONTENT(1);
+};
+} // namespace serialization
+} // namespace boost
+</pre><h2 id="Testingthearchiving">Testing the archiving</h2>
+<p>
+Things to note:
+</p>
+<ul><li>Always archive via a pointer (well, almost always).
+</li><li>Always archive pretending it is the most abstract class possible (this tests that boost is registering classes properly - otherwise your EXPORT commands aren't tested).
+</li><li>Write a test for each concrete class that can be archived, checking their unique methods and variables are archived properly.
+</li></ul><p>
+A good way to test the archiving is along the following lines:
+</p>
+<pre class="wiki">void TestArchivingOfConcreteClass() throw(Exception)
+{
+    OutputFileHandler handler("archive",false); 
+    std::string archive_filename = handler.GetOutputDirectoryFullPath() + "ConcreteClass.arch";
+
+    // Create data structures to store variables to test for equality here
+
+    {
+        AbstractClass* const p_abstract_class = new ConcreteClass();
+            
+        std::ofstream ofs(archive_filename.c_str());
+        boost::archive::text_oarchive output_arch(ofs);
+
+        // Record values to test into data structures
+        // If necessary you can use static_cast&lt;ConcreteClass*&gt;(p_abstract_class)
+        // (if your abstract class doesn't contain the necessary variables and methods)
+            
+        output_arch &lt;&lt; p_abstract_class;
+        delete p_abstract_class;
+    }
+
+    {
+        AbstractClass* p_abstract_class_2;
+
+        // Create an input archive
+        std::ifstream ifs(archive_filename.c_str(), std::ios::binary);
+        boost::archive::text_iarchive input_arch(ifs);
+
+        // restore from the archive
+        input_arch &gt;&gt; p_abstract_class_2;
+
+        // Check things in the data structures with TS_ASSERTS here.
+        // If necessary you can use static_cast&lt;ConcreteClass*&gt;(p_abstract_class_2)
+        // (if your abstract class doesn't contain the necessary variables and methods)
+
+        delete p_abstract_class_2;
+    }
+}
+</pre><p>
+Note that all archive files in the repository should be generated using boost1-33-1 to ensure compatibility with all of the possible boost versions supported by Chaste. You can generate these by logging on to <tt>chaste@chaste-bob</tt> and doing a build with e.g.
+</p>
+<pre class="wiki">scons build=GccOpt_hostconfig,boost=1-33-1 test_suite=cell_based/test/crypt/TestGenerateSteadyStateCrypt.hpp
+</pre><h2 id="Parallelarchiving">Parallel archiving</h2>
+<p>
+When checkpointing a parallel simulation, there are two kinds of data that need to be saved: replicated (same for every process) and distributed (different on each process).  We wish to write these to separate locations, so that the replicated data is only written to disk once, and to make it easier to re-load on a different number of processes (in which case the distributed data will need to be re-distributed).  However, the Boost Serialization library expects to be writing to just one archive.
+</p>
+<p>
+Two classes are provided to solve this problem: <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ProcessSpecificArchive.hpp">ProcessSpecificArchive</a> and <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ArchiveOpener.hpp">ArchiveOpener</a>.  The latter is for opening archives for reading or writing.  All that all a user needs to do is create an instance of this class, call <tt>GetCommonArchive</tt>, and read from/write to the returned archive.  When done, just destroy the instance (e.g. by closing the scope).
+</p>
+<p>
+The <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ProcessSpecificArchive.hpp">ProcessSpecificArchive</a> class is for use by classes that need to save distributed data, and provides access to a secondary archive in which to store it. When opening an archive in a (potentially) parallel setting, using either the <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ArchiveOpener.hpp">ArchiveOpener</a> or <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/heart/src/problem/CardiacSimulationArchiver.hpp">CardiacSimulationArchiver</a>, the <tt>Set</tt> method will be called to specify the secondary archive.  Classes which need to save distributed data can then use the <tt>Get</tt> method to access and write to/read from this archive.
+</p>
+<p>
+Some classes (e.g. the meshes, <tt>LinearSystem</tt>, and <tt>HeartConfig</tt>) don't write their data directly to the archive file, but instead write to separate files in the same folder.  They use the <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/global/src/checkpointing/ArchiveLocationInfo.hpp">ArchiveLocationInfo</a> class to find out where to write to.
+</p>
+<h3 id="Cardiacsimulations">Cardiac simulations</h3>
+<p>
+The <tt>CardiacSimulationArchiver</tt> class provides a high-level interface to checkpointing of cardiac simulations, and orchestrates the logic for re-distributing data when loading on a different number of processes.  The logic is currently quite difficult to follow, and so I am attempting to document the main points here.
+</p>
+<p>
+In order to support SVI, and potentially other applications which require loading halo information, all process-specific archives are read by all processes when loading from a checkpoint.  The only difference between the migration case (when loading on a different number of processes from that which saved the checkpoint) and the 'normal' case is which process-specific archive is loaded first.  If the number of processes matches, each process loads its own process-specific archive while reading the common archive, so that the mesh can maintain the same partitioning.  When migrating, each process reads the process-0 archive first, since it is guaranteed to exist.  <tt>AbstractCardiacProblem::LoadExtraArchive</tt> is then called with each additional process-specific archive.
+</p>
+<p>
+When a <tt>DistributedVectorFactory</tt> is loaded from any process-specific archive, then the <tt>DistributedVectorFactory</tt> <tt>load_construct_data</tt> will set <tt>mpOriginalFactory</tt> to contain the version in the archive (i.e. using its <tt>lo, hi, size, num_procs</tt>), and the object created will partition based on PETSc's default for a <tt>Vec</tt> with problem size <tt>mpOriginalFactory-&gt;GetProblemSize()</tt>.  <tt>CardiacSimulationArchiver</tt> also calls <tt>DistributedVectorFactory::SetCheckNumberOfProcessesOnLoad(false)</tt> to prevent <tt>load_construct_data</tt> setting the local size as <tt>hi-lo</tt>, since these will not always add up to the problem size when loading different process-specific archives.
+</p>
+<p>
+<tt>AbstractTetrahedralMesh::load</tt> makes use of the original factory, if present, to partition the loaded mesh.  (<tt>AbstractMesh::serialize</tt> checkpoints the mesh's <tt>DistributedVectorFactory</tt> to the process-specific archive.  This may be NULL in some cases (when we're not a <tt>DistributedTetrahedralMesh</tt>?).)  It unsets the member variable temporarily, saving it to <tt>p_factory</tt>, and sets <tt>p_our_factory</tt> to the original factory or NULL.  If there is an original factory and the number of processes matches, then <tt>SetDistributedVectorFactory</tt> is called to force use of the same partition as before; otherwise <tt>p_our_factory</tt> is set to NULL to allow repartitioning.  We then <tt>ConstructFromMeshReader</tt>.  Finally, <tt>mpDistributedVectorFactory</tt> needs to be changed to point to <tt>p_factory</tt> so all objects use the same factory, and <tt>p_factory</tt> updated if it exists and we repartitioned using <tt>p_factory-&gt;SetFromFactory(this-&gt;mpDistributedVectorFactory)</tt> (which clears <tt>mGlobalLows</tt> and sets <tt>mLo</tt> and <tt>mHi</tt>).
+</p>
+<h2 id="Othernotes">Other notes</h2>
+<h3 id="Anexampleofcompressingtheoutput">An example of compressing the output</h3>
+<pre class="wiki">        std::ofstream ofs(file_name);
+        boost::iostreams::filtering_ostream out;
+        boost::iostreams::zlib_params zp(boost::iostreams::zlib::best_speed);
+        out.push(boost::iostreams::zlib_compressor(zp));
+        out.push(ofs);
+        Archive oa(out);
+        oa &lt;&lt; BOOST_SERIALIZATION_NVP(message_request);
+</pre>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

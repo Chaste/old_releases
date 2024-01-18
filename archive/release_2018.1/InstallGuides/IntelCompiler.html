@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/IntelCompiler - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="BuildingChasteforhighperformancewiththeIntelcompilers">Building Chaste for high performance with the Intel compilers</h1>
+<h2 id="Installingthecompiler">Installing the compiler</h2>
+<p>
+See <a class="wiki" href="/trac/wiki/InstallIntelCompiler">InstallIntelCompiler</a> if you're on an Oxford University machine.
+If not, you'll need to download it from Intel's website yourself and get a suitable licence from somewhere.
+</p>
+<p>
+We followed the "install using sudo" route, and installed everything into <tt>/opt/intel</tt>.
+</p>
+<p>
+Note: to avoid needing 32-bit libraries, change the components installed to remove the IA-32 support. Select "2. Customize installation" when prompted, and then under "Target Architecture(s) of your applications:" select 1 to de-select IA-32. You can then continue with the default options.
+</p>
+<p>
+To be able to run the compilers you need to set the <tt>INTEL_LICENSE_FILE</tt> environment variable and source Intel's setup script.
+You can add these two lines to the top of your <tt>.bashrc</tt> to enable the compiler for all sessions:
+</p>
+<div class="code"><pre><span class="nb">source</span> /opt/intel/bin/compilervars.sh intel64
+<span class="nb">export </span><span class="nv">INTEL_LICENSE_FILE</span><span class="o">=</span><span class="s2">"&lt;path for your system here&gt;"</span>
+</pre></div><h2 id="Buildingoptimiseddependencies">Building optimised dependencies</h2>
+<p>
+See <a class="wiki" href="/trac/wiki/InstallPetscAndMpiForProductionBuild">InstallPetscAndMpiForProductionBuild</a> for legacy instructions.
+</p>
+<h2 id="BuildingChastewiththeIntelcompilers">Building Chaste with the Intel compilers</h2>
+<h3 id="Hostconfigsettings">Hostconfig settings</h3>
+<p>
+Several variables in your hostconfig file need to be set appropriately to enable building with Intel.
+The most important is <tt>intel_path</tt>, since this sets the path to the Intel compiler installation (i.e. the folder containing <tt>lib</tt> and <tt>bin</tt> subfolders).
+With the default install (pre 2016 releases) it will probably be <tt>/opt/intel/composerxe</tt>.
+The 2016 compiler release has changed folder structure, and you probably need something like <tt>/opt/intel/compilers_and_libraries_2016/linux</tt>.
+</p>
+<p>
+The other variables support using a PETSc built with the Intel compilers, and possibly production builds of PETSc using Intel's MKL libraries.
+A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build types</a>, and the relevant ones for Intel are:
+</p>
+<ul><li><tt>petsc_build_name_production</tt> - for the <tt>IntelProduction</tt> build type;
+</li><li><tt>petsc_build_name_optimized</tt> - for a normal <tt>Intel</tt> build, since the compiler uses optimisation by default;
+</li><li><tt>petsc_build_name</tt> - the default if any of the above variables are not specified. 
+</li></ul><p>
+In addition, if PETSc is built to link against Intel's MKL libraries, which provide optimised blas &amp; lapack routines, you need to specify the names of these libraries so that they are linked against in an <tt>IntelProduction</tt> build, using the <tt>blas_lapack_production</tt> variable.
+We use
+</p>
+<div class="code"><pre>blas_lapack_production <span class="o">=</span> <span class="p">[</span><span class="s">'mkl_lapack'</span><span class="p">,</span> <span class="s">'mkl'</span><span class="p">,</span> <span class="s">'svml'</span><span class="p">]</span>
+</pre></div><p>
+or
+</p>
+<div class="code"><pre>blas_lapack_production <span class="o">=</span> <span class="p">[</span><span class="s">'mkl_intel_lp64'</span><span class="p">,</span> <span class="s">'mkl_core'</span><span class="p">,</span> <span class="s">'mkl_sequential'</span><span class="p">]</span>
+</pre></div><p>
+It is possible to use PETSc and MPI built using gcc, rather than building your own with the Intel compiler (although using PETSc built with Intel is likely to be faster, so worth doing).
+If you use PETSc &amp; MPI built with gcc, you must tell the <tt>mpicxx</tt> compiler wrapper to use the Intel compiler instead of the compiler it was built it (gcc).
+With OpenMPI, this is done by setting the <tt>OMPI_CXX</tt> environment variable, and can be configured in Chaste by using the <tt>tools</tt> dictionary in the hostconfig.
+You want something like
+</p>
+<div class="code"><pre>    <span class="k">if</span> build<span class="o">.</span>CompilerType<span class="p">()</span> <span class="o">==</span> <span class="s">'intel'</span><span class="p">:</span>
+        tools<span class="p">[</span><span class="s">'mpicxx'</span><span class="p">]</span> <span class="o">=</span> <span class="s">'OMPI_CXX=icpc '</span> <span class="o">+</span> tools<span class="p">[</span><span class="s">'mpicxx'</span><span class="p">]</span>
+</pre></div><p>
+within the <tt>Configure</tt> method in your hostconfig file.
+</p>
+<p>
+A final variable that may be required is <tt>icpc</tt> which allows you to change the Intel compiler command, e.g. to add flags specific to 64-bit machines or specify the gcc libraries that the compiler should use.
+However, this is only relevant for legacy MPICH 1 installations, and should be commented out (or removed entirely) if using MPICH 2 or OpenMPI.
+</p>
+<p>
+See <a class="missing wiki">ChasteGuides/HostconfigSystem?</a> for the full reference manual for this section.
+</p>
+<h3 id="Buildflags">Build flags</h3>
+<p>
+The most important thing to remember when using the Intel compilers is to use a Chaste <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build type</a> that enables Intel support.
+What this means is that your <tt>scons</tt> invocations should include an argument such as <tt>build=Intel</tt> (or <tt>b=Intel</tt> for short).
+This sets additional compiler flags (e.g. disabling some warnings) and extra library search paths for libraries shipped with the compiler.
+It also ensures the Intel compiler tools are used.
+</p>
+<p>
+To run a production build, use <tt>build=IntelProduction</tt> in place of <tt>build=Intel</tt>, which will enable further optimisations and link against the MKL.
+</p>
+<p>
+For more details about build options see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

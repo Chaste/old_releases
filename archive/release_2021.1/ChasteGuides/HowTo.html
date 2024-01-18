@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/HowTo - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ChasteHOWTOIndex">Chaste HOWTO Index</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#ChasteHOWTOIndex">Chaste HOWTO Index</a>
+    <ol>
+      <li>
+        <a href="#Cardiac">Cardiac</a>
+        <ol>
+          <li>
+            <a href="#CellModels">Cell Models</a>
+          </li>
+          <li>
+            <a href="#Electro-mechanics">Electro-mechanics</a>
+          </li>
+          <li>
+            <a href="#Output">Output</a>
+          </li>
+          <li>
+            <a href="#Post-processing">Post-processing</a>
+          </li>
+          <li>
+            <a href="#Problemdefinition">Problem definition</a>
+          </li>
+          <li>
+            <a href="#Solver">Solver</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#CellBased">Cell Based</a>
+        <ol>
+          <li>
+            <a href="#Simulation">Simulation</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Continuummechanics">Continuum mechanics</a>
+        <ol>
+          <li>
+            <a href="#Ventilation">Ventilation</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#General">General</a>
+        <ol>
+          <li>
+            <a href="#Archiving">Archiving</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Lung">Lung</a>
+        <ol>
+          <li>
+            <a href="#Anatomydefinition">Anatomy definition</a>
+          </li>
+          <li>
+            <a href="#Simulation1">Simulation</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Mesh">Mesh</a>
+      </li>
+      <li>
+        <a href="#PDE">PDE</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#CreatingnewHOWTOs">Creating new HOWTOs</a>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+As well as ensuring that Chaste functions as expected, the many Chaste tests can
+be effective for learning how to use Chaste.  There are often aspects of Chaste's
+capabilities that do not warrant a full user tutorial, but are still worth noting.
+Equally, users often ask "how do I do...", and in many cases there is already a
+test that does something similar and can be used as a basis.
+</p>
+<p>
+This page contains a (probably partial) index of links to useful code.  Some of
+the links are to code in tutorials.  The others are links to test code.  For the
+latter, note that since tests are written primarily for checking functionality,
+they are not commented to the same degree as user tutorials.  Never-the-less they
+should be reasonably readable and useful.
+</p>
+<p>
+Note that this page is generated automatically based on tags in the Chaste code.
+Do not edit it manually, as your changes will be overwritten!
+</p>
+<hr />
+<h2 id="Cardiac">Cardiac</h2>
+<h3 id="CellModels">Cell Models</h3>
+<ul><li> Get a cardiac cell model to (roughly) a steady state, given a regular stimulus, using the <tt>SteadyStateRunner</tt> class. -- see <a class="source" href="/trac/browser/git_repo/heart/test/ionicmodels/TestSteadyStateRunner.hpp#L98">line 98 of heart/test/ionicmodels/TestSteadyStateRunner.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/ionicmodels/TestSteadyStateRunner.hpp#L98" title="Download">​</a>
+</li></ul><h3 id="Electro-mechanics">Electro-mechanics</h3>
+<ul><li> Run basic electro-mechanics simulations; specify different models, boundary conditions, fibres -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp#L117">line 117 of heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp#L117" title="Download">​</a>
+</li><li> Run electro-mechanical simulations using bidomain instead of monodomain -- see <a class="source" href="/trac/browser/git_repo/heart/test/mechanics/TestCardiacElectroMechanicsProblem.hpp#L215">line 215 of heart/test/mechanics/TestCardiacElectroMechanicsProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/mechanics/TestCardiacElectroMechanicsProblem.hpp#L215" title="Download">​</a>
+</li><li> Run electro-mechanics with inflation pressures -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp#L273">line 273 of heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp#L273" title="Download">​</a>
+</li><li> Run electro-mechanics with mechano-electric feedback -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp#L100">line 100 of heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestAnotherCardiacElectroMechanicsTutorial.hpp#L100" title="Download">​</a>
+</li><li> Set heterogeneous contraction models by using a contraction cell factory. -- see <a class="source" href="/trac/browser/git_repo/heart/test/TestAbstractContractionCellFactory.hpp#L148">line 148 of heart/test/TestAbstractContractionCellFactory.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/TestAbstractContractionCellFactory.hpp#L148" title="Download">​</a>
+</li><li> Visualise results in Cmgui (very brief description) -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp#L206">line 206 of heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp#L206" title="Download">​</a>
+</li></ul><h3 id="Output">Output</h3>
+<ul><li> Calculating and outputting ionic currents ('derived quantities') in a single cell simulation using <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2021.1/classOdeSolution.html" title="Documentation for the OdeSolution class"><span class="icon">​</span>class:OdeSolution</a> - see also <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">this page</a>. -- see <a class="source" href="/trac/browser/git_repo/heart/test/ionicmodels/TestCvodeCells.hpp#L389">line 389 of heart/test/ionicmodels/TestCvodeCells.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/ionicmodels/TestCvodeCells.hpp#L389" title="Download">​</a>
+</li><li> Calculating and outputting ionic currents ('derived quantities') in a tissue simulation using <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2021.1/classHeartConfig.html" title="Documentation for the HeartConfig class"><span class="icon">​</span>class:HeartConfig</a> - see also <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">this page</a>. -- see <a class="source" href="/trac/browser/git_repo/heart/test/monodomain/TestMonodomainProblem.hpp#L236">line 236 of heart/test/monodomain/TestMonodomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/monodomain/TestMonodomainProblem.hpp#L236" title="Download">​</a>
+</li><li> Collect and print timings to benchmark different parts of the cardiac code. -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomain3D.hpp#L124">line 124 of heart/test/bidomain/TestBidomain3D.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomain3D.hpp#L124" title="Download">​</a>
+</li><li> On large-scale parallel simulations it is advantageous to cache HDF5 output and only write to disk at end of simulation (or at checkpoint).  This is achieved with <tt>SetUseHdf5DataWriterCache()</tt> -- see <a class="source" href="/trac/browser/git_repo/heart/test/monodomain/TestMonodomainProblem.hpp#L1646">line 1646 of heart/test/monodomain/TestMonodomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/monodomain/TestMonodomainProblem.hpp#L1646" title="Download">​</a>
+</li><li> Only output data for particular nodes -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L578">line 578 of heart/test/bidomain/TestBidomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L578" title="Download">​</a>
+</li><li> Output all cell model state variables for the cell model used in a particular simulation -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L951">line 951 of heart/test/bidomain/TestBidomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L951" title="Download">​</a>
+</li><li> Output data using a light-weight output modifier.  This can be used in addition to regular HDF5 output or can replace it. -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L588">line 588 of heart/test/bidomain/TestBidomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L588" title="Download">​</a>
+</li><li> Specify output formats (for different visualisers) -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp#L133">line 133 of heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp#L133" title="Download">​</a>
+</li><li> Use the <tt>SingleTraceOutputModifier</tt> to output based on a global index (index AFTER any permutation has been applied) -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L1046">line 1046 of heart/test/bidomain/TestBidomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L1046" title="Download">​</a>
+</li></ul><h3 id="Post-processing">Post-processing</h3>
+<ul><li> Compute action potential properties (APD50, APD90, max upstroke velocities, etc) given voltage traces. -- see <a class="source" href="/trac/browser/git_repo/heart/test/postprocessing/TestCellProperties.hpp#L56">line 56 of heart/test/postprocessing/TestCellProperties.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/postprocessing/TestCellProperties.hpp#L56" title="Download">​</a>
+</li><li> Compute pseudo-ECGs -- see <a class="source" href="/trac/browser/git_repo/heart/test/postprocessing/TestPseudoEcgCalculator.hpp#L59">line 59 of heart/test/postprocessing/TestPseudoEcgCalculator.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/postprocessing/TestPseudoEcgCalculator.hpp#L59" title="Download">​</a>
+</li><li> Convert already generated simulation (HDF5) results to Cmgui format. -- see <a class="source" href="/trac/browser/git_repo/heart/test/postprocessing/TestHdf5ToVisualizerConverters.hpp#L61">line 61 of heart/test/postprocessing/TestHdf5ToVisualizerConverters.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/postprocessing/TestHdf5ToVisualizerConverters.hpp#L61" title="Download">​</a>
+</li><li> Convert already generated simulation (HDF5) results to text, VTK or Meshalyzer format. -- see <a class="source" href="/trac/browser/git_repo/pde/test/utilities/TestHdf5Converters.hpp#L64">line 64 of pde/test/utilities/TestHdf5Converters.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/utilities/TestHdf5Converters.hpp#L64" title="Download">​</a>
+</li></ul><h3 id="Problemdefinition">Problem definition</h3>
+<ul><li> Do a monodomain simulation with equivalent conductivities to a bidomain simulation. -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestEquivalentMonoAndBidomainTutorial.hpp#L233">line 233 of heart/test/tutorials/TestEquivalentMonoAndBidomainTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestEquivalentMonoAndBidomainTutorial.hpp#L233" title="Download">​</a>
+</li><li> Fix phi_e at particular nodes (note: this is not required) -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L264">line 264 of heart/test/bidomain/TestBidomainProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainProblem.hpp#L264" title="Download">​</a>
+</li><li> Generate a slab (cuboid) mesh rather than read a mesh in, and pass it to solver -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestMonodomain3dExampleTutorial.hpp#L102">line 102 of heart/test/tutorials/TestMonodomain3dExampleTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestMonodomain3dExampleTutorial.hpp#L102" title="Download">​</a>
+</li><li> Generate fibre field definitions for cardiac geometries using a mathematical rule approach -- see <a class="source" href="/trac/browser/git_repo/heart/test/fibres/TestStreeterFibreGenerator.hpp#L48">line 48 of heart/test/fibres/TestStreeterFibreGenerator.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/fibres/TestStreeterFibreGenerator.hpp#L48" title="Download">​</a>
+</li><li> Read in a mesh from file, via <tt>HeartConfig</tt>. -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestMonodomain3dRabbitHeartTutorial.hpp#L114">line 114 of heart/test/tutorials/TestMonodomain3dRabbitHeartTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestMonodomain3dRabbitHeartTutorial.hpp#L114" title="Download">​</a>
+</li><li> Run bidomain simulations with a perfusing bath, and apply shocks using electrodes -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L47">line 47 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L47" title="Download">​</a>
+</li><li> Save ('checkpoint') and reload simulations -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestCardiacCheckpointingAndRestartingTutorial.hpp#L49">line 49 of heart/test/tutorials/TestCardiacCheckpointingAndRestartingTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestCardiacCheckpointingAndRestartingTutorial.hpp#L49" title="Download">​</a>
+</li><li> Set discrete <strong>cuboid</strong> areas to have heterogeneous (intra- and/or extra-cellular) conductivity tensors. -- see <a class="source" href="/trac/browser/git_repo/heart/test/TestHeterogeneousConductivities.hpp#L82">line 82 of heart/test/TestHeterogeneousConductivities.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/TestHeterogeneousConductivities.hpp#L82" title="Download">​</a>
+</li><li> Set discrete <strong>ellipsoid</strong> areas to have heterogeneous (intra- and/or extra-cellular) conductivity tensors. -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainTissue.hpp#L325">line 325 of heart/test/bidomain/TestBidomainTissue.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainTissue.hpp#L325" title="Download">​</a>
+</li><li> Set up and run basic bidomain simulations -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp#L48">line 48 of heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp#L48" title="Download">​</a>
+</li><li> Specify fibre directions -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp#L87">line 87 of heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp#L87" title="Download">​</a>
+</li><li> Tell Chaste that a mesh has been modified -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L174">line 174 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L174" title="Download">​</a>
+</li><li> Use a CVODE adaptor solver in a tissue simulation -- see <a class="source" href="/trac/browser/git_repo/heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp#L121">line 121 of heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp#L121" title="Download">​</a>
+</li><li> Use a genuinely Neumann intracellular stimulus, rather than default volume stimulus -- see <a class="source" href="/trac/browser/git_repo/heart/test/stimuli/TestNeumannStimulus.hpp#L54">line 54 of heart/test/stimuli/TestNeumannStimulus.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/stimuli/TestNeumannStimulus.hpp#L54" title="Download">​</a>
+</li><li> Use a native CVODE cell in a tissue simulation -- see <a class="source" href="/trac/browser/git_repo/heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp#L168">line 168 of heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/performance/Test1dMonodomainShannonCvodeBenchmarks.hpp#L168" title="Download">​</a>
+</li><li> Use different cell models, defined using CellML files -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp#L74">line 74 of heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp#L74" title="Download">​</a>
+</li></ul><h3 id="Solver">Solver</h3>
+<ul><li> Run using (simple, user-defined) time-adaptivity -- see <a class="source" href="/trac/browser/git_repo/heart/test/monodomain/TestMonodomainWithTimeAdaptivity.hpp#L51">line 51 of heart/test/monodomain/TestMonodomainWithTimeAdaptivity.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/monodomain/TestMonodomainWithTimeAdaptivity.hpp#L51" title="Download">​</a>
+</li><li> Run using operator-splitting -- see <a class="source" href="/trac/browser/git_repo/heart/test/monodomain/TestOperatorSplittingMonodomainSolver.hpp#L58">line 58 of heart/test/monodomain/TestOperatorSplittingMonodomainSolver.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/monodomain/TestOperatorSplittingMonodomainSolver.hpp#L58" title="Download">​</a>
+</li><li> Use <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/StateVariableInterpolation.html">state-variable interpolation</a> to improve accuracy -- see <a class="source" href="/trac/browser/git_repo/heart/test/bidomain/TestBidomainWithSvi.hpp#L118">line 118 of heart/test/bidomain/TestBidomainWithSvi.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/bidomain/TestBidomainWithSvi.hpp#L118" title="Download">​</a>
+</li><li> Using specialised Backward Euler implementation to solve the cell models (allows for much larger timesteps) -- see <a class="source" href="/trac/browser/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L64">line 64 of heart/test/tutorials/TestBidomainWithBathTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/heart/test/tutorials/TestBidomainWithBathTutorial.hpp#L64" title="Download">​</a>
+</li></ul><h2 id="CellBased">Cell Based</h2>
+<h3 id="Simulation">Simulation</h3>
+<ul><li> Save and load ('checkpoint') a cell-based simulation to file. -- see <a class="source" href="/trac/browser/git_repo/crypt/test/simulation/TestGenerateSteadyStateCrypt.hpp#L135">line 135 of crypt/test/simulation/TestGenerateSteadyStateCrypt.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/crypt/test/simulation/TestGenerateSteadyStateCrypt.hpp#L135" title="Download">​</a>
+</li><li> Time various aspects of a cell-based simulation using <tt>CellBasedEventHandler</tt>. -- see <a class="source" href="/trac/browser/git_repo/crypt/test/simulation/TestCryptSimulation2dNightly.hpp#L434">line 434 of crypt/test/simulation/TestCryptSimulation2dNightly.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/crypt/test/simulation/TestCryptSimulation2dNightly.hpp#L434" title="Download">​</a>
+</li></ul><h2 id="Continuummechanics">Continuum mechanics</h2>
+<ul><li> Get or output stresses during a solve -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestIncompressibleNonlinearElasticitySolver.hpp#L634">line 634 of continuum_mechanics/test/TestIncompressibleNonlinearElasticitySolver.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestIncompressibleNonlinearElasticitySolver.hpp#L634" title="Download">​</a>
+</li><li> Solve Stokes' flow problems (this functionality is work-in-progress). -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestStokesFlowSolver.hpp#L51">line 51 of continuum_mechanics/test/TestStokesFlowSolver.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestStokesFlowSolver.hpp#L51" title="Download">​</a>
+</li><li> Solve nonlinear elasticity problems -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp#L107">line 107 of continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp#L107" title="Download">​</a>
+</li><li> Specify more complicated boundary conditions in elasticity problems -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestSolvingMoreElasticityProblemsTutorial.hpp#L77">line 77 of continuum_mechanics/test/TestSolvingMoreElasticityProblemsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestSolvingMoreElasticityProblemsTutorial.hpp#L77" title="Download">​</a>
+</li><li> Visualise nonlinear elasticity problems solutions, including visualisng strains -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp#L222">line 222 of continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp#L222" title="Download">​</a>
+</li><li> Write strain after solve -- see <a class="source" href="/trac/browser/git_repo/continuum_mechanics/test/TestCompressibleNonlinearElasticitySolver.hpp#L944">line 944 of continuum_mechanics/test/TestCompressibleNonlinearElasticitySolver.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/continuum_mechanics/test/TestCompressibleNonlinearElasticitySolver.hpp#L944" title="Download">​</a>
+</li></ul><h3 id="Ventilation">Ventilation</h3>
+<ul><li> Solve a simple ventilation problem defined in a file. -- see <a class="source" href="/trac/browser/git_repo/lung/test/ventilation/TestMatrixVentilationProblem.hpp#L390">line 390 of lung/test/ventilation/TestMatrixVentilationProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/ventilation/TestMatrixVentilationProblem.hpp#L390" title="Download">​</a>
+</li><li> Solve a simple ventilation problem defined in a file. -- see <a class="source" href="/trac/browser/git_repo/lung/test/ventilation/TestVentilationProblem.hpp#L416">line 416 of lung/test/ventilation/TestVentilationProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/ventilation/TestVentilationProblem.hpp#L416" title="Download">​</a>
+</li><li> Solve a simple ventilation problem with no time variation. -- see <a class="source" href="/trac/browser/git_repo/lung/test/ventilation/TestMatrixVentilationProblem.hpp#L272">line 272 of lung/test/ventilation/TestMatrixVentilationProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/ventilation/TestMatrixVentilationProblem.hpp#L272" title="Download">​</a>
+</li><li> Solve a simple ventilation problem with no time variation. -- see <a class="source" href="/trac/browser/git_repo/lung/test/ventilation/TestVentilationProblem.hpp#L299">line 299 of lung/test/ventilation/TestVentilationProblem.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/ventilation/TestVentilationProblem.hpp#L299" title="Download">​</a>
+</li></ul><h2 id="General">General</h2>
+<ul><li> Read and use parameters from the command line -- see <a class="source" href="/trac/browser/git_repo/global/test/TestCommandLineArguments.hpp#L46">line 46 of global/test/TestCommandLineArguments.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/global/test/TestCommandLineArguments.hpp#L46" title="Download">​</a>
+</li><li> Use mock (pretend) command line arguments -- see <a class="source" href="/trac/browser/git_repo/global/test/TestCommandLineArguments.hpp#L270">line 270 of global/test/TestCommandLineArguments.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/global/test/TestCommandLineArguments.hpp#L270" title="Download">​</a>
+</li></ul><h3 id="Archiving">Archiving</h3>
+<ul><li> Use a binary rather than ascii boost archive format, for speed and smaller file sizes. -- see <a class="source" href="/trac/browser/git_repo/global/test/TestArchiving.hpp#L391">line 391 of global/test/TestArchiving.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/global/test/TestArchiving.hpp#L391" title="Download">​</a>
+</li></ul><h2 id="Lung">Lung</h2>
+<h3 id="Anatomydefinition">Anatomy definition</h3>
+<ul><li> Generate a complete conducting airway model given segmentations of CT airways and lobes. -- see <a class="source" href="/trac/browser/git_repo/lung/test/tutorials/TestAirwayGenerationTutorial.hpp#L47">line 47 of lung/test/tutorials/TestAirwayGenerationTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/tutorials/TestAirwayGenerationTutorial.hpp#L47" title="Download">​</a>
+</li></ul><h3 id="Simulation1">Simulation</h3>
+<ul><li> Calculate transfer impedance of an airway tree using a simple impedance model -- see <a class="source" href="/trac/browser/git_repo/lung/test/tutorials/TestSimpleImpedanceProblemTutorial.hpp#L47">line 47 of lung/test/tutorials/TestSimpleImpedanceProblemTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/tutorials/TestSimpleImpedanceProblemTutorial.hpp#L47" title="Download">​</a>
+</li><li> Calculate ventilation distribution in an airway tree for a given flow rate at the trachea -- see <a class="source" href="/trac/browser/git_repo/lung/test/tutorials/TestStaticVentilationTutorial.hpp#L47">line 47 of lung/test/tutorials/TestStaticVentilationTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/tutorials/TestStaticVentilationTutorial.hpp#L47" title="Download">​</a>
+</li><li> Simulate ventilation on a full lung geometry with acinar dynamics over a breathing cycle. -- see <a class="source" href="/trac/browser/git_repo/lung/test/tutorials/TestDynamicVentilationTutorial.hpp#L47">line 47 of lung/test/tutorials/TestDynamicVentilationTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/lung/test/tutorials/TestDynamicVentilationTutorial.hpp#L47" title="Download">​</a>
+</li></ul><h2 id="Mesh">Mesh</h2>
+<ul><li> Apply transformations to meshes -- see <a class="source" href="/trac/browser/git_repo/mesh/test/TestTransformations.hpp#L49">line 49 of mesh/test/TestTransformations.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/mesh/test/TestTransformations.hpp#L49" title="Download">​</a>
+</li><li> Construct a distributed regular mesh (rectangle in 2D or cuboid in 3D) which does not have a default split plane.  The default is for parallel code to split 2-D meshes into slices in the y-dimension and 3-D meshes in the z-dimension. -- see <a class="source" href="/trac/browser/git_repo/mesh/test/TestDistributedTetrahedralMesh.hpp#L2283">line 2283 of mesh/test/TestDistributedTetrahedralMesh.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/mesh/test/TestDistributedTetrahedralMesh.hpp#L2283" title="Download">​</a>
+</li><li> Convert a linear tetrahedral mesh to quadratic and write back to file. -- see <a class="source" href="/trac/browser/git_repo/mesh/test/TestQuadraticMesh.hpp#L790">line 790 of mesh/test/TestQuadraticMesh.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/mesh/test/TestQuadraticMesh.hpp#L790" title="Download">​</a>
+</li><li> Write meshes to file -- see <a class="source" href="/trac/browser/git_repo/mesh/test/writer/TestMeshWriters.hpp#L58">line 58 of mesh/test/writer/TestMeshWriters.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/mesh/test/writer/TestMeshWriters.hpp#L58" title="Download">​</a>
+</li></ul><h2 id="PDE">PDE</h2>
+<ul><li> Define and solve a particular type of coupled ODE/PDE system -- see <a class="source" href="/trac/browser/git_repo/pde/test/tutorials/TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp#L47">line 47 of pde/test/tutorials/TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/tutorials/TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp#L47" title="Download">​</a>
+</li><li> Define and solve linear elliptic or parabolic PDEs -- see <a class="source" href="/trac/browser/git_repo/pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp#L47">line 47 of pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp#L47" title="Download">​</a>
+</li><li> Define and solve nonlinear elliptic PDEs -- see <a class="source" href="/trac/browser/git_repo/pde/test/tutorials/TestSolvingNonlinearPdesTutorial.hpp#L52">line 52 of pde/test/tutorials/TestSolvingNonlinearPdesTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/tutorials/TestSolvingNonlinearPdesTutorial.hpp#L52" title="Download">​</a>
+</li><li> Evaluate integrals (using a solution from a PDE solve say) over a finite element mesh -- see <a class="source" href="/trac/browser/git_repo/pde/test/utilities/TestAbstractFunctionalCalculator.hpp#L49">line 49 of pde/test/utilities/TestAbstractFunctionalCalculator.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/utilities/TestAbstractFunctionalCalculator.hpp#L49" title="Download">​</a>
+</li><li> Output results to file for time-dependent PDE solvers -- see <a class="source" href="/trac/browser/git_repo/pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp#L341">line 341 of pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/tutorials/TestSolvingLinearPdesTutorial.hpp#L341" title="Download">​</a>
+</li><li> Write a solver for coupled nonlinear PDEs (advanced) -- see <a class="source" href="/trac/browser/git_repo/pde/test/TestSolvingCoupledNonlinearPdes.hpp#L53">line 53 of pde/test/TestSolvingCoupledNonlinearPdes.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/TestSolvingCoupledNonlinearPdes.hpp#L53" title="Download">​</a>
+</li><li> Write new PDE solvers (especially for linear coupled elliptic/parabolic systems) -- see <a class="source" href="/trac/browser/git_repo/pde/test/tutorials/TestWritingPdeSolversTutorial.hpp#L52">line 52 of pde/test/tutorials/TestWritingPdeSolversTutorial.hpp</a><a class="trac-rawlink" href="/trac/export/HEAD/git_repo/pde/test/tutorials/TestWritingPdeSolversTutorial.hpp#L52" title="Download">​</a>
+</li></ul><hr />
+<h1 id="CreatingnewHOWTOs">Creating new HOWTOs</h1>
+<p>
+Any C-style block comment found in a test file that looks like the following
+will be given an entry in the index.
+</p>
+<pre class="wiki"> * HOW_TO_TAG Section/Subsection
+ * Short description (ideally one-liner)
+</pre><p>
+The short description may run over multiple lines; it will be considered to end
+either at the end of the comment, or at a blank comment line, whichever comes first.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

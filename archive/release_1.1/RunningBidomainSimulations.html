@@ -1,0 +1,539 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> RunningBidomainSimulations tutorial file </h1>      </div>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/cgi-bin/trac.cgi/wiki/UserTutorials">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningBidomainSimulations" href="/cgi-bin/trac.cgi/wiki/UserTutorials/RunningBidomainSimulations">RunningBidomainSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/heart/test/TestRunningBidomainSimulationsTutorial.hpp at revision <a class="missing changeset">r6266</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtorunbidomainsimulationsformonodomainitisessentiallythesame">An example showing how to run bidomain simulations (for monodomain, it is essentially the same)</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste is used to run a standard bidomain simulation.
+Note that monodomain simulations are run very similarly.
+The first thing that needs to be done, when writing any Chaste test,
+is to include the following header.
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+</pre></div><p>
+The main class to be used for running bidomain simulations is <tt>BidomainProblem</tt>. 
+</p>
+<div class="code"><pre>#include "BidomainProblem.hpp"
+</pre></div><p>
+The <tt>PlaneStimulusCellFactory</tt> is a useful class to include (see later). 
+</p>
+<div class="code"><pre>#include "PlaneStimulusCellFactory.hpp"
+</pre></div><p>
+<tt>LuoRudyIModel1991OdeSystem</tt> is the cell model which will be used in this simulation.
+</p>
+<div class="code"><pre>#include "LuoRudyIModel1991OdeSystem.hpp"
+</pre></div><p>
+All tests which run cardiac simulations (which use Petsc) should include
+<tt>PetscSetupAndFinalize.hpp</tt>.  This class ensures that <tt>PetscInitialise()</tt>
+is called with the appropriate arguments before any tests in the suite are run. 
+</p>
+<div class="code"><pre>#include "PetscSetupAndFinalize.hpp"
+</pre></div><p>
+Class used to to model a FEM mesh and helper class used to read it from file 
+</p>
+<div class="code"><pre>#include "TetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+</pre></div><h2 id="Definingacellfactory">Defining a cell factory</h2>
+<p>
+All mono/bidomain simulations need a <i>cell factory</i> as input. This is a class
+which tells the problem class what type of cardiac cells to create. The cell-factory
+class has to inherit from <tt>AbstractCardiacCellFactory&lt;DIM&gt;</tt>, which means it must
+implement the method <tt>CreateCardiacCellForTissueNode(unsigned nodeNum)</tt>, which returns
+a pointer to an <tt>AbstractCardiacCell</tt>. Note, some concrete cell factories have
+been defined, such as the <tt>PlaneStimulusCellFactory</tt>, which could be used in the
+simulation, but for completeness we create our own cell factory in this test. For
+complicated problems with, say, heterogeneous cell types or particular stimuli, a
+new cell factory will have to be defined by the user for their particular problem.
+</p>
+<p>
+This cell factory is a simple cell factory where every cell is a Luo-Rudy 91 cell,
+and only the cell at position (0,0) is given a non-zero stimulus.
+</p>
+<div class="code"><pre>class PointStimulus2dCellFactory : public AbstractCardiacCellFactory&lt;2&gt;
+{
+</pre></div><p>
+Declare (smart) pointer to a <tt>SimpleStimulus</tt> for the cell which is stimulated.
+Note that <tt>AbstractCardiacCellFactory</tt> also has as protected members: <tt>mpZeroStimulus</tt>
+of type <tt>boost::shared_ptr&lt;ZeroStimulus&gt;</tt>; <tt>mpMesh</tt>, a pointer to the mesh used (the problem
+class will set this before it calls <tt>CreateCardiacCellForTissueNode</tt>, so it can be used
+in that method); <tt>mTimestep</tt>, a double (see below); and <tt>boost::shared_ptr&lt;mpSolver&gt;</tt>
+a forward euler ode solver (see below). 
+</p>
+<div class="code"><pre>private:
+    boost::shared_ptr&lt;SimpleStimulus&gt; mpStimulus;
+public:
+</pre></div><p>
+Our contructor takes in nothing. It calls the constructor of <tt>AbstractCardiacCellFactory</tt>
+and we also initialise the stimulus to have magnitude 6000 (uA/cm<sup>3) and duration 0.5 (ms).
+</sup></p>
+<div class="code"><pre>    PointStimulus2dCellFactory()
+        : AbstractCardiacCellFactory&lt;2&gt;(),
+          mpStimulus(new SimpleStimulus(-6000.0, 0.5))
+    {
+    }
+</pre></div><p>
+Now we implement the pure method which needs to be implemented. We return
+a LR91 cell for each node, with the node at (0,0) given the non-zero stimulus,
+and all other nodes given the zero stimulus. Note that we use <tt>mpMesh</tt>,
+<tt>mTimestep</tt>, <tt>mpZeroStimulus</tt> and <tt>mpSolver</tt> which are all
+members of the base class. The timestep and solver are defined in the base
+class just so that the user doesn't have to create them here. 
+</p>
+<div class="code"><pre>    AbstractCardiacCell* CreateCardiacCellForTissueNode(unsigned nodeIndex)
+    {
+        double x = this-&gt;GetMesh()-&gt;GetNode(nodeIndex)-&gt;rGetLocation()[0];
+        double y = this-&gt;GetMesh()-&gt;GetNode(nodeIndex)-&gt;rGetLocation()[1];
+        if (fabs(x)+fabs(y)&lt;1e-6) // ie if (x,y)==(0,0). An alternative would be if(norm_2(this-&gt;mpMesh-&gt;GetNode(nodeIndex)-&gt;rGetLocation())&lt;1e-6)
+        {
+</pre></div><p>
+Even if running a bidomain simulation, only the intra-cellular stimulus
+should be given here.  There is a separate Electrodes class for applying
+extra-cellular stimuli.
+</p>
+<div class="code"><pre>            return new LuoRudyIModel1991OdeSystem(mpSolver, mpStimulus);
+        }
+        else
+        {
+</pre></div><p>
+The other cells have zero stimuli. 
+</p>
+<div class="code"><pre>            return new LuoRudyIModel1991OdeSystem(mpSolver, mpZeroStimulus);
+        }
+    }
+</pre></div><p>
+We have no need for a destructor, since the problem class deals with deleting the cells. 
+</p>
+<div class="code"><pre>};
+</pre></div><h2 id="Runningabidomainsimulation">Running a bidomain simulation</h2>
+<p>
+Now we can define the test class, which must inherit from <tt>CxxTest::TestSuite</tt>
+as usual. 
+</p>
+<div class="code"><pre>class TestRunningBidomainSimulationsTutorial : public CxxTest::TestSuite
+{
+</pre></div><p>
+Tests should be public... 
+</p>
+<div class="code"><pre>public:
+</pre></div><p>
+Define the test. Note the <tt>throw(Exception)</tt> - without this exception messages
+might not get printed out.
+</p>
+<div class="code"><pre>    void TestSimpleSimulation() throw(Exception)
+    {
+</pre></div><p>
+The <tt>HeartConfig</tt> class is used to set various parameters. It gets the default values
+from ChasteDefaults.xml (in the base Chaste directory) (except the values in the 'Simulation' block of the XML file,
+which is only used by the Chaste executable). Parameters in this file can be re-set
+with <tt>HeartConfig</tt> if the user wishes, and other paramters such as end time must be set
+using <tt>HeartConfig</tt>. Let us begin by setting the end time (in ms), the mesh to use, and the
+output directory and filename-prefix.
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;SetSimulationDuration(1.0); //ms
+        HeartConfig::Instance()-&gt;SetMeshFileName("mesh/test/data/square_128_elements");
+        HeartConfig::Instance()-&gt;SetOutputDirectory("BidomainTutorial");
+        HeartConfig::Instance()-&gt;SetOutputFilenamePrefix("results");
+</pre></div><p>
+Next, we have to create a cell factory of the type we defined above. 
+</p>
+<div class="code"><pre>        PointStimulus2dCellFactory cell_factory;
+</pre></div><p>
+Now we create a problem class using (a pointer to) the cell factory. 
+</p>
+<div class="code"><pre>        BidomainProblem&lt;2&gt; bidomain_problem( &amp;cell_factory );
+</pre></div><p>
+This is enough setup to run a simulation: we could now call <tt>Initialise()</tt>
+and <tt>Solve()</tt> to run... 
+</p>
+<div class="code"><pre>        // bidomain_problem.Initialise();
+        // bidomain_problem.Solve();
+</pre></div><p>
+..However, instead we show how to set a few more parameters. To set the conductivity values
+in the principal fibre, sheet and normal directions do the following.
+Note that <tt>Create_c_vector</tt> is just a helper method for creating a <tt>c_vector&lt;double,DIM&gt;</tt>
+of the correct size (2, in this case). Make sure these methods are called before
+<tt>Initialise()</tt>.
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;SetIntracellularConductivities(Create_c_vector(1.75, 0.19));
+        HeartConfig::Instance()-&gt;SetExtracellularConductivities(Create_c_vector(6.2, 2.4));
+</pre></div><p>
+Let us also reset the surface-area-to-volume ratio and the capacitance 
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;SetSurfaceAreaToVolumeRatio(1.0); // 1/cm
+        HeartConfig::Instance()-&gt;SetCapacitance(1.0); // uF/cm^2
+</pre></div><p>
+Now we call <tt>Initialise()</tt>... 
+</p>
+<div class="code"><pre>        bidomain_problem.Initialise();
+</pre></div><p>
+The output will be written to /tmp/USER_NAME/testoutput/BidomainTutorial
+in hdf5 format. If you want visualise the results afterwards, call the
+following method now, and the mesh and output will be converted to meshalyzer
+format at the end of the simulation.
+</p>
+<div class="code"><pre>        bidomain_problem.ConvertOutputToMeshalyzerFormat();
+</pre></div><p>
+Now we call Solve() to run the simulation.
+Note that if you want to view the progress of longer simulations
+go to the the output directory and look at the file
+<tt>progress_status.txt</tt>, which will say the percentage of the
+simulation run. A useful linux command is therefore <tt>watch tail progress_status.txt</tt>
+which will repeatedly display the last few lines of this file. 
+</p>
+<div class="code"><pre>        bidomain_problem.Solve();
+</pre></div><p>
+To now visualise the results, go to /tmp/USER_NAME/testoutput/BidomainTutorial/output,
+where you should find the mesh and output, and run meshalyzer.
+</p>
+<p>
+The easiest way to look at the resultant voltage values (for the last timestep -
+the data for the previous timesteps is written to file but not retained) is to
+use a <tt>ReplicatableVector</tt>. <tt>bidomain_problem.GetSolution())</tt> returns a PetSc vector
+of the form (V_0, phi_0, V_1, phi_e_1, ... V_n, phi_e_n), and we can create a
+<tt>ReplicatableVector</tt> for easy access to this PetSc vector's data. (This won't be very
+efficient with huge problems in parallel).
+</p>
+<div class="code"><pre>        ReplicatableVector res_repl(bidomain_problem.GetSolution());
+        for(unsigned i=0; i&lt;res_repl.size(); i++)
+        {
+        //    std::cout &lt;&lt; res_repl[i] &lt;&lt; "\n";
+        }
+</pre></div><p>
+Alternatively, we show how to access the voltage values using the <tt>DistributedVector</tt>
+class, which can be used to only iterate over the values of the voltage owned
+by that process.
+</p>
+<div class="code"><pre>        DistributedVector dist_bidomain_voltage = bidomain_problem.GetSolutionDistributedVector();
+        DistributedVector::Stripe bidomain_voltage(dist_bidomain_voltage, 0);
+        DistributedVector::Stripe extracellular_potential(dist_bidomain_voltage, 1);
+</pre></div><p>
+A loop over all the components owned by this process.. 
+</p>
+<div class="code"><pre>        for (DistributedVector::Iterator index = dist_bidomain_voltage.Begin();
+             index != dist_bidomain_voltage.End();
+             ++index)
+        {
+</pre></div><p>
+.. and a simple test, that the 'last' node was stimulated: 
+</p>
+<div class="code"><pre>            if (index.Global==bidomain_problem.rGetMesh().GetNumNodes()-1) // ie if the last node
+            {
+                TS_ASSERT_LESS_THAN(0, bidomain_voltage[index]);
+            }
+        }
+    }
+</pre></div><h2 id="Runningabidomainsimulationwithanexternalbathandelectrodes">Running a bidomain simulation with an external bath, and electrodes</h2>
+<p>
+Now, we illustrate how to run a simulation with an external bath
+and electrodes applying a boundary extracellular stimulus. Note that
+currently, bath problems can only be solved on rectangular/cuboid
+domains.
+</p>
+<div class="code"><pre>    void TestWithBathAndElectrodes() throw (Exception)
+    {
+</pre></div><p>
+<strong>Important:</strong> we need to remember to reset the <tt>HeartConfig</tt>
+class, since it had reset various parameters in the previous
+test.
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;Reset();
+</pre></div><p>
+First, set the end time and output info. In this simulation
+we'll explicitly read the mesh, alter it, then pass it
+to the problem class, so we don't set the mesh file name.
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;SetSimulationDuration(3.0);  //ms
+        HeartConfig::Instance()-&gt;SetOutputDirectory("BidomainTutorialWithBath");
+        HeartConfig::Instance()-&gt;SetOutputFilenamePrefix("results");
+</pre></div><p>
+Bath problems seem to require decreased ODE timesteps.
+</p>
+<div class="code"><pre>        HeartConfig::Instance()-&gt;SetOdeTimeStep(0.001);  //ms
+</pre></div><p>
+Next, use the <tt>PlaneStimulusCellFactory</tt> to define a set
+of Luo-Rudy cells. This factory normally sets the X=0 cells to be
+stimulated, but we don't want any intracellular stimulus in this
+test, so we pass in 0.0 as the stimulus magnitude.
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory&lt;LuoRudyIModel1991OdeSystem,2&gt; cell_factory(0.0);
+</pre></div><p>
+Now, we load up a rectangular mesh (in triangle/tetgen format), done as follows,
+using <tt>TrianglesMeshReader</tt>.
+</p>
+<div class="code"><pre>        TrianglesMeshReader&lt;2,2&gt; reader("mesh/test/data/2D_0_to_1mm_400_elements");
+        TetrahedralMesh&lt;2,2&gt; mesh;
+        mesh.ConstructFromMeshReader(reader);
+</pre></div><p>
+In bath problems, each element has an attribute which must be set
+to 0 (cardiac tissue) or 1 (bath). This can be done by having an
+extra column in the element file (see for example mesh/test/data/1D_0_to_1_10_elements_with_two_attributes.ele,
+and note that the header in this file has 1 at the end to indicate that
+the file defines an attribute for each element. We have read in a mesh
+without this type of information set up, so we set it up manually,
+by looping over elements and setting those more than 2mm from the centre
+as bath elements (by default, the others are cardiac elements).
+</p>
+<div class="code"><pre>        for(unsigned i=0; i&lt;mesh.GetNumElements(); i++)
+        {
+            double x = mesh.GetElement(i)-&gt;CalculateCentroid()[0];
+            double y = mesh.GetElement(i)-&gt;CalculateCentroid()[1];
+            if( sqrt((x-0.05)*(x-0.05) + (y-0.05)*(y-0.05)) &gt; 0.02 )
+            {
+                mesh.GetElement(i)-&gt;SetRegion(HeartRegionCode::BATH);
+            }
+        }
+</pre></div><p>
+Now we define the electrodes. First define the magnitude of the electrodes
+(ie the magnitude of the boundary extracellular stimulus), and the duration
+it lasts for. Currently, electrodes switch on at time 0 and have constant magnitude
+until they are switched off. (Note that this test has a small range of
+magnitudes that will work, perhaps because the electrodes are close to the tissue).
+</p>
+<div class="code"><pre>        //-1e4 is under thershold, -1.4e4 too high - crashes the cell model
+        double magnitude = -1.1e4; // uA/cm^2
+        double duration = 2; //ms
+</pre></div><p>
+Electrodes work in two ways: the first electrode applies an input flux, and
+the opposite electrode can either be grounded or apply an equal and opposite
+flux (ie an output flux). The <tt>false</tt> here indicates the second electrode
+is not grounded, ie has an equal and opposite flux. The "0, 0.0, 0.1" indicates
+that the electrodes should be applied to the surfaces X=0.0 and X=0.1 (which
+must match the mesh provided) (so, for example, you should use "2, 0.0, 0.1" to
+apply electrodes to the surfaces Z=0.0 and Z=0.1, etc).
+</p>
+<div class="code"><pre>        Electrodes&lt;2&gt; electrodes(mesh, false, 0, 0.0, 0.1, magnitude, duration);
+</pre></div><p>
+Now create the problem class, using the cell factory and passing
+in <tt>true</tt> as the second argument to indicate we are solving a bath
+problem..
+</p>
+<div class="code"><pre>        BidomainProblem&lt;2&gt; bidomain_problem( &amp;cell_factory, true );
+</pre></div><p>
+..set the mesh and electrodes.. 
+</p>
+<div class="code"><pre>        bidomain_problem.SetMesh(&amp;mesh);
+        bidomain_problem.SetElectrodes(electrodes);
+</pre></div><p>
+..and solve as before. 
+</p>
+<div class="code"><pre>        bidomain_problem.ConvertOutputToMeshalyzerFormat(true);
+        bidomain_problem.Initialise();
+        bidomain_problem.Solve();
+</pre></div><p>
+The results can be visualised as before. <strong>Note:</strong> The voltage is only
+defined at cardiac nodes (a node contained in <i>any</i> cardiac element), but
+for visualisation and computation a 'fake' value of ZERO is given for the
+voltage at bath nodes.
+</p>
+<p>
+Finally, we can check that an AP was induced in any of the cardiac
+cells. We use a <tt>ReplicatableVector</tt> as before, and make sure we
+only check the voltage at cardiac cells.
+</p>
+<div class="code"><pre>        Vec solution = bidomain_problem.GetSolution(); // the Vs and phi_e's, as a PetSc vector
+        ReplicatableVector solution_repl(solution);
+        bool ap_triggered = false;
+        for(unsigned i=0; i&lt;mesh.GetNumNodes(); i++)
+        {
+            if (mesh.GetNode(i)-&gt;GetRegion()==HeartRegionCode::TISSUE)
+            {
+                if (solution_repl[2*i] &gt; 0.0) // 2*i, ie the voltage for this node (would be 2*i+1 for phi_e for this node)
+                {
+                    ap_triggered = true;
+                }
+            }
+        }
+        TS_ASSERT(ap_triggered);
+    }
+};
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+#include "LuoRudyIModel1991OdeSystem.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "TetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+
+class PointStimulus2dCellFactory : public AbstractCardiacCellFactory&lt;2&gt;
+{
+private:
+    boost::shared_ptr&lt;SimpleStimulus&gt; mpStimulus;
+
+public:
+    PointStimulus2dCellFactory()
+        : AbstractCardiacCellFactory&lt;2&gt;(),
+          mpStimulus(new SimpleStimulus(-6000.0, 0.5))
+    {
+    }
+
+    AbstractCardiacCell* CreateCardiacCellForTissueNode(unsigned nodeIndex)
+    {
+        double x = this-&gt;GetMesh()-&gt;GetNode(nodeIndex)-&gt;rGetLocation()[0];
+        double y = this-&gt;GetMesh()-&gt;GetNode(nodeIndex)-&gt;rGetLocation()[1];
+        if (fabs(x)+fabs(y)&lt;1e-6) // ie if (x,y)==(0,0). An alternative would be if(norm_2(this-&gt;mpMesh-&gt;GetNode(nodeIndex)-&gt;rGetLocation())&lt;1e-6)
+        {
+            return new LuoRudyIModel1991OdeSystem(mpSolver, mpStimulus);
+        }
+        else
+        {
+            return new LuoRudyIModel1991OdeSystem(mpSolver, mpZeroStimulus);
+        }
+    }
+
+};
+
+class TestRunningBidomainSimulationsTutorial : public CxxTest::TestSuite
+{
+public:
+    void TestSimpleSimulation() throw(Exception)
+    {
+        HeartConfig::Instance()-&gt;SetSimulationDuration(1.0); //ms
+        HeartConfig::Instance()-&gt;SetMeshFileName("mesh/test/data/square_128_elements");
+        HeartConfig::Instance()-&gt;SetOutputDirectory("BidomainTutorial");
+        HeartConfig::Instance()-&gt;SetOutputFilenamePrefix("results");
+
+        PointStimulus2dCellFactory cell_factory;
+
+        BidomainProblem&lt;2&gt; bidomain_problem( &amp;cell_factory );
+
+        // bidomain_problem.Initialise();
+        // bidomain_problem.Solve();
+
+        HeartConfig::Instance()-&gt;SetIntracellularConductivities(Create_c_vector(1.75, 0.19));
+        HeartConfig::Instance()-&gt;SetExtracellularConductivities(Create_c_vector(6.2, 2.4));
+        HeartConfig::Instance()-&gt;SetSurfaceAreaToVolumeRatio(1.0); // 1/cm
+        HeartConfig::Instance()-&gt;SetCapacitance(1.0); // uF/cm^2
+
+        bidomain_problem.Initialise();
+
+        bidomain_problem.ConvertOutputToMeshalyzerFormat();
+
+        bidomain_problem.Solve();
+
+        ReplicatableVector res_repl(bidomain_problem.GetSolution());
+        for(unsigned i=0; i&lt;res_repl.size(); i++)
+        {
+        //    std::cout &lt;&lt; res_repl[i] &lt;&lt; "\n";
+        }
+
+        DistributedVector dist_bidomain_voltage = bidomain_problem.GetSolutionDistributedVector();
+        DistributedVector::Stripe bidomain_voltage(dist_bidomain_voltage, 0);
+        DistributedVector::Stripe extracellular_potential(dist_bidomain_voltage, 1);
+
+        for (DistributedVector::Iterator index = dist_bidomain_voltage.Begin();
+             index != dist_bidomain_voltage.End();
+             ++index)
+        {
+            if (index.Global==bidomain_problem.rGetMesh().GetNumNodes()-1) // ie if the last node
+            {
+                TS_ASSERT_LESS_THAN(0, bidomain_voltage[index]);
+            }
+        }
+    }
+
+    void TestWithBathAndElectrodes() throw (Exception)
+    {
+        HeartConfig::Instance()-&gt;Reset();
+
+        HeartConfig::Instance()-&gt;SetSimulationDuration(3.0);  //ms
+        HeartConfig::Instance()-&gt;SetOutputDirectory("BidomainTutorialWithBath");
+        HeartConfig::Instance()-&gt;SetOutputFilenamePrefix("results");
+
+        HeartConfig::Instance()-&gt;SetOdeTimeStep(0.001);  //ms
+
+        PlaneStimulusCellFactory&lt;LuoRudyIModel1991OdeSystem,2&gt; cell_factory(0.0);
+
+        TrianglesMeshReader&lt;2,2&gt; reader("mesh/test/data/2D_0_to_1mm_400_elements");
+        TetrahedralMesh&lt;2,2&gt; mesh;
+        mesh.ConstructFromMeshReader(reader);
+
+        for(unsigned i=0; i&lt;mesh.GetNumElements(); i++)
+        {
+            double x = mesh.GetElement(i)-&gt;CalculateCentroid()[0];
+            double y = mesh.GetElement(i)-&gt;CalculateCentroid()[1];
+            if( sqrt((x-0.05)*(x-0.05) + (y-0.05)*(y-0.05)) &gt; 0.02 )
+            {
+                mesh.GetElement(i)-&gt;SetRegion(HeartRegionCode::BATH);
+            }
+        }
+
+        //-1e4 is under thershold, -1.4e4 too high - crashes the cell model
+        double magnitude = -1.1e4; // uA/cm^2
+        double duration = 2; //ms
+
+        Electrodes&lt;2&gt; electrodes(mesh, false, 0, 0.0, 0.1, magnitude, duration);
+
+        BidomainProblem&lt;2&gt; bidomain_problem( &amp;cell_factory, true );
+
+        bidomain_problem.SetMesh(&amp;mesh);
+        bidomain_problem.SetElectrodes(electrodes);
+
+        bidomain_problem.ConvertOutputToMeshalyzerFormat(true);
+        bidomain_problem.Initialise();
+        bidomain_problem.Solve();
+
+        Vec solution = bidomain_problem.GetSolution(); // the Vs and phi_e's, as a PetSc vector
+        ReplicatableVector solution_repl(solution);
+
+        bool ap_triggered = false;
+        for(unsigned i=0; i&lt;mesh.GetNumNodes(); i++)
+        {
+            if (mesh.GetNode(i)-&gt;GetRegion()==HeartRegionCode::TISSUE)
+            {
+                if (solution_repl[2*i] &gt; 0.0) // 2*i, ie the voltage for this node (would be 2*i+1 for phi_e for this node)
+                {
+                    ap_triggered = true;
+                }
+            }
+        }
+        TS_ASSERT(ap_triggered);
+    }
+};
+
+</pre></div>
+        
+        
+      </div>

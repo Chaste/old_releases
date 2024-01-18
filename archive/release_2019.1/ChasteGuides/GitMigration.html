@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/GitMigration - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="GitandCmakeMigration">Git and Cmake Migration</h1>
+<p>
+We are planning to change a number of major Chaste infrastructure components in the next few months. These include:
+</p>
+<ul><li>Changing to a version control system based on Git rather than the current Subversion (See <a class="missing ticket">#2655</a>)
+</li><li>Implementation of a CMake build system, instead of the current Scons (See <a class="missing ticket">#2656</a>)
+</li><li>replacing the current continuous integration and testing scripts with a Buildbot system (See <a class="missing ticket">#2656</a>)
+</li></ul><p>
+This page will collate some of the information and guides related to the changes mentioned above.
+</p>
+<p>
+Chaste Stakeholder Meeting Slides:
+</p>
+<ul><li><a class="attachment" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/chaste_infrastructure.pdf" title="Attachment 'chaste_infrastructure.pdf' in ChasteGuides/GitMigration">attachment:chaste_infrastructure.pdf</a><a class="trac-rawlink" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/chaste_infrastructure.pdf" title="Download">​</a> for an overview of the migrations.
+</li><li><a class="attachment" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/chaste_stakeholders.pdf" title="Attachment 'chaste_stakeholders.pdf' in ChasteGuides/GitMigration">attachment:chaste_stakeholders.pdf</a><a class="trac-rawlink" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/chaste_stakeholders.pdf" title="Download">​</a> for <a class="missing wiki">Git/Trac/Buildbot?</a> links + CMake roadmap
+</li></ul><h2 id="CMake">CMake</h2>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/CmakeBuildGuide.html">CMake build guide</a>
+</li></ul><h2 id="Git">Git</h2>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitGuide.html">Internal Git for Chaste developers guide</a>
+</li><li>Chaste Git tutorial slides <a class="attachment" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/git_slides.2.pdf" title="Attachment 'git_slides.2.pdf' in ChasteGuides/GitMigration">attachment:git_slides.2.pdf</a><a class="trac-rawlink" href="/chaste/tutorials/release_2019.1/ChasteGuides/GitMigration/git_slides.2.pdf" title="Download">​</a>
+</li><li><a class="ext-link" href="https://github.com/martinjrobins/exercise"><span class="icon">​</span>Chaste Git Tutorial exercises</a>
+</li><li>Other resourse for learning about Git:
+<ul><li><a class="ext-link" href="http://git-scm.com/doc"><span class="icon">​</span>Official Git documentation and book</a>
+</li><li><a class="ext-link" href="https://www.atlassian.com/git/tutorials"><span class="icon">​</span>Atlassian tutorials</a>
+</li><li><a class="ext-link" href="http://swcarpentry.github.io/git-novice"><span class="icon">​</span>Software Carpentry Foundation tutorial</a>
+</li><li><a class="ext-link" href="https://www.git-tower.com/blog/git-for-subversion-users-cheat-sheet/"><span class="icon">​</span>Git For Subversion cheat sheet</a> 
+</li><li><a class="ext-link" href="https://wisevishvesh.files.wordpress.com/2010/09/git-cheat-sheet-large.png?w=1250"><span class="icon">​</span>Git cheat sheet</a>
+</li></ul></li><li>Main Chaste repositories (clone repo using <tt>git clone &lt;url&gt;</tt>)
+<ul><li><a href="https://chaste.cs.ox.ac.uk/git/chaste.git">https://chaste.cs.ox.ac.uk/git/chaste.git</a> -- New Chaste repository for development, only contains history since Version 3.0
+</li><li><a href="https://chaste.cs.ox.ac.uk/git/chaste_history.git">https://chaste.cs.ox.ac.uk/git/chaste_history.git</a> -- Full Chaste repository, contains all history
+</li><li><a href="https://chaste.cs.ox.ac.uk/git/project/">https://chaste.cs.ox.ac.uk/git/project/</a>&lt;your_project_name_here&gt;.git -- Project repositories
+</li></ul></li></ul><h2 id="Buildbot">Buildbot</h2>
+<p>
+Buildbot is the new test system built on cmake and git.
+</p>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/BuildBot.html">trac wiki page for the buildbot setup</a>
+</li></ul><ul><li><a class="ext-link" href="http://docs.buildbot.net/0.8.8/manual/cfg-statustargets.html#buildbot-web-resources"><span class="icon">​</span>Buildbot (v0.8.8) web server documentation</a>
+</li></ul><ul><li>Test results:
+<ul><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?failures_only=true&amp;reload=60">Failing</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=continuous&amp;reload=60">Continuous</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=nightly&amp;reload=60">Nightly</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=lofty&amp;reload=60">Lofty</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=weekly&amp;reload=60">Weekly</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?reload=60">Full waterfall, refresh every 60s</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot">Buildbot homepage</a>
+</li></ul></li></ul><h2 id="Tract">Tract</h2>
+<p>
+Not too many changes!
+</p>
+<ul><li>Note: to refer to a changeset on tickets, instead of typing <tt>r12345</tt> we now type <tt>[changeset:88cdb33/git_repo]</tt>.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

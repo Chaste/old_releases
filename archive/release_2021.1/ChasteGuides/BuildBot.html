@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/BuildBot - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ChasteBuildbotSetup">Chaste Buildbot Setup</h1>
+<p>
+Buildbot is the new test system built on Cmake and git. We use buildbot version 0.8.8, and you can see the official documentation <a class="ext-link" href="http://docs.buildbot.net/0.8.8/manual/"><span class="icon">​</span>here</a>.
+</p>
+<p>
+Local developers can see <a class="forbidden wiki" title="no permission to view this wiki page">ChasteAdmin/AutomatedBuilds</a> for detail of more advances configuration options.
+</p>
+<h2 id="TestResultsWebpage">Test Results Webpage</h2>
+<p>
+The landing page for the Chaste test results is <a href="https://chaste.cs.ox.ac.uk/buildbot">here</a>. The main feature of this website is the <a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall">waterfall</a>, which shows the current status (as well as complete history) of all the test builders. Clicking on the "waterfall help" link on the top right hand side of the waterfall will take you to a useful help page for the waterfall, which will show you how to customise what the waterfall shows you. As an example, below are a few links that customise the waterfall in various ways:
+</p>
+<ul><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?failures_only=true&amp;reload=60">Show failing tests</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=continuous&amp;reload=60">Show Continuous tests</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=nightly&amp;reload=60">Show Nightly tests</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=portability&amp;reload=60">Show Portability tests</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?category=weekly&amp;reload=60">Show Weekly tests</a>
+</li><li><a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall?reload=60">Full waterfall, refresh every 60s</a>
+</li></ul><h2 id="Reproducingatestfailure">Reproducing a test failure</h2>
+<p>
+If all the "last build" tabs are green, then relax! If not, then you might want to investigate why a particular test failed. 
+</p>
+<p>
+First click on the link in the red "last build" tab that you wish to debug, this will give you a complete history for that particular test builder. Then click on the latest build number link under the "Recent Builds" heading, this will take you to the most recent test run that failed. 
+</p>
+<p>
+This page has a lot of information which will help you to debug what went wrong with the test. Down the bottom you can see the list of <strong>changes</strong> since the last build (one of these changes might have caused the test to fail). On the right hand side of the page you will see a list of <strong>build properties</strong>. Many of these are just internal properties used in the Buildbot setup, but you should make note of these important build properties:
+</p>
+<ul><li><strong>compiler</strong> = the compiler used
+</li><li><strong>config</strong> = the CMake build type (Release, Debug etc)
+</li><li><strong>revision</strong> = the git revision number being tested
+</li><li><strong>slavename</strong> = the machine running the test
+</li><li><strong>workdir</strong> = the directory on the slave where the test is being run
+</li></ul><p>
+Each builder is made up of one or more build <strong>steps</strong>. A step might be something like "configure" (i.e. run <tt>CMake</tt>) or "compile" (i.e. run <tt>make</tt>), or "test" (i.e. run <tt>ctest</tt>). See the wiki page on the CMake build system for more information on these steps. Basically each step of the test builder is something that you, as a user, might type into the command-line to perform an action. Each step of the most recent build will be colored green (succeeded), orange (warnings detected) or red (failed). You will probably want to focus on the steps that have failed (which will cause the build as a whole to fail).
+</p>
+<p>
+In the most common case, the <tt>test</tt> step (i.e. the step that runs <tt>ctest</tt>) will be the source of the failure. In this case, click on the <tt>stdio</tt> link under this step. This takes you to the full command-line output for the <tt>test</tt> step. Right at the top of the page (in blue text) you can see the command that buildbot has run, along with all the environment variables that were set. Below this is the output of this command, which is the normal output that <tt>ctest</tt> gives you. Locate which test has failed and the failure message that is given. 
+</p>
+<p>
+This failure message, along with the build properties and changes mentioned above, should normally be enough information to allow you to checkout the correct version of the code onto your local machine, compile it in a similar fashion to the slave that ran the test and allow you to trip the same error, therefore allowing you to start debugging normally. However, if you don't get the same error as the slave, then the problem might be machine-specific (i.e. only occurs on that particular slave), in which case read on...
+</p>
+<h3 id="Machine-specificfailures">Machine-specific failures</h3>
+<p>
+Machine-specific failures often fall into two different categories. The failure might be caused due to the CMake configuration getting into an erroneous state, or it could be something wrong with how the particular slave is setup.
+</p>
+<p>
+If you suspect the first case, the simplest solution is to delete the CMake cache file on the slave, and force a new build, which will re-configure the builder with a fresh cache.
+</p>
+<ol><li>First, make a note of the <strong>slavename</strong> build property on the failing build, then navigate to the webpage for the builder that has failed (if you are on the build webpage, this will be the link in the heading <tt>Builder &lt;builder name here&gt; Build #&lt;number&gt;</tt> up the top of the page). 
+</li><li>On the RHS of the builder webpage will be a heading "Force build" (if this does not appear, then make sure you are logged in). 
+</li><li>Now, change the "slavename" pull down list to the slavename that ran the failing build, and ensure that the "reconfigure" checkbox is ticked. Then click the "Force Build" button. 
+</li></ol><p>
+This will kick off a new build on that slave, and will re-configure the build directory with a fresh cache. Hopefully this fixes your problem!!
+ 
+If not, then the problem might be the setup on the slave machine. To reproduce this, it is likely that you will need to <tt>ssh</tt> into the slave in question, so make sure you have permissions to do this. 
+</p>
+<ol><li>The machine name of the slave in question is its slavename minus the final "-slave". First ssh into this machine, and checkout the version of the code that has failed. 
+</li><li>Then, go back to the build webpage and make a note of all the steps that the build went through. For each step you can click on the <tt>stdout</tt> link to get the command that the slave used, and the environment variables that were set. 
+</li><li>Go through and reproduce all of the steps manually on the slave
+</li></ol><p>
+This should hopefully trip the same error. Then go through your normally debugging procedure to fix the problem. 
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

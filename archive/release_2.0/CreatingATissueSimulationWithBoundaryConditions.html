@@ -1,0 +1,401 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> CreatingATissueSimulationWithBoundaryConditions tutorial file </h1>      </div>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/cgi-bin/trac.cgi/wiki/UserTutorials">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CreatingATissueSimulationWithBoundaryConditions" href="/cgi-bin/trac.cgi/wiki/UserTutorials/CreatingATissueSimulationWithBoundaryConditions">CreatingATissueSimulationWithBoundaryConditions</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingATissueSimulationWithBoundaryConditionsTutorial.hpp at revision <a class="missing changeset">r8279</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateatissuesimulationwithboundaryconditions">An example showing how to create a tissue simulation with boundary conditions</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how to create a new tissue simulation class in which cells
+are constrained to lie within a fixed domain.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+The first thing to do is include the following header, which allows us
+to use certain methods in our test (this header file should be included
+in any Chaste test):
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+</pre></div><p>
+The next header defines a base class for tissue simulations, from which
+the new class will inherit. 
+</p>
+<div class="code"><pre>#include "TissueSimulation.hpp"
+</pre></div><p>
+The remaining header files define classes that will be used in the tissue
+simulation test: <tt>HoneycombMeshGenerator</tt> defines a helper class for
+generating a suitable mesh;  <tt>CellsGenerator</tt>
+defines a helper class for generating a vector of cells and
+<tt>FixedDurationGenerationBasedCellCycleModel</tt> makes them have fixed cell
+cycle models; <tt>GeneralisedLinearSpringForce</tt> defines a force law for
+describing the mechanical interactions between neighbouring cells in the
+tissue; and <tt>TissueSimulation</tt> defines the class that simulates the
+evolution of a tissue. 
+</p>
+<div class="code"><pre>#include "HoneycombMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+</pre></div><h2 id="Definingthetissuesimulationclass">Defining the tissue simulation class</h2>
+<p>
+As an example, let us consider a two-dimensional tissue simulation in which
+all cells are constrained to lie within the domain given in Cartesian coordinates
+by 0 &lt;= y &lt;= 5. To implement this we define a tissue simulation class,
+<tt>MyTissueSimulation</tt>, which inherits from <tt>TissueSimulation</tt> and overrides
+the <tt>ApplyTissueBoundaryConditions()</tt> method.
+</p>
+<div class="code"><pre>class MyTissueSimulation : public TissueSimulation&lt;2&gt;
+{
+</pre></div><p>
+The first public method is a default constructor, which just calls the base
+constructor. There are four input argument: a reference to a tissue object,
+<tt>rTissue</tt>; a collection of force laws governing tissue mechanics,
+<tt>forceCollection</tt>; an optional flag, <tt>deleteTissueAndForceCollection</tt>,
+telling the simulation whether to delete the tissue and force collection
+on destruction to free up memory; and another optional flag, <tt>initialiseCells</tt>,
+telling the simulation whether to initialise cells. 
+</p>
+<div class="code"><pre>public:
+    MyTissueSimulation(AbstractTissue&lt;2&gt;&amp; rTissue,
+                       std::vector&lt;AbstractForce&lt;2&gt;*&gt; forceCollection,
+                       bool deleteTissueAndForceCollection=false,
+                       bool initialiseCells=true)
+        : TissueSimulation&lt;2&gt;(rTissue, forceCollection, deleteTissueAndForceCollection, initialiseCells)
+    {
+    }
+</pre></div><p>
+The second public method overrides <tt>ApplyTissueBoundaryConditions()</tt>.
+This method is called during the <tt>Solve()</tt> method at the end of each
+timestep, just after the position of each node in the tissue has been
+updated according to its equation of motion. We iterate over all nodes
+associated with real cells and update their positions according to any
+boundary conditions. In our case, this means that if any node moves
+This method iterates over all cells in the tissue, and calls <tt>Kill()</tt> on
+any cell whose centre has y coordinate less than 0 or greater than 5. 
+</p>
+<div class="code"><pre>    void ApplyTissueBoundaryConditions(const std::vector&lt;c_vector&lt;double,2&gt; &gt;&amp; rOldLocations)
+    {
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = mrTissue.Begin();
+             cell_iter != mrTissue.End();
+             ++cell_iter)
+        {
+            c_vector&lt;double, 2&gt; cell_location = mrTissue.GetLocationOfCellCentre(*cell_iter);
+            unsigned node_index = mrTissue.GetLocationIndexUsingCell(*cell_iter);
+            Node&lt;2&gt;* p_node = mrTissue.GetNode(node_index);
+            if (cell_location[1] &gt; 5.0)
+            {
+                p_node-&gt;rGetModifiableLocation()[1] = 5.0;
+            }
+            else if (cell_location[1] &lt; 0.0)
+            {
+                p_node-&gt;rGetModifiableLocation()[1] = 0.0;
+            }
+            assert(p_node-&gt;rGetLocation()[1] &lt;= 5.0);
+            assert(p_node-&gt;rGetLocation()[1] &gt;= 0.0);
+        }
+    }
+};
+</pre></div><p>
+You only need to include the next block of code if you want to be able to
+archive (save or load) the tissue simulation. We start by including a
+serialization header, then define <tt>save_construct_data</tt> and
+<tt>load_construct_data</tt> methods, which archive the tissue simulation
+constructor input argument(s) (in this case, a tissue and a collection of
+force laws). 
+</p>
+<div class="code"><pre>#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyTissueSimulation)
+namespace boost
+{
+    namespace serialization
+    {
+        template&lt;class Archive&gt;
+        inline void save_construct_data(
+            Archive &amp; ar, const MyTissueSimulation * t, const BOOST_PFTO unsigned int file_version)
+        {
+            // Save data required to construct instance
+            const AbstractTissue&lt;2&gt; * p_tissue = &amp;(t-&gt;rGetTissue());
+            ar &amp; p_tissue;
+            const std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection = t-&gt;rGetForceCollection();
+            ar &amp; force_collection;
+        }
+        template&lt;class Archive&gt;
+        inline void load_construct_data(
+            Archive &amp; ar, MyTissueSimulation * t, const unsigned int file_version)
+        {
+            // Retrieve data from archive required to construct new instance
+            AbstractTissue&lt;2&gt;* p_tissue;
+            ar &gt;&gt; p_tissue;
+            std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+            ar &gt;&gt; force_collection;
+            // Invoke inplace constructor to initialise instance
+            ::new(t)MyTissueSimulation(*p_tissue, force_collection, true, false);
+        }
+    }
+}
+</pre></div><p>
+This completes the code for <tt>MyTissueSimulation</tt>. Note that usually this code
+would be separated out into a separate declaration in a .hpp file and definition
+in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre>class TestCreatingATissueSimulationWithBoundaryConditionsTutorial : public CxxTest::TestSuite
+{
+public:
+</pre></div><h2 id="Testingthetissuesimulation">Testing the tissue simulation</h2>
+<p>
+We now test that our new tissue simulation is implemented correctly.
+</p>
+<div class="code"><pre>    void TestMyTissueSimulation() throw(Exception)
+    {
+</pre></div><p>
+The first thing to do, as before, is to set up the start time and
+reset the parameters. 
+</p>
+<div class="code"><pre>        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh. 
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator(5, 5, 0, false);
+</pre></div><p>
+Get the mesh using the <tt>GetMesh()</tt> method. 
+</p>
+<div class="code"><pre>        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>TissueCell</tt>s.
+To do this, we can use a static method on the <tt>CellsGenerator</tt> helper class.
+The <tt>&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt;</tt> defines the
+cell-cycle model and that it is in 2d. We create an empty vector of cells
+and pass this into the method along with the mesh. The <tt>cells</tt> vector is
+populated once the method <tt>GenerateBasic</tt> is called. 
+</p>
+<div class="code"><pre>        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the tissue. The
+constructor takes in the mesh and the cells vector. 
+</p>
+<div class="code"><pre>        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of
+the tissue. For this test, we assume that a cell experiences a force from each
+neighbour that can be represented as a linear overdamped spring, and so use
+a <tt>GeneralisedLinearSpringForce</tt> object. We pass a pointer to this force
+into a vector. Note that we have called the method <tt>UseCutoffPoint</tt> on the
+<tt>GeneralisedLinearSpringForce</tt> before passing it into the collection of force
+laws - this modifies the force law so that two neighbouring cells do not impose
+a force on each other if they are located more than 3 units (=3 cell widths)
+away from each other. This modification is necessary when no ghost nodes are used,
+for example to avoid artificially large forces between cells that lie close together
+on the tissue boundary.
+</p>
+<div class="code"><pre>        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+</pre></div><p>
+We pass in the tissue and the mechanics system into a <tt>TissueSimulation</tt>. 
+</p>
+<div class="code"><pre>        MyTissueSimulation simulator(tissue, force_collection);
+</pre></div><p>
+We set the output directory and end time. 
+</p>
+<div class="code"><pre>        simulator.SetOutputDirectory("TestMyTissueSimulation");
+        simulator.SetEndTime(30.0);
+</pre></div><p>
+Test that the Solve() method does not throw any exceptions: 
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+</pre></div><p>
+Test that the boundary conditions have been implemented properly: 
+</p>
+<div class="code"><pre>        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = simulator.rGetTissue().Begin();
+             cell_iter != simulator.rGetTissue().End();
+             ++cell_iter)
+        {
+            unsigned node_index = simulator.rGetTissue().GetLocationIndexUsingCell(*cell_iter);
+            Node&lt;2&gt;* p_node = simulator.rGetTissue().GetNode(node_index);
+            TS_ASSERT_LESS_THAN_EQUALS(p_node-&gt;rGetModifiableLocation()[1], 5.0);
+            TS_ASSERT_LESS_THAN_EQUALS(0.0, p_node-&gt;rGetModifiableLocation()[1]);
+        }
+</pre></div><p>
+We conclude the test by calling <tt>Destroy()</tt> on any singleton classes. 
+</p>
+<div class="code"><pre>        SimulationTime::Destroy();
+    }
+};
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+
+#include "TissueSimulation.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+
+class MyTissueSimulation : public TissueSimulation&lt;2&gt;
+{
+public:
+
+    MyTissueSimulation(AbstractTissue&lt;2&gt;&amp; rTissue,
+                       std::vector&lt;AbstractForce&lt;2&gt;*&gt; forceCollection,
+                       bool deleteTissueAndForceCollection=false,
+                       bool initialiseCells=true)
+        : TissueSimulation&lt;2&gt;(rTissue, forceCollection, deleteTissueAndForceCollection, initialiseCells)
+    {
+    }
+
+    void ApplyTissueBoundaryConditions(const std::vector&lt;c_vector&lt;double,2&gt; &gt;&amp; rOldLocations)
+    {
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = mrTissue.Begin();
+             cell_iter != mrTissue.End();
+             ++cell_iter)
+        {
+            c_vector&lt;double, 2&gt; cell_location = mrTissue.GetLocationOfCellCentre(*cell_iter);
+
+            unsigned node_index = mrTissue.GetLocationIndexUsingCell(*cell_iter);
+            Node&lt;2&gt;* p_node = mrTissue.GetNode(node_index);
+
+            if (cell_location[1] &gt; 5.0)
+            {
+                p_node-&gt;rGetModifiableLocation()[1] = 5.0;
+            }
+            else if (cell_location[1] &lt; 0.0)
+            {
+                p_node-&gt;rGetModifiableLocation()[1] = 0.0;
+            }
+
+            assert(p_node-&gt;rGetLocation()[1] &lt;= 5.0);
+            assert(p_node-&gt;rGetLocation()[1] &gt;= 0.0);
+        }
+    }
+};
+
+#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyTissueSimulation)
+
+namespace boost
+{
+    namespace serialization
+    {
+        template&lt;class Archive&gt;
+        inline void save_construct_data(
+            Archive &amp; ar, const MyTissueSimulation * t, const BOOST_PFTO unsigned int file_version)
+        {
+            // Save data required to construct instance
+            const AbstractTissue&lt;2&gt; * p_tissue = &amp;(t-&gt;rGetTissue());
+            ar &amp; p_tissue;
+            const std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection = t-&gt;rGetForceCollection();
+            ar &amp; force_collection;
+        }
+
+        template&lt;class Archive&gt;
+        inline void load_construct_data(
+            Archive &amp; ar, MyTissueSimulation * t, const unsigned int file_version)
+        {
+            // Retrieve data from archive required to construct new instance
+            AbstractTissue&lt;2&gt;* p_tissue;
+            ar &gt;&gt; p_tissue;
+            std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+            ar &gt;&gt; force_collection;
+
+            // Invoke inplace constructor to initialise instance
+            ::new(t)MyTissueSimulation(*p_tissue, force_collection, true, false);
+        }
+    }
+}
+
+class TestCreatingATissueSimulationWithBoundaryConditionsTutorial : public CxxTest::TestSuite
+{
+public:
+
+    void TestMyTissueSimulation() throw(Exception)
+    {
+        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+
+        HoneycombMeshGenerator generator(5, 5, 0, false);
+        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+
+        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+
+        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+
+        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+
+        MyTissueSimulation simulator(tissue, force_collection);
+
+        simulator.SetOutputDirectory("TestMyTissueSimulation");
+        simulator.SetEndTime(30.0);
+
+        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = simulator.rGetTissue().Begin();
+             cell_iter != simulator.rGetTissue().End();
+             ++cell_iter)
+        {
+            unsigned node_index = simulator.rGetTissue().GetLocationIndexUsingCell(*cell_iter);
+            Node&lt;2&gt;* p_node = simulator.rGetTissue().GetNode(node_index);
+
+            TS_ASSERT_LESS_THAN_EQUALS(p_node-&gt;rGetModifiableLocation()[1], 5.0);
+            TS_ASSERT_LESS_THAN_EQUALS(0.0, p_node-&gt;rGetModifiableLocation()[1]);
+        }
+
+        SimulationTime::Destroy();
+    }
+};
+
+</pre></div>
+        
+        
+      </div>

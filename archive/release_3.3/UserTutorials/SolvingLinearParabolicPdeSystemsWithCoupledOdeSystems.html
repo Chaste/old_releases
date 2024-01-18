@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SolvingLinearParabolicPdeSystemsWithCoupledOdeSystems - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/pde/test/tutorials/TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="ExamplesshowinghowtosolveasystemofcoupledlinearparabolicPDEsandODEs">Examples showing how to solve a system of coupled linear parabolic PDEs and ODEs</h1>
+<p>
+In this tutorial we show how Chaste can be used to solve a system of coupled linear
+parabolic PDEs and ODEs. This test uses the <tt>LinearParabolicPdeSystemWithCoupledOdeSystemSolver</tt>.
+</p>
+<p>
+The following header files need to be included.
+First we include the header needed to define this class as a test suite.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+On some systems there is a clash between Boost Ublas includes and PETSc.  This can be
+resolved by making sure that Chaste's interface to the Boost libraries are included
+as early as possible.
+</p>
+<div class="code"><pre><span class="cp">#include "UblasIncludes.hpp"
+</span></pre></div><p>
+This is the class that is needed to solve a system of coupled linear
+parabolic PDEs and ODEs.
+</p>
+<div class="code"><pre><span class="cp">#include "LinearParabolicPdeSystemWithCoupledOdeSystemSolver.hpp"
+</span></pre></div><p>
+The next header file defines the Schnackenberg system, which comprises
+two reaction-diffusion PDEs that are coupled through their reaction terms.
+</p>
+<div class="code"><pre><span class="cp">#include "SchnackenbergCoupledPdeSystem.hpp"
+</span></pre></div><p>
+The next header file will allow us to specify a random initial condition.
+</p>
+<div class="code"><pre><span class="cp">#include "RandomNumberGenerator.hpp"
+</span></pre></div><p>
+We then include header files that allow us to specify boundary conditions for the PDEs,
+deal with meshes and output files, and use PETSc. As noted before, PetscSetupAndFinalize.hpp
+must be included in every test that uses PETSc.
+</p>
+<div class="code"><pre><span class="cp">#include "BoundaryConditionsContainer.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "OutputFileHandler.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><h2 id="Test1:SolvingtheSchnackenbergsystem">Test 1: Solving the Schnackenberg system</h2>
+<p>
+Here, we solve the Schnackenberg system of PDEs, given by
+</p>
+<p>
+u<sub>t</sub> = div(D1 grad u) + k<sub>1</sub> - k<sub>-1</sub>*u + k<sub>3</sub>u<sup>2</sup>v,
+v<sub>t</sub> = div(D2 grad v) + k<sub>2</sub> - k<sub>3</sub>u<sup>2</sup>v,
+</p>
+<p>
+on a 2d butterfly-shaped domain. We impose non-zero Dirichlet
+boundary conditions and an initial condition that is a random
+perturbation of the spatially uniform steady state of the
+system.
+</p>
+<p>
+To do this we define the test suite (a class). It is sensible to name it the same
+as the filename. The class should inherit from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+</pre></div><p>
+All individual tests defined in this test suite <strong>must</strong> be declared as public.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+</pre></div><p>
+Define a particular test.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSchnackenbergSystemOnButterflyMesh</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+As usual, we first create a mesh. Here we are using a 2d mesh of a butterfly-shaped domain.
+</p>
+<div class="code"><pre>        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"mesh/test/data/butterfly"</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+
+</pre></div><p>
+We scale the mesh to an appropriate size.
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>Scale<span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+</pre></div><p>
+Next, we instantiate the PDE system to be solved. We pass the parameter values into the
+constructor.  (The order is D<sub>1</sub>  D<sub>2</sub>  k<sub>1</sub>  k<sub>-1</sub>  k<sub>2</sub>  k<sub>3</sub>)
+</p>
+<div class="code"><pre>        SchnackenbergCoupledPdeSystem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde<span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+Then we have to define the boundary conditions. As we are in 2d, <tt>SPACE_DIM</tt>=2 and
+<tt>ELEMENT_DIM</tt>=2. We also have two unknowns u and v,
+so in this case <tt>PROBLEM_DIM</tt>=2. The value of each boundary condition is
+given by the spatially uniform steady state solution of the Schnackenberg system,
+given by u = (k<sub>1</sub> + k<sub>2</sub>)/k<sub>-1</sub>, v = k<sub>2</sub>k<sub>-1</sub><sup>2</sup>/k<sub>3</sub>(k<sub>1</sub> + k<sub>2</sub>)<sup>2</sup>.
+</p>
+<div class="code"><pre>        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc_for_u <span class="o">=</span> <span class="k">new</span> ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc_for_v <span class="o">=</span> <span class="k">new</span> ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.75</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_bc_for_u<span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+            bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_bc_for_v<span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+This is the solver for solving coupled systems of linear parabolic PDEs and ODEs,
+which takes in the mesh, the PDE system, the boundary conditions and optionally
+a vector of ODE systems (one for each node in the mesh). Since in this example
+we are solving a system of coupled PDEs only, we do not supply this last argument.
+</p>
+<div class="code"><pre>        LinearParabolicPdeSystemWithCoupledOdeSystemSolver<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span> <span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bcc<span class="p">);</span>
+
+</pre></div><p>
+Then we set the end time and time step and the output directory to which results will be written.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> t_end <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+        solver<span class="p">.</span>SetTimes<span class="p">(</span><span class="mi">0</span><span class="p">,</span> t_end<span class="p">);</span>
+        solver<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">1e-1</span><span class="p">);</span>
+        solver<span class="p">.</span>SetSamplingTimeStep<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        solver<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestSchnackenbergSystemOnButterflyMesh"</span><span class="p">);</span>
+
+</pre></div><p>
+We create a vector of initial conditions for u and v that are random perturbations
+of the spatially uniform steady state and pass this to the solver.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> init_conds<span class="p">(</span><span class="mi">2</span><span class="o">*</span>mesh<span class="p">.</span>GetNumNodes<span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            init_conds<span class="p">[</span><span class="mi">2</span><span class="o">*</span>i<span class="p">]</span> <span class="o">=</span> fabs<span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            init_conds<span class="p">[</span><span class="mi">2</span><span class="o">*</span>i <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> fabs<span class="p">(</span><span class="mf">0.75</span> <span class="o">+</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+        Vec initial_condition <span class="o">=</span> PetscTools<span class="o">::</span>CreateVec<span class="p">(</span>init_conds<span class="p">);</span>
+        solver<span class="p">.</span>SetInitialCondition<span class="p">(</span>initial_condition<span class="p">);</span>
+
+</pre></div><p>
+We now solve the PDE system and write results to VTK files, for
+visualization using Paraview.  Results will be written to CHASTE_TEST_OUTPUT/TestSchnackenbergSystemOnButterflyMesh
+as a results.pvd file and several results_[time].vtu files.
+You should see something like <a style="padding:0; border:none" href="/chaste/tutorials/release_3.3/UserTutorials/SolvingLinearParabolicPdeSystemsWithCoupledOdeSystems/u.png"><img width="350px" src="/chaste/tutorials/release_3.3/UserTutorials/SolvingLinearParabolicPdeSystemsWithCoupledOdeSystems/u.png" /></a> for u and <a style="padding:0; border:none" href="/chaste/tutorials/release_3.3/UserTutorials/SolvingLinearParabolicPdeSystemsWithCoupledOdeSystems/v.png"><img width="350px" src="/chaste/tutorials/release_3.3/UserTutorials/SolvingLinearParabolicPdeSystemsWithCoupledOdeSystems/v.png" /></a> for v.
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>SolveAndWriteResultsToFile<span class="p">();</span>
+
+</pre></div><p>
+All PETSc <tt>Vec</tt>s should be destroyed when they are no longer needed.
+</p>
+<div class="code"><pre>        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>initial_condition<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp">File name <tt>TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "UblasIncludes.hpp"
+#include "LinearParabolicPdeSystemWithCoupledOdeSystemSolver.hpp"
+#include "SchnackenbergCoupledPdeSystem.hpp"
+#include "RandomNumberGenerator.hpp"
+#include "BoundaryConditionsContainer.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "OutputFileHandler.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestSolvingLinearParabolicPdeSystemsWithCoupledOdeSystemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSchnackenbergSystemOnButterflyMesh<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"mesh/test/data/butterfly"</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+
+        mesh<span class="p">.</span>Scale<span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+        SchnackenbergCoupledPdeSystem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde<span class="p">(</span><span class="mf">1e-4</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc_for_u <span class="o">=</span> <span class="k">new</span> ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc_for_v <span class="o">=</span> <span class="k">new</span> ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.75</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_bc_for_u<span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+            bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_bc_for_v<span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        LinearParabolicPdeSystemWithCoupledOdeSystemSolver<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span> <span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bcc<span class="p">);</span>
+
+        <span class="kt">double</span> t_end <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+        solver<span class="p">.</span>SetTimes<span class="p">(</span><span class="mi">0</span><span class="p">,</span> t_end<span class="p">);</span>
+        solver<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">1e-1</span><span class="p">);</span>
+        solver<span class="p">.</span>SetSamplingTimeStep<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        solver<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestSchnackenbergSystemOnButterflyMesh"</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> init_conds<span class="p">(</span><span class="mi">2</span><span class="o">*</span>mesh<span class="p">.</span>GetNumNodes<span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            init_conds<span class="p">[</span><span class="mi">2</span><span class="o">*</span>i<span class="p">]</span> <span class="o">=</span> fabs<span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            init_conds<span class="p">[</span><span class="mi">2</span><span class="o">*</span>i <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> fabs<span class="p">(</span><span class="mf">0.75</span> <span class="o">+</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+        Vec initial_condition <span class="o">=</span> PetscTools<span class="o">::</span>CreateVec<span class="p">(</span>init_conds<span class="p">);</span>
+        solver<span class="p">.</span>SetInitialCondition<span class="p">(</span>initial_condition<span class="p">);</span>
+
+        solver<span class="p">.</span>SolveAndWriteResultsToFile<span class="p">();</span>
+
+        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>initial_condition<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

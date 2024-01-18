@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Comlab - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonOxfordUniversityComputingLaboratorymachines">Installing Chaste on Oxford University Computing Laboratory machines</h1>
+<p>
+Last updated September 2013 for Fedora 18.
+</p>
+<h2 id="Wheretoinstall">Where to install</h2>
+<p>
+We will install everything to <tt>/home/scratch/</tt> as this is a local drive with plenty of space. Make a <tt>chaste-libs</tt> folder and set its path as an environment variable:
+</p>
+<pre class="wiki">mkdir /home/scratch/chaste-libs
+export base='/home/scratch/chaste-libs'
+</pre><h2 id="ccachedirectory">ccache directory</h2>
+<p>
+By default, ccache is installed and the directory is set to <tt>~/.ccache</tt>. As a network location this is very slow! Enter the following lines into a terminal to make a new folder in <tt>/home/scratch</tt>, delete <tt>~/.ccache</tt> if it exists, and redirect it to the new one using a symbolic link.
+</p>
+<pre class="wiki">mkdir /home/scratch/.ccache
+rm -rf ~/.ccache
+ln -s /home/scratch/.ccache ~/.ccache
+</pre><p>
+Also, you can add the following to the bottom of your <tt>~/.bashrc</tt> to set the ccache directory explicitly:
+</p>
+<pre class="wiki">export CCACHE_DIR=/home/scratch/.ccache
+</pre><p>
+Note that this will cause havoc if you log in to a machine which doesn't have a <tt>/home/scratch</tt> directory.
+</p>
+<h2 id="Fedorapackages">Fedora packages</h2>
+<p>
+A large number of dependencies are available as packages. Some on this list will already be installed.
+</p>
+<pre class="wiki">sudo yum install scons gcc-gfortran gcc-c++ boost-devel boost-serialization valgrind xerces-c-devel xsd subversion eclipse-subclipse eclipse-cdt eclipse-pydev subversion-javahl vtk-devel python-lxml python-amara python-rdflib python-dateutil
+</pre><h2 id="PETSc">PETSc</h2>
+<p>
+The following are slightly modified from the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/InstallGuide#PETSc">PETSc install instructions</a> in the main install guide. Other <a class="ext-link" href="http://www.mcs.anl.gov/petsc/download/index.html"><span class="icon">​</span>versions of PETSc</a> should be very similar, but check compatibility first (<a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a>).
+</p>
+<pre class="wiki">cd $base
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.4.5.tar.gz
+tar xzvf petsc-lite-3.4.5.tar.gz
+rm -f petsc-lite-3.4.5.tar.gz
+cd petsc-3.4.5/
+
+export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu
+./config/configure.py --download-fblaslapack --download-mpich --download-hdf5 --download-parmetis --download-metis --download-sundials --download-hypre --with-x=false --with-clanguage=cxx --with-shared-libraries
+make all
+</pre><p>
+We recommend you also make an optimised build.
+</p>
+<pre class="wiki">export PETSC_ARCH=linux-gnu-opt
+./config/configure.py --download-fblaslapack --download-mpich --download-hdf5 --download-parmetis --download-metis --download-sundials --download-hypre --with-x=false --with-clanguage=cxx --with-shared-libraries --CXXOPTFLAGS="-O3" --COPTFLAGS="-O3" --with-debugging=0
+make all
+</pre><h2 id="Eclipse">Eclipse</h2>
+<p>
+When you first run eclipse it will ask you to set the workspace location. Set it to <tt>/home/scratch/workspace</tt> and let this be the default every time. On the splash screen go straight to the "workbench" by clicking the button at the top-right.
+</p>
+<p>
+Set preferences:
+</p>
+<ul><li>Unclick Project -&gt; Build Automatically 
+</li><li>In Window-&gt;Preferences:
+<ul><li>Go to General-&gt;Editors-&gt;Text Editors and select "Insert spaces for tabs".  <strong>Please make sure you do this'''
+</strong></li><li>Under C/C++-&gt;Code Style-&gt;Formatter, select 'BSD/Allman', then Edit... and set the Tab policy to 'Spaces only'.    <strong>Please make sure you do this'''  Alter the name of the Profile (e.g.g to "BSD/Allman Chaste") in order to save it.
+</strong></li><li>Other options under C/C++-&gt;Editor are worth browsing through.
+</li></ul></li></ul><h2 id="SetupChaste">Set up Chaste</h2>
+<ul><li>Use these guides to connect Eclipse to the subversion repository and checkout the source code: <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>
+</li><li>You may need to make changes to the <a class="missing wiki">hostconfig system?</a> if you used different versions or paths to the above.  By default computers in the department will automatically pick up <tt>python/hostconfig/machines/comlab.py</tt>, so if you need to make changes either edit this file, or copy it to <tt>python/hostconfig/local.py</tt> and make changes there.
+</li><li>Very often, new users are unable to access the <tt>/python/hostconfig/machines</tt> directory to get the machines file. If this is you, copy and paste the following into <tt>python/hostconfig/local.py</tt> manually:
+<pre class="wiki"># Configuration for machines following Comlab install guide located at
+# https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/Comlab
+
+"""Copyright (c) 2005-2014, University of Oxford.
+All rights reserved.
+
+University of Oxford means the Chancellor, Masters and Scholars of the
+University of Oxford, having an administrative office at Wellington
+Square, Oxford OX1 2JD, UK.
+
+This file is part of Chaste.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+ * Neither the name of the University of Oxford nor the names of its
+   contributors may be used to endorse or promote products derived from this
+   software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
+import os
+
+chaste_libs = '/home/scratch/chaste-libs'
+petsc_path = os.path.join(chaste_libs, 'petsc-3.4.5')
+petsc_build_name = 'linux-gnu'
+petsc_build_name_profile = 'linux-gnu'
+petsc_build_name_optimized = 'linux-gnu-opt'
+
+use_cvode = True
+# Use system VTK
+use_vtk = True
+other_includepaths = ['/usr/include/vtk/']
+other_libpaths = ['/usr/lib64/vtk/']
+
+blas_lapack = ['flapack', 'fblas']
+
+other_libraries = ['boost_system', 'boost_serialization', 'boost_filesystem', 'xerces-c', 'hdf5', 'z', 'parmetis', 'metis']
+other_libraries.append(['vtkCommonCore','vtkCommonDataModel','vtkIOXML','vtkCommonExecutionModel','vtkFiltersCore','vtkFiltersGeometry'])
+other_libraries.append(['sundials_cvode', 'sundials_nvecserial'])
+
+tools = {'xsd': 'xsdcxx'}
+
+def Configure(prefs, build):
+    DetermineCvodeVersion(os.path.join(petsc_path,petsc_build_name,'include'))
+
+</pre></li><li>Happy Chasting!
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

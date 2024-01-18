@@ -1,0 +1,142 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/DeveloperBuildGuide - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/DeveloperBuildGuide" href="/chaste/tutorials/release_3.2/ChasteGuides/DeveloperBuildGuide.html">DeveloperBuildGuide</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="DeveloperBuildGuide">Developer Build Guide</h1>
+<p>
+We use <a class="ext-link" href="http://www.scons.org/"><span class="icon">&nbsp;</span>SCons</a> to control the build process. The <a class="source" href="/trac/browser/trunk/SConstruct">source:trunk/SConstruct</a> file configures what needs to be built, and is worth a look if this document leaves unanswered questions.  The file <a class="source" href="/trac/browser/trunk/python/SConsTools.py">source:trunk/python/SConsTools.py</a> also contains much of the build logic.
+</p>
+<p>
+To start a build, simply run <tt>scons</tt> from within the trunk directory; this will build all Chaste components and run their continuous tests (NB: it does not build user projects). "<tt>scons -c .</tt>" will do a clean build (note the '.' - this is necessary to do a full clean).
+</p>
+<p>
+Other build targets can be selected, rather than just running the default.
+</p>
+<ul><li><tt>scons &lt;component&gt;</tt> build and tests the specified component.
+</li><li><tt>scons projects/&lt;project_name&gt;</tt> build and tests the specified user project.
+</li><li><tt>scons core</tt> will build and test the core components.  As of the time of writing this means global, io, linalg, mesh, ode and pde.
+</li><li><tt>scons .</tt> will build all the Chaste components <strong>and</strong> currently checked out user projects.
+</li><li><tt>scons build=&lt;whatever&gt; chaste_libs=1 exe=1 apps</tt> will build any executables contained in the apps folder.
+</li></ul><p>
+Various options can be passed to customise the build.  Some also have short forms, shown in brackets.
+</p>
+<ul><li>Common options:
+<ul><li><tt>build=&lt;x&gt;</tt> (<tt>b=&lt;x&gt;</tt>) sets what type of build to perform; see 'Build Classes' below.
+</li><li><tt>test_suite=&lt;path&gt;</tt> (<tt>ts=&lt;path&gt;</tt>) can be used to specify the paths to specific test suites to run, instead of running all tests in the default test pack(s). A single test suite may be given, or multiple paths may be separated by commas. The paths should be relative to the top level directory of Chaste (e.g. <tt>test_suite=global/test/TestException.hpp</tt>) or be an absolute path (see <a class="wiki" href="/trac/wiki/MakeEclipseBuildTheTestThatIsOpen">MakeEclipseBuildTheTestThatIsOpen</a>).
+<ul><li>As an alternative to using <tt>test_suite=</tt>, test .hpp files may also be specified directly as arguments to <tt>scons</tt>, e.g. "<tt>scons global/test/TestException.hpp global/test/TestCwd.hpp</tt>".  This makes it easier to use tab completion to specify multiple tests to run.
+</li><li>Subfolders may also be given to select tests therein.  For instance "<tt>scons heart/test/ionicmodels</tt>" will run all the <i>Continuous</i> tests in that folder.
+</li></ul></li><li><tt>compile_only=1</tt> (<tt>co=1</tt>) will just compile test executables without running them.  This is useful for fixing build failures.
+</li><li><tt>all_tests=1</tt> (<tt>at=1</tt>) will select all tests for running.  This is most useful in conjunction with <tt>compile_only=1</tt> to avoid breaking the nightly builds.
+</li><li><tt>chaste_libs=1</tt> (<tt>cl=1</tt>) to compile Chaste as libraries, rather than using fine-grained dependencies for linking (see <a class="missing ticket">#244</a> and <a class="missing ticket">#614</a>).
+</li><li><tt>update_provenance=0</tt> (<tt>up=0</tt>) to not update the provenance information (see <a class="missing ticket">#1026</a> and <a class="source" href="/trac/browser/trunk/global/src/Version.hpp">Version.hpp</a>) - useful to avoid rebuilding if you don't want accurate provenance while developing a feature.
+</li><li><tt>brief=1</tt> (<tt>br=1</tt>) to reduce the length of C++ compilation lines printed by scons.
+</li><li><tt>exe=1</tt> enables building of Chaste executables.
+</li></ul></li><li>Rarer options:
+<ul><li><tt>static=1</tt> to compile the Chaste libraries statically rather than making them shared libraries.  Requires <tt>chaste_libs=1</tt> to be useful.
+</li><li><tt>test_summary=0</tt> will prevent the build summarising the output of any tests run. By default it produces an index.html file in the output directory (the name of which will be printed to stdout in case you are unsure).
+</li><li><tt>run_time_flags="&lt;x&gt;"</tt> will pass a list of flags to the executables in the build.  For example, <tt>run_time_flags="-get_total_flops"</tt> will enable PETSc flop logging. <a class="ext-link" href="http://www.tu-harburg.de/~htmar/petsc_options.html"><span class="icon">&nbsp;</span>More PETSc flags</a>
+</li><li><tt>debug=1</tt> will turn on some limited build script debugging.  It is particularly useful to check your <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>.
+</li><li><tt>acceptance_suite=weekly</tt> will switch the acceptance tests (used with <tt>exe=1</tt> and the <tt>apps</tt> target)
+</li></ul></li><li>Experimental options:
+<ul><li><tt>install_prefix</tt> can be used to specify where to install the Chaste headers and libraries, if the <tt>install</tt> target is given.  See <a class="assigned ticket" href="/trac/ticket/1467" title="user story: Allow Chaste to be installed as a normal collection of libraries and ... (assigned)">#1467</a>.
+</li></ul></li><li>Some options exist for the benefit of the build system:
+<ul><li><tt>revision=&lt;n&gt;</tt> is used by the integration machines to specify what revision of the code is being built.
+</li><li><tt>dyn_libs_only=1</tt> is used by the run-time CellML converter to only compile the cell model.
+</li><li><tt>do_inf_tests=0</tt> will turn off "infrastructure tests" (checking for orphaned tests and duplicate file names).  Passing <tt>1</tt> will turn on extra checks, including checking copyright notices.
+</li><li><tt>check_failing_tests=1</tt> will try running tests in the Failing test pack.
+</li><li><tt>force_test_runs=1</tt> will force re-running of all (selected) tests even if the source is unchanged.
+</li></ul></li></ul><h2 id="BuildClasses">Build Classes</h2>
+<p>
+The <tt>build</tt> argument is used to control what type of build to perform. The different possible values for this option correspond to classes defined in the <a class="source" href="/trac/browser/trunk/python/BuildTypes.py">source:trunk/python/BuildTypes.py</a> file. The GetBuildType function in this module will always have the most up-to-date information on what is available, but a summary is also given here for convenience.
+</p>
+<p>
+Some of the classes (and hence valid values for the <tt>build=&lt;x&gt;</tt> parameter) are:
+</p>
+<ul><li><strong><tt>BuildType</tt></strong>: This is the base class, and uses gcc with lots of warnings turned on.
+</li><li><strong><tt>GccDebug</tt></strong>: Use gcc with debugging turned on (-g flag). This is currently the default.
+</li><li><strong><tt>MemoryTesting</tt></strong>: Use valgrind to check for memory leaks when running tests.
+</li><li><strong><tt>Coverage</tt></strong>: Do coverage testing.  Runs the continuous test pack on both 1 and 2 processors. Note that you can evaluate the coverage of a single test by adding a <tt>test_suite=</tt> option, or of a component or project by giving it as a target (e.g. <tt>scons b=Coverage global</tt>).
+</li><li><strong><tt>DoxygenCoverage</tt></strong>: Test whether every class, method, parameter, etc. have some documentation.  By default it checks the main Chaste components; you can test a project by giving it as a build target (e.g. <tt>scons b=DoxygenCoverage projects/ProjectFolder</tt>).
+</li><li><strong><tt>GccOpt</tt></strong>: Use gcc with some optimisations.
+</li><li><strong><tt>GccOptP4</tt></strong>: Use gcc optimised for Pentium 4.
+</li><li><strong><tt>GccOptNative</tt></strong>: Use gcc optimised for the machine the compilation is performed on.  This may yield better performance than <tt>GccOpt</tt>, but may not work on older versions of gcc.
+</li><li><strong><tt>Intel</tt></strong>: Use the Intel C++ compiler, linker, etc.
+</li><li><strong><tt>IntelNonopt</tt></strong>: Use the Intel compiler with no optimisation.
+</li><li><strong><tt>IntelP4</tt></strong> Use the Intel compiler optimised for Pentium 4.
+</li><li><strong><tt>IntelProduction</tt></strong>: The fastest build (in terms of run time, not compile time) available; requires extra libraries.
+</li><li><strong><tt>Parallel</tt></strong>: Use mpirun with 2 processors. The Parallel TestPack is default.
+</li><li><strong><tt>Profile</tt></strong>: Same as <tt>GccDebug</tt> but uses the gprof CPU profiler and the Profile test pack.
+</li><li><strong><tt>LineProfile</tt></strong>: Same as Profile but generates line-by-line profiling info.
+</li><li><strong><tt>GoogleProfile</tt></strong>: Use the Google Profiler.
+</li></ul><h2 id="BuildOptions">Build Options</h2>
+<p>
+A build type string can be just a class name `build=&lt;x&gt;, in which case that class is used (as above). 
+Certain options can also be specified, separated by an underscore '_'. 
+Some valid values for the <tt>build=&lt;x&gt;_&lt;WhateverOption1&gt;_&lt;WhateverOption2&gt;</tt> options parameters are:
+</p>
+<ul><li><strong><tt>ndebug</tt></strong> to define NDEBUG, turning off assert()s and speeding up ublas,
+</li><li><strong><tt>report</tt></strong> to turn on extra reporting with the Intel compiler,
+</li><li><strong><tt>fpe</tt></strong> to enable specific floating point exception traps in PETSc-enabled tests (currently tests for <tt>FE_DIVBYZERO</tt> like x/0.0  and <tt>FE_INVALID</tt> like 0.0/0.0),
+</li><li><strong><tt>onlytests</tt></strong> to disable the default testpack,
+</li><li><strong><i>n</i></strong> (a positive integer) to run tests in parallel using <tt>n</tt> processes,
+</li><li><strong><i>TestPackName</i></strong> to specify an extra set of tests to run (see also <a class="wiki" href="/trac/wiki/TestingStrategy">TestingStrategy</a>).
+</li><li><strong><tt>traceksp</tt></strong> to enable linear system solution tracing: # iterations, residual evolution,...
+</li><li><strong><tt>barriers</tt></strong> to turn on MPI barriers within <tt>BeginEvent</tt> and <tt>EndEvent</tt> calls.
+</li><li><strong><tt>warn</tt></strong> to stop compiler warnings being treated as errors.
+</li><li><strong><tt>32bit</tt></strong> - see <a class="wiki" href="/trac/wiki/Compile32bit">Compile32bit</a>
+</li><li><strong><tt>hostconfig,...</tt></strong> - can be used to select different library versions, etc. if your <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/HostconfigSystem.html">machine configuration</a> supports this.
+</li></ul><p>
+The various classes specify such things as what compiler and flags to use for building C++ code, and also what tests to run by default. They also contain methods which the build (and test summary) scripts use to determine whether a test passed or failed, and where to store the output of tests. Unless you're working on the infrastructure you shouldn't have to worry about that. All methods contain documentation on their function.
+</p>
+<p>
+Note that different build types, if they use different compilation flags, cause the compiled object files to be stored in different directories.  Doing a clean build (<tt>scons -c . build=&lt;whatever&gt;</tt>) will only remove object files in the directories corresponding to the given build type.
+</p>
+<h2 id="SeeAlso">See Also</h2>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/UserBuildGuide.html">UserBuildGuide</a> -- for a simplified version of this page.
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a> -- for how to configure <tt>scons</tt> to work with your machine.
+</li></ul>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

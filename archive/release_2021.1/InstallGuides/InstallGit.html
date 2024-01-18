@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/InstallGit - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="GitInstallandSetupGuide">Git Install and Setup Guide</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#GitInstallandSetupGuide">Git Install and Setup Guide</a>
+    <ol>
+      <li>
+        <a href="#WhatisaGitrepository">What is a Git repository?</a>
+      </li>
+      <li>
+        <a href="#InstallGuide">Install Guide</a>
+        <ol>
+          <li>
+            <a href="#Debian-baseddistributionsi.e.Ubuntu">Debian-based distributions (i.e. Ubuntu)</a>
+          </li>
+          <li>
+            <a href="#Fedora">Fedora</a>
+          </li>
+          <li>
+            <a href="#Mac">Mac</a>
+          </li>
+          <li>
+            <a href="#Windows">Windows</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#GitConfiguration">Git Configuration</a>
+      </li>
+      <li>
+        <a href="#Gitpluginforeclipse">Git plugin for eclipse</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This page is to learn about what Git is and get it installed and set up. 
+If you are looking for instructions on how to use git and setup a chaste repository, please see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/GitGuide.html">ChasteGuides/GitGuide</a>!
+</p>
+<h2 id="WhatisaGitrepository">What is a Git repository?</h2>
+<ul><li>A git repository is a collection of <strong>commits</strong> arranged in a sequential or 
+branching network
+</li><li>Each commit contains snapshots of the files that are added, along with timing, 
+author etc. information
+</li><li>As well as the commits, branch pointers show the progress of different 
+branches
+</li><li>The <strong>working directory</strong> is simply the current set of files in the user's local directory
+</li><li>The <strong>staging area</strong> is where new edits are added in preparation for creating a new commit
+</li></ul><p>
+Before you let yourself loose in the depths of Chaste and git, you might like to read some of this <a class="ext-link" href="https://git-scm.com/book/en/v2/Getting-Started-Git-Basics"><span class="icon">​</span>Git Guide</a>.
+</p>
+<h2 id="InstallGuide">Install Guide</h2>
+<h3 id="Debian-baseddistributionsi.e.Ubuntu">Debian-based distributions (i.e. Ubuntu)</h3>
+<pre class="wiki">$ apt-get install git
+</pre><p>
+On older Ubuntu distributions you get an older version of Git which may be incompatible with the Chaste Git repository:
+</p>
+<pre class="wiki"> $ git push
+error: RPC failed; result=22, HTTP code = 401
+fatal: The remote end hung up unexpectedly
+fatal: The remote end hung up unexpectedly
+Everything up-to-date
+$ git --version
+git version 1.7.9.5
+</pre><p>
+If you see the above error, then you will need to get a newer Git, like so:
+</p>
+<pre class="wiki">sudo add-apt-repository ppa:git-core/ppa
+sudo apt-get update 
+sudo apt-get upgrade git
+</pre><h3 id="Fedora">Fedora</h3>
+<pre class="wiki">$ yum install git
+</pre><h3 id="Mac">Mac</h3>
+<ul><li>Graphical git installer at <a class="ext-link" href="http://sourceforge.net/projects/git-osx-installer/"><span class="icon">​</span>http://sourceforge.net/projects/git-osx-installer/</a>
+</li><li><a class="missing wiki">MacPorts?</a>:
+<pre class="wiki">$ sudo port install git +svn +doc +bash_completion +gitweb
+</pre></li></ul><h3 id="Windows">Windows</h3>
+<ul><li><tt>msysGit</tt> at <a class="ext-link" href="http://msysgit.github.io"><span class="icon">​</span>http://msysgit.github.io</a>. Use provided <tt>msysGit</tt> shell for 
+command line interface
+</li><li><tt>Cygwin</tt> at <a class="ext-link" href="http://www.cygwin.com/"><span class="icon">​</span>http://www.cygwin.com/</a>
+</li></ul><h2 id="GitConfiguration">Git Configuration</h2>
+<p>
+Setup your git installation by telling it your name and email, if you make these the same as your github credentials you'll get credit on there for Chaste commits.
+</p>
+<pre class="wiki">$ git config --global user.name "Firstname Lastname"
+$ git config --global user.email "example@maths.ox.ac.uk"
+</pre><p>
+Other handy settings:
+</p>
+<pre class="wiki">$ git config --global credential.https://chaste.cs.ox.ac.uk.username your-username
+$ git config --global core.commentchar ";"
+$ git config --global pull.ff only
+</pre><p>
+The last one is equivalent to passing <tt>--ff-only</tt> to every <tt>git pull</tt>.
+</p>
+<h2 id="Gitpluginforeclipse">Git plugin for eclipse</h2>
+<p>
+See <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/EclipsePlugins.html">InstallGuides/EclipsePlugins</a>
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

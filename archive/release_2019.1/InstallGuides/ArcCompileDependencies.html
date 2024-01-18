@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ArcCompileDependencies - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#GuidetocompilingChastedependenciesfromsourceonARCUS-B">Guide to compiling Chaste dependencies from source on ARCUS-B</a>
+    <ol>
+      <li>
+        <a href="#PETScwithHDF5andPARMETIS">PETSc (with HDF5 and PARMETIS)</a>
+      </li>
+      <li>
+        <a href="#Boost">Boost</a>
+      </li>
+      <li>
+        <a href="#VTK">VTK</a>
+      </li>
+      <li>
+        <a href="#XSD">XSD</a>
+      </li>
+      <li>
+        <a href="#Xerces">Xerces</a>
+      </li>
+      <li>
+        <a href="#SUNDIALSCVODE">SUNDIALS (CVODE)</a>
+      </li>
+      <li>
+        <a href="#PyCML">PyCML</a>
+      </li>
+      <li>
+        <a href="#Tidyup">Tidy up</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#SettingtheEnvironment">Setting the Environment</a>
+  </li>
+  <li>
+    <a href="#BuildingChaste">Building Chaste</a>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="GuidetocompilingChastedependenciesfromsourceonARCUS-B">Guide to compiling Chaste dependencies from source on ARCUS-B</h1>
+<p>
+This guide supplants <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/Arc.html">InstallGuides/Arc</a> as far as installing stuff and setting up the environment. And since these instructions are specific to arcus-b, jump straight to <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/Arc.html#RunningcodeonARCUS-B">InstallGuides/Arc</a> (running code on arcus-b) after following this page.
+</p>
+<p>
+Some available modules on ARCUS-B are old, or may have been compiled with an older Intel compiler.  This may cause compatibility issues when using newer versions of Chaste (post introduction of C++11).
+</p>
+<p>
+This guide runs through compiling new versions of each Chaste dependency from source, and relies on the following modules:
+</p>
+<ul><li><tt>python/2.7</tt> for PyCml dependencies
+</li><li><tt>gcc/5.4.0</tt> as a fallback for dependencies such as boost which prefer it to intel
+</li><li><tt>intel-compilers/2017 intel-mkl/2017 intel-mpi/2017</tt> for compiling most things, such as PETSc
+</li><li><tt>cmake/3.8.0</tt>
+</li><li><tt>git/1.9.0</tt>
+</li></ul><p>
+First, in case you have already loaded modules through <tt>~/.bash_profile</tt>, run <tt>module list</tt> to find out which modules are currently loaded. Although it is probably unnecessary, just to make sure that you are in the same situation as these instructions, unload all of these modules by running <tt>module unload &lt;loaded_module_1&gt; &lt;loaded_module_2&gt; ...</tt>. Then run the following to load the required modules
+</p>
+<pre class="wiki">module load python/2.7
+module unload intel-compilers/2013 intel-mkl/2013
+module load gcc/5.4.0
+module load intel-compilers/2017 intel-mkl/2017 intel-mpi/2017
+module load cmake/3.8.0
+module load git/1.9.0
+</pre><p>
+Make a directory to install dependencies.
+There should be more than enough space in your <tt>$HOME</tt>, and these files are less likely to be periodically deleted.
+</p>
+<pre class="wiki">export SOFTWARE=$HOME/software
+mkdir $SOFTWARE
+</pre><h2 id="PETScwithHDF5andPARMETIS">PETSc (with HDF5 and PARMETIS)</h2>
+<p>
+This PETSc install will use Intel's MPI and MKL.
+</p>
+<pre class="wiki">cd $SOFTWARE
+
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.6.4.tar.gz
+tar -zxf petsc-lite-3.6.4.tar.gz
+wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.bz2
+
+MPI_ROOT_DIR=/system/software/linux-x86_64/compilers/intel/intelPS-2017/impi/2017.2.191/intel64/
+MKL_ROOT_DIR=/system/software/linux-x86_64/compilers/intel/intelPS-2017/compilers_and_libraries_2017/linux/mkl/lib/intel64/
+
+cd $SOFTWARE/petsc-3.6.4/
+export PETSC_DIR=`pwd`
+
+export PETSC_ARCH=linux-intel-opt-mkl
+./configure --with-batch --with-make-np=10 --with-fc=0 --with-x=false --with-ssl=false --known-mpi-shared-libraries=1 --with-mpi-dir=$MPI_ROOT_DIR --download-hdf5=../hdf5-1.10.1.tar.bz2 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 --with-blas-lapack-dir=$MKL_ROOT_DIR
+</pre><p>
+When this has finished, you will be prompted to submit a job as part of the installation process: this is necessary due to the <tt>--with-batch</tt> specifier, as the installer cannot test the MPI configuration on the head node.
+</p>
+<p>
+Still inside <tt>$SOFTWARE/petsc-3.6.4/</tt>, create the following <tt>petsc_job.sh</tt> (taking care to change <tt>&lt;your_email_address&gt;</tt>:
+</p>
+<pre class="wiki">#!/bin/bash
+
+# Use the devel partition
+#SBATCH --partition=devel
+
+# set the number of nodes
+#SBATCH --nodes=1
+
+# set max wallclock time
+#SBATCH --time=00:01:00
+
+# set name of job
+#SBATCH --job-name=petsc_config
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+
+# send mail to this address
+#SBATCH --mail-user=&lt;your_email_address&gt;
+
+# run the application
+export PETSC_DIR=$SOFTWARE/petsc-3.6.4
+export PETSC_ARCH=linux-intel-opt-mkl
+$SOFTWARE/petsc-3.6.4/conftest-linux-intel-opt-mkl
+</pre><p>
+and run it with <tt>sbatch petsc_job.sh</tt>.
+Because it is set to run on the <tt>devel</tt> partition, it should start almost instantly, and will only take a few seconds.
+</p>
+<p>
+Then, finish the installation with
+</p>
+<pre class="wiki">cd $SOFTWARE/petsc-3.6.4
+python reconfigure-linux-intel-opt-mkl.py
+make all
+</pre><h2 id="Boost">Boost</h2>
+<pre class="wiki">cd $SOFTWARE
+wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.bz2
+tar -jxf boost_1_58_0.tar.bz2
+cd $SOFTWARE/boost_1_58_0/
+./bootstrap.sh --prefix=$SOFTWARE/boost_1_58 &amp;&amp; ./b2 -j 10 install
+</pre><h2 id="VTK">VTK</h2>
+<pre class="wiki">cd $SOFTWARE
+wget https://github.com/Kitware/VTK/archive/v7.1.1.tar.gz
+tar -zxf v7.1.1.tar.gz
+mkdir $SOFTWARE/vtk-build-7.1 &amp;&amp; cd $SOFTWARE/vtk-build-7.1
+cmake -DCMAKE_INSTALL_PREFIX=$SOFTWARE/vtk-7.1 -DCMAKE_INSTALL_RPATH=$SOFTWARE/vtk-7.1/lib -DCMAKE_BUILD_TYPE=Release ../VTK-7.1.1 &amp;&amp; make -j10 &amp;&amp; make install
+</pre><h2 id="XSD">XSD</h2>
+<p>
+XSD just needs extracting from the archive:
+</p>
+<pre class="wiki">cd $SOFTWARE
+wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+tar -jxf xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+</pre><h2 id="Xerces">Xerces</h2>
+<pre class="wiki">cd $SOFTWARE
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.4.tar.bz2
+tar -jxf xerces-c-3.1.4.tar.bz2 &amp;&amp; cd $SOFTWARE/xerces-c-3.1.4
+./configure --enable-netaccessor-socket --prefix=$SOFTWARE/xercesc_3_1_4 &amp;&amp; make &amp;&amp; make install
+</pre><h2 id="SUNDIALSCVODE">SUNDIALS (CVODE)</h2>
+<p>
+Following the rest of these instructions, downloading and compiling Sundials/CVODE results in the error <tt>undefined reference to pthread_create</tt> when running <tt>cmake</tt>. You should therefore link to the versions already on arcus-b when it comes up later.
+</p>
+<h2 id="PyCML">PyCML</h2>
+<p>
+Amara and friends seem to already be available with the Python 2.7 module.
+Double check by running:
+</p>
+<pre class="wiki">cd $SOFTWARE
+pip install --user "python-dateutil==1.5"
+pip install --user "Amara==1.2.0.2"
+pip install --user "rdflib==2.4.2"
+pip install --user lxml
+</pre><h2 id="Tidyup">Tidy up</h2>
+<p>
+If the above has all completed successfully, you can run the following to free up space:
+</p>
+<pre class="wiki">rm $SOFTWARE/boost_1_58_0.tar.bz2
+rm -rf $SOFTWARE/boost_1_58_0/
+
+rm $SOFTWARE/v7.1.1.tar.gz
+rm -rf $SOFTWARE/vtk-build-7.1
+rm -rf $SOFTWARE/VTK-7.1.1
+
+rm $SOFTWARE/xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+
+rm $SOFTWARE/xerces-c-3.1.4.tar.bz2
+rm -rf $SOFTWARE/xerces-c-3.1.4
+
+rm $SOFTWARE/hdf5-1.10.1.tar.bz2
+rm $SOFTWARE/petsc-lite-3.6.4.tar.gz
+</pre><h1 id="SettingtheEnvironment">Setting the Environment</h1>
+<p>
+Adding the following to your <tt>~/.bash_profile</tt> (and remove anything Chaste-related from your <tt>~/.bashrc</tt>) will allow CMake to pick up all the pacakges:
+</p>
+<pre class="wiki">unset LD_LIBRARY_PATH
+
+# Keep a software directory in $HOME
+export SOFTWARE=$HOME/software
+alias cdsoftware='cd $SOFTWARE'
+
+# ----- Chaste config ----- #
+
+# Module commands
+
+module load cmake/3.8.0
+module load python/2.7
+module load git/1.9.0
+
+module unload gcc/4.8.2
+module load gcc/5.4.0
+module unload intel-compilers/2013 intel-mkl/2013
+module load intel-compilers/2017 intel-mkl/2017 intel-mpi/2017
+
+# PETSc
+export PETSC_DIR=$SOFTWARE/petsc-3.6.4
+export PETSC_ARCH=linux-intel-opt-mkl
+
+# Boost
+export BOOST_ROOT=$SOFTWARE/boost_1_58
+
+# XSD
+export XSD_ROOT=$SOFTWARE/xsd-4.0.0-x86_64-linux-gnu
+
+# Xerces
+export XERCESC_INCLUDE_DIR=$SOFTWARE/xercesc_3_1_4/include
+export XERCESC_LIBRARY_DIR=$SOFTWARE/xercesc_3_1_4/lib
+
+# CVODE
+export SUNDIALS_ROOT=/system/software/linux-x86_64/lib/cvode/2.7.0
+
+# Define CMake variables needed by Chaste
+Chaste_OPTS="-DCMAKE_BUILD_TYPE=RELEASE -DChaste_UPDATE_PROVENANCE=OFF -DChaste_ERROR_ON_WARNING=OFF"
+BOOST_OPTS="-DBoost_NO_BOOST_CMAKE=BOOL:ON -DBOOST_ROOT=$BOOST_ROOT"
+VTK_OPTS="-DVTK_DIR=$SOFTWARE/vtk-7.1/lib/cmake/vtk-7.1"
+
+# Combine the CMake lines defined above
+export Chaste_REL_OPTS="$Chaste_OPTS $BOOST_OPTS $VTK_OPTS"
+
+# ----- End Chaste config ----- #
+
+# Useful aliases
+alias cdchaste='cd /path/to/build/dir'
+alias cmchaste='cmake $Chaste_REL_OPTS /path/to/chaste/src'
+alias myjobs='squeue -o "%.7i %.30j %.2t %.19S %.10M %.6D %R" -u &lt;username&gt;'
+alias gitpull='git -C /path/to/your/chaste/project pull'
+</pre><h1 id="BuildingChaste">Building Chaste</h1>
+<p>
+Make sure you have started a new session since adding the above to your <tt>~/.bash_profile</tt>, i.e. literally log out and log back in.
+</p>
+<pre class="wiki">cd /path/to/build/dir  # or just "cdchaste"
+# make sure the build directory exists and that you are in it, otherwise the next line will ruin your life
+rm -rf *  # just to make sure it's a clean build, don't do this every time
+cmake $Chaste_REL_OPTS /path/to/chaste/src  # or just "cmchaste"
+make -j11 chaste_heart
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

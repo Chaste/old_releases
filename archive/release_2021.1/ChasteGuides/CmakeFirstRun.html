@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/CmakeFirstRun - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Cmakefirst-timeuserguide">Cmake first-time user guide</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#Cmakefirst-timeuserguide">Cmake first-time user guide</a>
+    <ol>
+      <li>
+        <a href="#Prerequisites">Prerequisites</a>
+      </li>
+      <li>
+        <a href="#Settingupabuilddirectory">Setting up a build directory</a>
+      </li>
+      <li>
+        <a href="#Configurestep">Configure step</a>
+      </li>
+      <li>
+        <a href="#Buildstep">Build step</a>
+      </li>
+      <li>
+        <a href="#Testingstep">Testing step</a>
+      </li>
+      <li>
+        <a href="#Troubleshooting">Troubleshooting</a>
+        <ol>
+          <li>
+            <a href="#UsersoftheUbuntupackage">Users of the Ubuntu package</a>
+          </li>
+          <li>
+            <a href="#Usersonnon-UbuntuLinuxdistributions">Users on non-Ubuntu Linux distributions</a>
+          </li>
+          <li>
+            <a href="#UsersonMacOSX">Users on Mac OS X</a>
+          </li>
+          <li>
+            <a href="#UsersonWindows">Users on Windows</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Seealso">See also</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+Chaste uses <tt>cmake</tt> to configure a build, <tt>make</tt> to compile the configured build, and <tt>ctest</tt> to run the resulting executables.  Each of these steps is described in more detail in other parts of this Wiki (e.g. see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html">the detailed CMake guide</a>), but this page serves simply as a quick-start guide to verify your installation.
+</p>
+<p>
+This page will walk you through a <em>first run</em> of Chaste: building and running the <em>Continuous Test Pack</em>.
+</p>
+<h2 id="Prerequisites">Prerequisites</h2>
+<p>
+You must have obtained the source code and installed the dependencies.  See <a class="wiki" href="/chaste/tutorials/release_2021.1/GettingStarted.html">GettingStarted</a> if you haven't yet.
+</p>
+<h2 id="Settingupabuilddirectory">Setting up a build directory</h2>
+<p>
+Let us assume you have the Chaste source code in the directory:
+</p>
+<pre class="wiki">/path/to/Chaste_source_code
+</pre><p>
+Create an empty <tt>chaste_build</tt> directory outside the source directory, and change into it:
+</p>
+<pre class="wiki">mkdir /path/to/chaste_build
+cd /path/to/chaste_build
+</pre><h2 id="Configurestep">Configure step</h2>
+<p>
+The first step is to configure Chaste using <tt>cmake</tt>.  This will locate all dependencies, and generate the build targets.
+</p>
+<pre class="wiki">cmake /path/to/Chaste_source_code
+</pre><p>
+This command will print a bunch of things to the terminal.  If it runs without any errors, the last lines of the output will be:
+</p>
+<pre class="wiki">-- Configuring done
+-- Generating done
+-- Build files have been written to: /path/to/chaste_build 
+</pre><p>
+If you do see errors, you may need to set some paths to dependencies manually, see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/FindingChasteDependencies.html">ChasteGuides/FindingChasteDependencies</a>.
+</p>
+<h2 id="Buildstep">Build step</h2>
+<p>
+Next, we compile Chaste using the <tt>make</tt> utility.
+In this guide, we will compile the Continuous test pack; the core set of unit tests that will determine whether everything is working as expected.
+</p>
+<pre class="wiki">make -j4 Continuous
+</pre><p>
+(Note the capital C!) The <tt>-j4</tt> will speed up the compilation by using 4 cores on your processor; adjust this number if you have more or fewer cores available.  This step should take around 90 minutes, depending on your machine.
+</p>
+<p>
+If this command runs with no errors, the last lines of the output will be:
+</p>
+<pre class="wiki">[100%] Built target Continuous
+program finished with exit code 0
+elapsedTime=&lt;some_amount_of_time&gt;
+</pre><h2 id="Testingstep">Testing step</h2>
+<p>
+Now that the Continuous test pack is compiled, we run the tests using <tt>ctest</tt>:
+</p>
+<pre class="wiki">ctest -j4 -L Continuous
+</pre><p>
+If all the tests pass, you should see the following towards the end of the output:
+</p>
+<pre class="wiki">100% tests passed, 0 tests failed out of 366
+
+Label Time Summary:
+...
+...
+</pre><p>
+If you see this, you're good to go!
+Head over to <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides#RunningChaste">the chaste guides</a> for next steps.
+</p>
+<h2 id="Troubleshooting">Troubleshooting</h2>
+<h3 id="UsersoftheUbuntupackage">Users of the Ubuntu package</h3>
+<p>
+If you installed Chaste with the <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/UbuntuPackage.html">Ubuntu package</a>, it really ought to work out-of-the-box!
+</p>
+<p>
+After re-trying these steps, please let us know on our <a class="ext-link" href="https://web.maillist.ox.ac.uk/ox/subscribe/chaste-users"><span class="icon">​</span>users' mailing list</a>.
+</p>
+<h3 id="Usersonnon-UbuntuLinuxdistributions">Users on non-Ubuntu Linux distributions</h3>
+<p>
+First, check that the version of each dependency is listed as <em>supported</em> on our <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/DependencyVersions">dependency versions page</a>.
+</p>
+<p>
+If you are using supported package versions, you may need to provide CMake with some hints for finding dependencies, during the configure step.
+You can find details in the more detailed <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CmakeBuildGuide#ConfigureStep">CMake build guide</a>.
+</p>
+<p>
+If you are still having problems, please let us know on our <a class="ext-link" href="https://web.maillist.ox.ac.uk/ox/subscribe/chaste-users"><span class="icon">​</span>users' mailing list</a>.
+</p>
+<h3 id="UsersonMacOSX">Users on Mac OS X</h3>
+<p>
+Check out the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/ChasteInstallationOnOSXYosemite">OS X installation instructions</a>.
+Please note that these instructions may become quickly out-of-date due to Home Brew always brewing the very latest package versions.
+</p>
+<p>
+If you are still having problems, please let us know on our <a class="ext-link" href="https://web.maillist.ox.ac.uk/ox/subscribe/chaste-users"><span class="icon">​</span>users' mailing list</a>.
+</p>
+<h3 id="UsersonWindows">Users on Windows</h3>
+<p>
+Good luck!
+</p>
+<h2 id="Seealso">See also</h2>
+<p>
+<a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html">ChasteGuides/CmakeBuildGuide</a> for a list of all available cmake configuration options - how to do optimised builds, parallel builds, run memory testing etc. etc.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

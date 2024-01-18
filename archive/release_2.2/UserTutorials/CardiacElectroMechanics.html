@@ -1,0 +1,438 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacElectroMechanics - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.2/">Release 2.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_2.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CardiacElectroMechanics" href="/chaste/tutorials/release_2.2/UserTutorials/CardiacElectroMechanics.html">CardiacElectroMechanics</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestCardiacElectroMechanicsTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/12409" title="#1751, #1752 change interface of cardiac EM problem to take in ...">r12409</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="CardiacElectro-mechanicalProblems">Cardiac Electro-mechanical Problems</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+The tutorial explains how electro-mechanics problems can be solved in Chaste. The reader should certainly read
+the electro-physiological tutorials before this tutorial, and it is helpful to have also had a look at
+the tutorial on solving general solid mechanics problems.
+</p>
+<p>
+The equations of cardiac electro-mechanics are written down in Section 4.2 of the PDF on equations and
+finite element implementations in <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides.html">ChasteGuides</a> -&gt; Miscellaneous information. <strong>Note:</strong> By default we do
+not these full equations: the mechanics information is not coupled back to electrics, ie by default
+the conductivities do not depend  on deformation, and cell models do not get affected by stretch.
+This has to be switched on if required - see comments on mechano-electric feedback below.
+</p>
+<p>
+Before going to the code, we list the sub-models/parameters that need to be set, or can be varied,
+in electro-mechanical problems. The last four of the below are mechanics-specific.
+</p>
+<ul><li>The geometry (see note 1 below)
+</li><li>The region electrically stimulated
+</li><li>The cell model
+</li><li>Electro-physiological parameters (conductivity, capacitance, surface-area-to-volume ratio)
+</li><li>Electro-physiological timesteps: ode and pde (but not printing timestep) (see note 2 below)
+</li><li>Fibre directions (and maybe sheet/normal directions) (see note 3 below)
+</li><li>The part of the boundary that is fixed in space
+</li><li>The contraction model [the model which takes in electrical variables (voltage or calcium typically), and
+returns cellular active tension]
+</li><li>The material law [the strain-energy function]
+</li><li>Mechanics timesteps: mechanics update timestep, contraction model ode timestep. (see note 4 below)
+</li></ul><p>
+ 
+Notes:
+</p>
+<ul><li><i>Meshes:</i> Two meshes for the geometry are required, one for the electrics solve and one for the mechanics.
+The mechanics mesh would ideally be coarser but any two meshes are technically possible. The meshes should
+ideally both cover exactly the same geometry (ie either mesh being contained in the other), but the meshes
+not completely overlapping is allowed - some extrapolation of quantities will then occur.
+</li><li><i>The electro-physiology printing timestep:</i> This is not used in electro-mechanics problems; output is
+instead written after every mechanics solve, so effectively the mechanics update timestep is equal to
+the printing timestep.
+</li><li><i>Fibres:</i> In electro-physiological simulations the fibre direction is in the X-direction
+by default, but if isotropic conductivities are used the fibre direction won't be used. In mechanics
+solves, the fibres will always be used as it determines the direction of contraction. Sheet/normal directions
+may be used in the material law.
+</li><li><i>Timesteps:</i> The should-divide rules are: (a) ode_timestep should-divide pde_timestep should-divide
+mechanics_update_timestep and (b) contraction_model_ode_timestep should-divide mechanics_update_timestep.
+</li></ul><p>
+ 
+</p>
+<p>
+<strong>Another note:</strong> mechanics problems are not currently implemented to scale in parallel yet.
+</p>
+<p>
+The basic includes are
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "PlaneStimulusCellFactory.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "CardiacElectroMechProbRegularGeom.hpp"
+#include "LuoRudy1991.hpp"
+</span></pre></div><p>
+The includes for the second test are
+</p>
+<div class="code"><pre><span class="cp">#include "CardiacElectroMechanicsProblem.hpp"
+#include "NonlinearElasticityTools.hpp"
+#include "NobleVargheseKohlNoble1998WithSac.hpp"
+</span></pre></div><h2 id="IMPORTANT:usingHYPRE">IMPORTANT: using HYPRE</h2>
+<p>
+Mechanics solves involve solving a nonlinear system, which is broken down into a sequence of linear solves.
+When running problems <strong>in 3D, or with more elements than in the first test below</strong>, it is vital to change the linear
+solver to use HYPRE, an algebraic multigrid solver. Without HYRPE, the linear solve (i) may become very very slow; or
+(ii) may not converge, in which case the nonlinear solve will (probably) not converge. HYPRE is (currently) not a
+pre-requisite for installing Chaste, hence this is not (currently) the default linear solver for mechanics problems,
+although this will change in the future. HYPRE should be considered a pre-requisite for large mechanics problems.
+You can run the first test below without HYPRE, but it is certainly recommended for the second test.
+</p>
+<p>
+To use HYRPE in mechanics solves, you need to have Petsc installed with HYPRE. However, if you followed installation
+instructions for Chaste 2.1 or later, you probably do already have Petsc installed with HYPRE.
+</p>
+<p>
+To switch on HYPRE, open the file <tt>pde/src/solver/AbstractNonlinearElasticitySolver</tt> and uncomment the line
+#define MECH_USE_HYPRE
+near the top of the file (currently: line 53).
+</p>
+<p>
+Mechanics solves being nonlinear are expensive, so it is recommended you also use <tt>build=GccOpt_ndebug</tt> (when running scons)
+on larger problems.
+</p>
+<p>
+Note: Petsc unfortunately doesn't quit if you try to use HYPRE without it being installed, but it spew lots of error messages.
+</p>
+<h2 id="Simple2dtest">Simple 2d test</h2>
+<p>
+This test shows how to use the <tt>CardiacElectroMechProbRegularGeom</tt> class, which
+inherits from the more general class <tt>CardiacElectroMechanicsProblem</tt> class but
+sets up a square or cubic geometry for you.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCardiacElectroMechanicsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestCardiacElectroMechanicsExample<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+All electro-mechanics problems require a cell factory as normal. This particular
+factory stimulates the LHS side (X=0) surface.
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">);</span>
+</pre></div><p>
+The <tt>CardiacElectroMechProbRegularGeom&lt;2&gt;</tt> defines an electro-mechanics problem on a square. Two meshes are created
+internally. We use a PDE timestep of 0.01 for the electrics, solving the mechanics every 1ms.
+</p>
+<div class="code"><pre>        CardiacElectroMechProbRegularGeom<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem<span class="p">(</span>KERCHOFFS2003<span class="p">,</span>  <span class="c">// The contraction model (see below)
+</span>                                                     <span class="mf">0.1</span><span class="p">,</span>  <span class="c">// width of square (cm)
+</span>                                                     <span class="mi">5</span><span class="p">,</span>    <span class="c">// Number mechanics elements in each direction
+</span>                                                     <span class="mi">10</span><span class="p">,</span>   <span class="c">// Number electrics elements in each direction
+</span>                                                     <span class="o">&amp;</span>cell_factory<span class="p">,</span>
+                                                     <span class="mf">40.0</span><span class="p">,</span> <span class="c">// end time
+</span>                                                     <span class="mf">0.01</span><span class="p">,</span> <span class="c">// electrics timestep (ms)
+</span>                                                     <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// mechanics solve timestep
+</span>                                                     <span class="mf">0.01</span><span class="p">,</span> <span class="c">// contraction model ode timestep
+</span>                                                     <span class="s">"TestCardiacElectroMechanicsExample"</span> <span class="c">/* output directory */</span><span class="p">);</span>
+</pre></div><p>
+The contraction model chosen above is KERCHOFFS2003 (Kerchoffs, Journal of Engineering Mathematics, 2003). Other possibilities
+are 'NHS' (Niederer, Hunter, Smith, 2006), and 'NASH2004' (Nash, Progress in biophysics and molecular biology, 2004).
+</p>
+<p>
+Two meshes are created, one with five elements in each direction for the mechanics (so 5*5*2 triangles in total),
+and a finer one for the electrics.
+</p>
+<p>
+This leaves the material law, fibres direction and fixed nodes from the list above: the material
+law is hard-coded to the Pole-zero material law, the fibre direction is by default the X-direction, and the fixed
+nodes are automatically set (when <tt>CardiacElectroMechProbRegularGeom</tt> is used) to be those satistying X=0, ie
+the left-hand edge. We discuss how to change these in the second test.
+</p>
+<p>
+Then all we have to do is call Solve.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+Go to the output directory. There should be log file (which can be used to watch progress), and a
+directory for the electrics output and the mechanics output. The electrics directory is not the same
+as when running an electrics solve: the basic HDF5 data is there but there is no there is no meshalyzer
+output, and there is always cmgui output of the <i>electrics solution downsampled onto the mechanics mesh</i>.
+The deformation output directory contains the deformed solution each timestep in several simple
+matlab-readable files, and a cmgui output directory. The latter has a script for automatically loading
+all the results.
+</p>
+<p>
+Visualise the results by calling <tt>cmgui LoadSolutions.com</tt> in the directory
+<tt>TestCardiacElectroMechanicsExample/deformation/cmgui</tt> . The electrics data can be visualised on the
+deforming mesh by using the scene (and spectrum) editor. (See cmgui website for information on how
+to use cmgui, but very briefy: graphics -&gt; scene editor -&gt; select surfaces -&gt; add, then check 'Data'. Then
+graphics -&gt; Spectrum editor -&gt; min=-90, max=50.).
+</p>
+<p>
+To observe the tissue relaxing you can re-run the simulation with an end time of more than 350ms.
+</p>
+<div class="code"><pre>    <span class="p">}</span>
+</pre></div><h2 id="Twistingcube:3dexamplewithvaryingfibredirections">Twisting cube: 3d example with varying fibre directions</h2>
+<p>
+The second test is a longer running 3d test - the 'dont' in the name of the test
+means it isn't run automatically. To run, remove the 'dont'. It is worth running
+with <tt>build=GccOpt_ndebug</tt>, and <strong>see the comments about HYPRE above.</strong>
+</p>
+<p>
+This test shows how to do 3d simulations (trivial changes), and how to use
+<tt>CardiacElectroMechanicsProblem</tt>, which requires meshes and fixed nodes to be passed
+in, and also how to pass in fibre directions for the mechanics mesh.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> dontTestTwistingCube<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Cell factory as normal
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">);</span>
+</pre></div><p>
+Set up two meshes of 1mm by 1mm by 1mm, one a <tt>TetrahedralMesh</tt>
+for the electrics solve, one a (coarser) <tt>QuadraticMesh</tt> for the mechanics
+solve.
+</p>
+<div class="code"><pre>        TetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> electrics_mesh<span class="p">;</span>
+        electrics_mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.01</span><span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*length*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*width*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*depth*/</span><span class="p">);</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mechanics_mesh<span class="p">;</span>
+        mechanics_mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span> <span class="c">/*as above with a different stepsize*/</span><span class="p">);</span>
+</pre></div><p>
+We choose to fix the nodes on Z=0. For this the <tt>NonlinearElasticityTools</tt> class
+is helpful. The static method called below returns all nodes for which the Z value
+(indicated by the '2' ('0' for X, '1' for Y)) is equal to 0.0.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes
+            <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mechanics_mesh<span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+Create the problem object, which has the same interface as the the child class used
+in the first test, except it takes in meshes and fixed nodes (as std vectors).
+</p>
+<div class="code"><pre>        CardiacElectroMechanicsProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> problem<span class="p">(</span>KERCHOFFS2003<span class="p">,</span>
+                                                  <span class="o">&amp;</span>electrics_mesh<span class="p">,</span>
+                                                  <span class="o">&amp;</span>mechanics_mesh<span class="p">,</span>
+                                                  fixed_nodes<span class="p">,</span>
+                                                  <span class="o">&amp;</span>cell_factory<span class="p">,</span>
+                                                  <span class="mi">50</span><span class="p">,</span>   <span class="c">// end time
+</span>                                                  <span class="mf">0.01</span><span class="p">,</span> <span class="c">// electrics timestep (ms)
+</span>                                                  <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// mechanics solve timestep
+</span>                                                  <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// contraction model ode timestep
+</span>                                                  <span class="s">"TestCardiacElectroMech3dTwistingCube"</span> <span class="c">/* output directory */</span><span class="p">);</span>
+</pre></div><p>
+The default fibre direction is the X-direction (and the default sheet plane is the XY plane). Here we show
+how this can be changed.
+</p>
+<p>
+Fibre files should be .ortho type files (not .axi), since the sheet direction is used in the default material
+law (see file formats documentation if you haven't come across these files, basically .axi files specify the
+fibre directions; .ortho the fibre sheet and normal directions). For mechanics problems, the .ortho file
+can be used to either define the fibre information PER-ELEMENT or PER-QUADRATURE-POINT (ie all the quad points
+in all the elements). The latter provides a higher resolution description of fibres. Here we use the latter, just
+because it is the harder case. Tthe <tt>true</tt> below the problem class tells the class the fibres are defined per quad
+point. To see how this data file was generated, see below.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetVariableFibreSheetDirectionsFile<span class="p">(</span><span class="s">"heart/test/data/fibre_tests/5by5by5_fibres_by_quadpt.orthoquad"</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</pre></div><p>
+<tt>SetNoElectricsOutput</tt> is a method that is sometimes useful with a fine electrics mesh (although in this
+case we don't call it).
+</p>
+<div class="code"><pre>        <span class="kt">bool</span> no_electrics <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span>no_electrics<span class="p">)</span>
+        <span class="p">{</span>
+            problem<span class="p">.</span>SetNoElectricsOutput<span class="p">();</span>
+        <span class="p">}</span>
+</pre></div><p>
+Now call <tt>Solve</tt>. This will take a while to run, so watch progress using the log file to estimate when
+it will finish. <tt>build=GccOpt_ndebug</tt> will speed this up by a factor of about 5.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+The way the fibre file was created is given here. After defining the mechanics mesh, do:
+</p>
+<div class="code"><pre>        <span class="c">//GaussianQuadratureRule&lt;3&gt; quad_rule(3);
+</span>        <span class="c">//QuadraturePointsGroup&lt;3&gt; quad_points(mechanics_mesh, quad_rule);
+</span>        <span class="c">//std::cout &lt;&lt; quad_points.Size() &lt;&lt; "\n";
+</span>        <span class="c">//for(unsigned i=0; i&lt;quad_points.Size(); i++)
+</span>        <span class="c">//{
+</span>        <span class="c">//    ////std::cout &lt;&lt; quad_points.Get(i)(0) &lt;&lt; " " &lt;&lt; quad_points.Get(i)(1) &lt;&lt; " " &lt;&lt; quad_points.Get(i)(2) &lt;&lt; " ";
+</span>        <span class="c">//    double x = quad_points.Get(i)(0);
+</span>        <span class="c">//    double theta = M_PI/3 - 10*x*2*M_PI/3; // 60 degrees when x=0, -60 when x=0.1;
+</span>        <span class="c">//    std::cout &lt;&lt;  "0 " &lt;&lt; cos(theta)  &lt;&lt; " " &lt;&lt; sin(theta)
+</span>        <span class="c">//              &lt;&lt; " 0 " &lt;&lt; -sin(theta) &lt;&lt; " " &lt;&lt; cos(theta)
+</span>        <span class="c">//              &lt;&lt; " 1 0 0\n";
+</span>        <span class="c">//}
+</span></pre></div><p>
+For creating a fibre file with fibres for each element instead, we could have done
+</p>
+<div class="code"><pre>        <span class="c">//for(unsigned i=0; i&lt;mechanics_mesh.GetNumElements(); i++)
+</span>        <span class="c">//{
+</span>        <span class="c">//    double X = mechanics_mesh.GetElement(i)-&gt;CalculateCentroid()(0);
+</span>        <span class="c">//    //etc
+</span>        <span class="c">//}
+</span></pre></div><p>
+The one thing we haven't shown how to change is the material law. Unfortunately this is currently
+hardcoded (ie there is no interface to change it) to the pole-zero material law. It can be manually changed
+by altering the file <tt>heart/src/solver/mechanics/AbstractCardiacMechanicsSolver</tt> - search for
+<tt>NashHunterPoleZeroLaw</tt>. This issue will be fixed in the near future.
+</p>
+<div class="code"><pre>    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h2 id="Mechano-electricfeedback">Mechano-electric feedback</h2>
+<p>
+As mentioned above, by default feedback of the mechanics to the electrics is not switched on, so <i>by default</i>
+the conductivities will not be affected by the deformation, and the stretch is not passed back to the cell-models
+to allow for stretch-activated channels (SAC). To allow for these two features, call
+</p>
+<div class="code"><pre>    <span class="c">//problem.UseMechanoElectricFeedback();
+</span></pre></div><p>
+before calling <tt>problem.Solve()</tt>. Note that (i) the electrics solve will slow down, since the linear system matrix now
+varies with time (as conductivities depend on deformation), and has to be recomputed after every mechanics update; and
+(ii) if you want a cell model that includes SAC you have to implement one. There is a single example of this in
+the code base at the moment, see  <tt>heart/src/odes/ionicmodels/NobleVargheseKohlNoble1998WithSac.hpp</tt>.
+</p>
+<p>
+Further functionality and examples using M.E.F. will be added in the near future.
+</p>
+<h2 id="Othercomments">Other comments</h2>
+<p>
+If you would like to apply a traction boundary condition, see the solid mechanics tutorial on how to apply tractions given
+a <tt>NonlinearElasticitySolver</tt>, and then note that you can access this solver in the tests above by doing, for example:
+</p>
+<div class="code"><pre>    <span class="c">//problem.Initialise();
+</span>    <span class="c">//problem.GetCardiacMechanicsSolver()-&gt;SetSurfaceTractionBoundaryConditions(boundary_elems, tractions);
+</span></pre></div><p>
+and then calling <tt>problem.Solve()</tt>.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCardiacElectroMechanicsTutorial.hpp">File name <tt>TestCardiacElectroMechanicsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "PlaneStimulusCellFactory.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "CardiacElectroMechProbRegularGeom.hpp"
+#include "LuoRudy1991.hpp"
+#include "CardiacElectroMechanicsProblem.hpp"
+#include "NonlinearElasticityTools.hpp"
+#include "NobleVargheseKohlNoble1998WithSac.hpp"
+</span><span class="k">class</span> <span class="nc">TestCardiacElectroMechanicsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestCardiacElectroMechanicsExample<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">);</span>
+
+        CardiacElectroMechProbRegularGeom<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem<span class="p">(</span>KERCHOFFS2003<span class="p">,</span>  <span class="c">// The contraction model (see below)
+</span>                                                     <span class="mf">0.1</span><span class="p">,</span>  <span class="c">// width of square (cm)
+</span>                                                     <span class="mi">5</span><span class="p">,</span>    <span class="c">// Number mechanics elements in each direction
+</span>                                                     <span class="mi">10</span><span class="p">,</span>   <span class="c">// Number electrics elements in each direction
+</span>                                                     <span class="o">&amp;</span>cell_factory<span class="p">,</span>
+                                                     <span class="mf">40.0</span><span class="p">,</span> <span class="c">// end time
+</span>                                                     <span class="mf">0.01</span><span class="p">,</span> <span class="c">// electrics timestep (ms)
+</span>                                                     <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// mechanics solve timestep
+</span>                                                     <span class="mf">0.01</span><span class="p">,</span> <span class="c">// contraction model ode timestep
+</span>                                                     <span class="s">"TestCardiacElectroMechanicsExample"</span> <span class="c">/* output directory */</span><span class="p">);</span>
+        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+    <span class="p">}</span>
+
+    <span class="kt">void</span> dontTestTwistingCube<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">);</span>
+
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> electrics_mesh<span class="p">;</span>
+        electrics_mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.01</span><span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*length*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*width*/</span><span class="p">,</span> <span class="mf">0.1</span><span class="c">/*depth*/</span><span class="p">);</span>
+
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mechanics_mesh<span class="p">;</span>
+        mechanics_mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span> <span class="c">/*as above with a different stepsize*/</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes
+            <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mechanics_mesh<span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">);</span>
+
+        CardiacElectroMechanicsProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> problem<span class="p">(</span>KERCHOFFS2003<span class="p">,</span>
+                                                  <span class="o">&amp;</span>electrics_mesh<span class="p">,</span>
+                                                  <span class="o">&amp;</span>mechanics_mesh<span class="p">,</span>
+                                                  fixed_nodes<span class="p">,</span>
+                                                  <span class="o">&amp;</span>cell_factory<span class="p">,</span>
+                                                  <span class="mi">50</span><span class="p">,</span>   <span class="c">// end time
+</span>                                                  <span class="mf">0.01</span><span class="p">,</span> <span class="c">// electrics timestep (ms)
+</span>                                                  <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// mechanics solve timestep
+</span>                                                  <span class="mf">1.0</span><span class="p">,</span>  <span class="c">// contraction model ode timestep
+</span>                                                  <span class="s">"TestCardiacElectroMech3dTwistingCube"</span> <span class="c">/* output directory */</span><span class="p">);</span>
+
+        problem<span class="p">.</span>SetVariableFibreSheetDirectionsFile<span class="p">(</span><span class="s">"heart/test/data/fibre_tests/5by5by5_fibres_by_quadpt.orthoquad"</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+
+        <span class="kt">bool</span> no_electrics <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span>no_electrics<span class="p">)</span>
+        <span class="p">{</span>
+            problem<span class="p">.</span>SetNoElectricsOutput<span class="p">();</span>
+        <span class="p">}</span>
+
+        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        <span class="c">//GaussianQuadratureRule&lt;3&gt; quad_rule(3);
+</span>        <span class="c">//QuadraturePointsGroup&lt;3&gt; quad_points(mechanics_mesh, quad_rule);
+</span>        <span class="c">//std::cout &lt;&lt; quad_points.Size() &lt;&lt; "\n";
+</span>        <span class="c">//for(unsigned i=0; i&lt;quad_points.Size(); i++)
+</span>        <span class="c">//{
+</span>        <span class="c">//    ////std::cout &lt;&lt; quad_points.Get(i)(0) &lt;&lt; " " &lt;&lt; quad_points.Get(i)(1) &lt;&lt; " " &lt;&lt; quad_points.Get(i)(2) &lt;&lt; " ";
+</span>        <span class="c">//    double x = quad_points.Get(i)(0);
+</span>        <span class="c">//    double theta = M_PI/3 - 10*x*2*M_PI/3; // 60 degrees when x=0, -60 when x=0.1;
+</span>        <span class="c">//    std::cout &lt;&lt;  "0 " &lt;&lt; cos(theta)  &lt;&lt; " " &lt;&lt; sin(theta)
+</span>        <span class="c">//              &lt;&lt; " 0 " &lt;&lt; -sin(theta) &lt;&lt; " " &lt;&lt; cos(theta)
+</span>        <span class="c">//              &lt;&lt; " 1 0 0\n";
+</span>        <span class="c">//}
+</span>        <span class="c">//for(unsigned i=0; i&lt;mechanics_mesh.GetNumElements(); i++)
+</span>        <span class="c">//{
+</span>        <span class="c">//    double X = mechanics_mesh.GetElement(i)-&gt;CalculateCentroid()(0);
+</span>        <span class="c">//    //etc
+</span>        <span class="c">//}
+</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+    <span class="c">//problem.UseMechanoElectricFeedback();
+</span>    <span class="c">//problem.Initialise();
+</span>    <span class="c">//problem.GetCardiacMechanicsSolver()-&gt;SetSurfaceTractionBoundaryConditions(boundary_elems, tractions);
+</span></pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/NonRootDeveloper - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChastewithoutrootpermissions">Installing Chaste without root permissions</h1>
+<p>
+I'm trying to install all the necessary items without having root permissions on the machine in question.
+It's going well so far, so I thought I'd better document what I've done before I forget it...
+</p>
+<p>
+Note that my machine has a local build of gcc version 4.1.1, so this may introduce some differences for you.
+</p>
+<p>
+Note also that these instructions assume you are using the <tt>bash</tt> shell.  If your prompt ends in a dollar symbol, you're probably OK.
+</p>
+<p>
+Top Tip: whenever you add anything to the .bashrc file then also type it in to the terminal (.bashrc is run on login)
+</p>
+<h2 id="Workoutwheretoinstall">Work out where to install</h2>
+<p>
+There probably isn't enough space on your network filestore, and that'll be a bit slow anyway, so much better if you can
+install everything on the local disk.  I have a folder /home/scratch/jonc that I can write to, so I'm installing everything
+in there.  Alter paths to suit your circumstances:
+</p>
+<pre class="wiki">export base="/home/scratch/jonc"
+</pre><h2 id="InstallBoost">Install Boost</h2>
+<p>
+Download version 1.33.1 from <a class="ext-link" href="http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=8041"><span class="icon">​</span>http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=8041</a>
+</p>
+<p>
+Unpack somewhere sensible, configure, and install:
+</p>
+<pre class="wiki">cd boost-1.34.0
+./configure --prefix=$base --with-libraries=serialization
+make install
+</pre><h2 id="InstallXSD">Install XSD</h2>
+<p>
+I cheat for this by copying XSD itself from one of the Chaste machines.  Installing Xerces is rather more complicated!
+</p>
+<pre class="wiki">scp -r chaste@userpc44.comlab.ox.ac.uk:xsd-2.3.1-i686-linux-gnu/ $base/
+
+cd $base/src
+wget http://www.apache.org/dist/xerces/c/2/sources/xerces-c-src_2_8_0.tar.gz
+tar -zxf xerces-c-src_2_8_0.tar.gz
+export XERCESCROOT=$base/src/xerces-c-src_2_8_0
+cd $XERCESCROOT/src/xercesc/
+./runConfigure -plinux -cgcc -xg++ -P$base
+gmake
+gmake install
+</pre><h2 id="Installscons">Install scons</h2>
+<p>
+Download the latest stable tarball from <a class="ext-link" href="http://www.scons.org"><span class="icon">​</span>http://www.scons.org</a>
+</p>
+<p>
+Extract and <tt>cd</tt> into the folder. Run
+</p>
+<pre class="wiki">python setup.py install --prefix=$base
+</pre><p>
+You'll need to add $base/bin to your PATH.  Perhaps add the following to your ~/.bashrc
+</p>
+<pre class="wiki">export PATH=$base/bin:$PATH
+</pre><p>
+At some point you'll need to add the folder $base/lib to LD_LIBRARY_PATH, so may as well add that to your ~/.bashrc now too:
+</p>
+<pre class="wiki">export LD_LIBRARY_PATH=$base/lib
+</pre><h2 id="InstallJava">Install Java</h2>
+<p>
+Install J2SE (Update 6 at time of writing) from <a class="ext-link" href="http://java.sun.com/j2se/1.5.0/download.jsp"><span class="icon">​</span>http://java.sun.com/j2se/1.5.0/download.jsp</a>
+</p>
+<p>
+Make sure to choose the "Linux self-extracting file" version.
+</p>
+<p>
+Run the downloaded executable from within $base.
+</p>
+<p>
+Now add the following to your ~/.bashrc
+</p>
+<pre class="wiki">export PATH=$base/jdk1.6.0_10/bin:$PATH
+export JAVA_HOME=$base/jdk1.6.0_10
+</pre><h2 id="InstallSubversionandJavaHL">Install Subversion and JavaHL</h2>
+<p>
+JavaHL is used by subclipse, the Eclipse interface to subversion.  It seems to be more reliable than the pure Java interface.
+</p>
+<p>
+Download and unpack the latest subversion (1.3 when this was written) from <a class="ext-link" href="http://subversion.tigris.org/"><span class="icon">​</span>http://subversion.tigris.org/</a>
+</p>
+<pre class="wiki">cd subversion-1.3.0
+./configure --with-ssl --enable-javahl --disable-mod-activation --prefix=$base
+make
+make install
+</pre><p>
+During this process svn might request the install of <tt>apr</tt> and <tt>apr-utils</tt>, it gives you instructions on how to get them (using svn - pretty nifty) and gives instructions on how to carry on with the install.
+</p>
+<h2 id="InstallEclipse">Install Eclipse</h2>
+<p>
+Download the latest stable version from <a class="ext-link" href="http://www.eclipse.org/"><span class="icon">​</span>http://www.eclipse.org/</a> and unpack it in $base.  I used 3.1.2.
+</p>
+<p>
+You may want to add $base/eclipse to your PATH as well.
+</p>
+<p>
+To clear cached subversion credentials when starting eclipse, try the following:
+</p>
+<pre class="wiki">cd $base
+mv eclipse/eclipse eclipse/eclipse.exec
+</pre><p>
+Then create a file $base/eclipse/eclipse with the contents:
+</p>
+<pre class="wiki">#!/bin/bash
+
+/bin/rm -f ~/.subversion/auth/svn.simple/*
+/bin/rm -f $base/eclipse/configuration/org.eclipse.core.runtime/.keyring
+exec $base/eclipse/eclipse.exec
+</pre><p>
+And make it executable:
+</p>
+<pre class="wiki">chmod a+x eclipse/eclipse
+</pre><p>
+Run eclipse and when prompted, set your workspace to $base/eclipse/workspace
+</p>
+<h3 id="InstallEclipsePlugins">Install Eclipse Plugins</h3>
+<p>
+Run eclipse and go to Help -&gt; Software Updates -&gt; Find and Install.  Select "Search for new features to install".
+Click on "New Remote Site" a few times to add the following:
+</p>
+<ul><li>CDT: http://download.eclipse.org/tools/cdt/releases/eclipse3.1
+</li><li>subclipse: http://subclipse.tigris.org/update_1.0.x
+</li><li>(optional) PyDev: http://pydev.sf.net/updates/
+</li></ul><p>
+Then click Finish to search for updates.  You probably want to install the latest versions of everything found under those sites.
+</p>
+<h3 id="SetEditorpreferences">Set Editor preferences</h3>
+<p>
+Go to Window-&gt;Preferences-&gt;C/C++-&gt;Editor and under the Appearance tab select "Insert spaces for tabs".
+</p>
+<h3 id="SetPydevpreferences">Set Pydev preferences</h3>
+<p>
+Go to Window-&gt;Preferences and expand the Pydev section.  You'll want to change at least the 'Interpreter - Python' 
+subsection to add a new interpreter /usr/bin/python.
+</p>
+<h2 id="InstallValgrind">Install Valgrind</h2>
+<p>
+Download the latest stable tarball (3.1.0 at time of writing) from <a class="ext-link" href="http://valgrind.org/downloads/"><span class="icon">​</span>http://valgrind.org/downloads/</a>
+</p>
+<p>
+Unpack and <tt>cd</tt> into the resulting directory.  Then run
+</p>
+<pre class="wiki">./configure --prefix=$base
+make
+make install
+</pre><h2 id="InstallPETScandMPI">Install PETSc and MPI</h2>
+<p>
+Download MPICH from <a class="ext-link" href="ftp://ftp.mcs.anl.gov/pub/mpi/mpich.tar.gz"><span class="icon">​</span>ftp://ftp.mcs.anl.gov/pub/mpi/mpich.tar.gz</a>  , unpack and do
+</p>
+<pre class="wiki">cd mpich-1.2.7p1
+./configure --prefix=$base -with-comm=shared --with-device=ch_shmem --enable-sharedlib --disable-f77
+make
+cd examples/test/
+make testing
+cd ../..
+make install
+# You may now remove the mpich-1.2.7p1 folder if you wish.
+</pre><p>
+PETSc 2.3.1 seems to work without the workarounds needed for 2.2.1:
+</p>
+<pre class="wiki">wget ftp://ftp.mcs.anl.gov/pub/petsc/petsc-2.3.1.tar.gz
+tar xvfz petsc-2.3.1.tar.gz
+rm  petsc-2.3.1.tar.gz
+cd petsc-2.3.1-p19/
+export PETSC_DIR=`pwd`
+./config/configure.py  --download-c-blas-lapack=1 --with-mpi-dir=$base --with-x=false  -PETSC_ARCH=linux-gnu --with-clanguage=cxx
+make all
+./config/configure.py  --download-c-blas-lapack=1 --with-mpi-dir=$base --with-x=false   --with-debugging=0 -PETSC_ARCH=linux-gnu-opt --with-clanguage=cxx
+make all
+</pre><p>
+To avoid compiler warnings (which the Chaste build turns into errors) apply the patch available from <a class="wiki" href="/trac/wiki/InstallPetscAndMpi">InstallPetscAndMpi</a>:
+</p>
+<pre class="wiki">cd $base/include/mpi2c++
+patch -p3 &lt;../../mpi.patch
+</pre><p>
+<em>Actually, I think this is redundant now, as the build is configured to ignore warnings in 'system' libraries.</em>
+</p>
+<h2 id="InstallHDF5">Install HDF5</h2>
+<p>
+As <a class="wiki" href="/trac/wiki/InstallHdf5">InstallHdf5</a>, but use <tt>--prefix=$base</tt>
+</p>
+<h2 id="InstallCVODE">Install CVODE</h2>
+<p>
+As <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a>, but use <tt>--prefix=$base</tt>
+</p>
+<h2 id="InstallparMETIS">Install parMETIS</h2>
+<p>
+As <a class="wiki" href="/trac/wiki/InstallParMetis">InstallParMetis</a>, but do <tt>cd $base</tt> instead of <tt>cd $HOME</tt>
+</p>
+<h2 id="ChasteGuidesAccessCodeRepository"><a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a></h2>
+</div>
+          
+
+    </div>
+  </body>
+</html>

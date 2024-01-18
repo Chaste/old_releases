@@ -1,0 +1,361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningVertexBasedCryptSimulations - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/crypt/test/tutorial/TestRunningVertexBasedCryptSimulationsTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 25790 on (default)">r25790</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Examplesshowinghowtocreaterunandvisualizevertex-basedsimulationsonperiodicmesheswithdifferentcell-cyclemodels">Examples showing how to create, run and visualize vertex-based simulations on periodic meshes with different cell-cycle models</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to create, run and visualize vertex-based simulations.
+This mechanical model was originally proposed by T. Nagai and H. Honda ("A dynamic cell model for
+the formation of epithelial tissues", Philosophical Magazine Part B 81:699-719).
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The remaining header files define classes that will be used in the cell population
+simulation test. We have encountered some of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "CellsGenerator.hpp"
+#include "CryptCellsGenerator.hpp"
+#include "WntConcentration.hpp"
+#include "SloughingCellKiller.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span></pre></div><p>
+The next three header files define two different types of cell-cycle model,
+one with fixed cell-cycle times and one
+where the cell-cycle time depends on the Wnt concentration.
+</p>
+<div class="code"><pre><span class="cp">#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "SimpleWntCellCycleModel.hpp"
+</span></pre></div><p>
+The next header file defines a helper class for generating a suitable mesh.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombVertexMeshGenerator.hpp"
+</span></pre></div><p>
+The next header file defines a helper class for generating a periodic vertex mesh.
+</p>
+<div class="code"><pre><span class="cp">#include "CylindricalHoneycombVertexMeshGenerator.hpp"
+</span></pre></div><p>
+The next header file defines the class that simulates the evolution of a crypt <tt>CellPopulation</tt>
+for a vertex mesh.
+</p>
+<div class="code"><pre><span class="cp">#include "CryptSimulation2d.hpp"
+</span></pre></div><p>
+The next header file defines a vertex-based <tt>CellPopulation</tt> class.
+</p>
+<div class="code"><pre><span class="cp">#include "VertexBasedCellPopulation.hpp"
+</span></pre></div><p>
+The next header file defines a force law for describing the mechanical interactions
+between neighbouring cells in the cell population, subject to each vertex.
+</p>
+<div class="code"><pre><span class="cp">#include "NagaiHondaForce.hpp"
+</span></pre></div><p>
+In conjunction with the <tt>NagaiHondaForce</tt>, we always have to use a child class of <tt>AbstractTargetAreaModifier</tt> as well.
+Here, we use the <tt>SimpleTargetAreaModifier</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleTargetAreaModifier.hpp"
+</span>
+</pre></div><p>
+Next, we define the test class.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningVertexBasedCryptSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Test1-createavertex-basedcryptsimulation">Test 1 - create a vertex-based crypt simulation</h2>
+<p>
+The first test generates a crypt, in which we use a cylindrical vertex mesh,
+give each cell a fixed cell-cycle model, and enforce sloughing at the top of
+the crypt.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedCrypt</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Create a cylindrical mesh, and get the cell location indices. To enforce
+periodicity at the left and right hand sides of the mesh, we use a subclass
+called <tt>Cylindrical2dMesh</tt>, which has extra methods for maintaining
+periodicity.
+</p>
+<div class="code"><pre>         CylindricalHoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+         Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we the <tt>CryptCellsGenerator</tt> helper class, which is templated over the type
+of cell model required (here <tt>FixedDurationGenerationBasedCellCycleModel</tt>)
+and the dimension. We create an empty vector of cells and pass this into the
+method along with the mesh. The third argument 'true' indicates that the cells
+should be assigned random birth times, to avoid synchronous division. The
+<tt>cells</tt> vector is populated once the method <tt>Generate</tt> is
+called.
+The last four arguments represent the height below which cells belong to generations 0,
+1, 2, 3 and 4, respectively.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CryptCellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>Generate<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="p">,</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">);</span>
+
+</pre></div><p>
+Create a cell population, as before.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> crypt<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+Create a simulator as before (except setting a different output directory).
+</p>
+<div class="code"><pre>        CryptSimulation2d <span class="nf">simulator</span><span class="p">(</span>crypt<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexCrypt"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+Before running the simulation, we add a one or more force laws, which determine the mechanics of
+the cell population.  For this test, we use a <tt>NagaiHondaForce</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+The <tt>NagaiHondaForce</tt> requires us to add a child class of <tt>AbstractTargetAreaModifier</tt> to the simulation.
+This modifier assigns and updates target areas to each cell throughout the simulation. The target
+areas are in turn used by the force law to determine the pressure forces on each vertex.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+</pre></div><p>
+Before running the simulation, we add a cell killer. This object
+dictates conditions under which cells die. For this test, we use
+a <tt>SloughingCellKiller</tt>, which kills cells above a certain height.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> crypt_length <span class="o">=</span> <span class="mf">6.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>SloughingCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>crypt<span class="p">,</span> crypt_length<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dVertexCells /tmp/$USER/testoutput/VertexCrypt/results_from_time_0</tt>.
+You may have to do: <tt>javac Visualize2dVertexCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+When we visualize the results, we should see three colours of cells: a row of blue stem cells, 3 rows of yellow transit
+cells, and 5 rows of pink differentiated cells. Cells above 6.0 will be sloughed off immediately.
+</p>
+<h2 id="Test2-createavertex-basedcryptsimulationwithasimplewntdependentcell-cyclemodel">Test 2 - create a vertex-based crypt simulation with a simple wnt dependent cell-cycle model</h2>
+<p>
+The next test generates a crypt, in which we use a cylindrical vertex mesh, and
+impose a linearly decreasing concentration gradient of Wnt. Cells detect the level of Wnt
+at their centre and those that are in a region of sufficient Wnt are defined to be transit cells,
+whilst those above this Wnt threshold are defined to be differentiated. The cell cycle length of
+transit cells is then assigned randomly from a uniform distribution.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedCryptWithSimpleWntCellCycleModel</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Create a cylindrical mesh, and get the cell location indices, as before.
+</p>
+<div class="code"><pre>        CylindricalHoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+
+</pre></div><p>
+Create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+Generate cells, which are assigned a <tt>SimpleWntCellCycleModel</tt> using
+the <tt>CryptCellsGenerator</tt>. The final boolean argument 'true' indicates
+to assign randomly chosen birth times.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CryptCellsGenerator<span class="o">&lt;</span>SimpleWntCellCycleModel<span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>Generate<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="p">,</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">);</span>
+
+</pre></div><p>
+Create a cell population, as before.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> crypt<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+Define the crypt length; this will be used for sloughing and calculating the Wnt gradient.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> crypt_length <span class="o">=</span> <span class="mf">6.0</span><span class="p">;</span>
+
+</pre></div><p>
+Set up a <tt>WntConcentration</tt> object, as in <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials/RunningMeshBasedCryptSimulations.html">UserTutorials/RunningMeshBasedCryptSimulations</a>.
+</p>
+<div class="code"><pre>        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetType<span class="p">(</span>LINEAR<span class="p">);</span>
+        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCellPopulation<span class="p">(</span>crypt<span class="p">);</span>
+        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCryptLength<span class="p">(</span>crypt_length<span class="p">);</span>
+
+</pre></div><p>
+Create a simulator as before, and add a force law, the target area modifier and a sloughing cell killer to it.
+</p>
+<div class="code"><pre>        CryptSimulation2d <span class="nf">simulator</span><span class="p">(</span>crypt<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexCryptWithSimpleWntCellCycleModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        MAKE_PTR_ARGS<span class="p">(</span>SloughingCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>crypt<span class="p">,</span> crypt_length<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+</pre></div><p>
+Here we impose a boundary condition at the base: that cells
+at the bottom of the crypt are repelled if they move past 0.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>UseJiggledBottomCells<span class="p">();</span>
+
+</pre></div><p>
+Run the simulation, by calling <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dVertexCells /tmp/$USER/testoutput/VertexCryptWithSimpleWntCellCycleModel/results_from_time_0</tt>.
+You may have to do: <tt>javac Visualize2dVertexCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+When we visualize the results, we should see two colours of cells: yellow transit
+cells and pink differentiated cells. Cells above 6.0 will be sloughed off immediately.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningVertexBasedCryptSimulationsTutorial.hpp">File name <tt>TestRunningVertexBasedCryptSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "CellsGenerator.hpp"
+#include "CryptCellsGenerator.hpp"
+#include "WntConcentration.hpp"
+#include "SloughingCellKiller.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "SimpleWntCellCycleModel.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CylindricalHoneycombVertexMeshGenerator.hpp"
+#include "CryptSimulation2d.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningVertexBasedCryptSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestVertexBasedCrypt<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+         CylindricalHoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+         Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CryptCellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>Generate<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="p">,</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">);</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> crypt<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        CryptSimulation2d <span class="nf">simulator</span><span class="p">(</span>crypt<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexCrypt"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        <span class="kt">double</span> crypt_length <span class="o">=</span> <span class="mf">6.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>SloughingCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>crypt<span class="p">,</span> crypt_length<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestVertexBasedCryptWithSimpleWntCellCycleModel<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        CylindricalHoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CryptCellsGenerator<span class="o">&lt;</span>SimpleWntCellCycleModel<span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>Generate<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="p">,</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">);</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> crypt<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        <span class="kt">double</span> crypt_length <span class="o">=</span> <span class="mf">6.0</span><span class="p">;</span>
+
+        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetType<span class="p">(</span>LINEAR<span class="p">);</span>
+        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCellPopulation<span class="p">(</span>crypt<span class="p">);</span>
+        WntConcentration<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCryptLength<span class="p">(</span>crypt_length<span class="p">);</span>
+
+        CryptSimulation2d <span class="nf">simulator</span><span class="p">(</span>crypt<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexCryptWithSimpleWntCellCycleModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        MAKE_PTR_ARGS<span class="p">(</span>SloughingCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>crypt<span class="p">,</span> crypt_length<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+        simulator<span class="p">.</span>UseJiggledBottomCells<span class="p">();</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

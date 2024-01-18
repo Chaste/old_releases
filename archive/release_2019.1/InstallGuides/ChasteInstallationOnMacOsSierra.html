@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ChasteInstallationOnMacOsSierra - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonmacOSSierra">Installing Chaste on macOS Sierra</h1>
+<p>
+This install guide is based upon a fresh install of macOS Sierra.
+</p>
+<h2 id="CCompiler">C++ Compiler</h2>
+<p>
+You will need to either:
+</p>
+<ul><li>Install Xcode from app store to get the Apple-clang compiler
+</li><li>Following the instructions below to install Gcc-7 via Homebrew (it is a dependency of several packages)
+<ul><li>Note that, by default, <tt>g++</tt> is an alias to the Apple-clang compiler
+</li></ul></li></ul><h2 id="Homebrew">Homebrew</h2>
+<p>
+see <a class="ext-link" href="http://mxcl.github.com/homebrew/"><span class="icon">​</span>http://mxcl.github.com/homebrew/</a>
+</p>
+<pre class="wiki">/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+</pre><p>
+Later libraries (PETSc, METIS, VTK and parMETIS) need a "science" repository
+</p>
+<pre class="wiki">brew tap homebrew/science
+</pre><p>
+Note: I needed to <tt>chown</tt> some directories to get homebrew 100% happy 
+</p>
+<pre class="wiki">sudo chown USER /usr/local/share/man/de/
+sudo chown USER /usr/local/share/man/de/man1/
+</pre><p>
+where USER is your username.
+</p>
+<h2 id="InstallingdependenciesviaHomebrew">Installing dependencies via Homebrew</h2>
+<p>
+To get the latest version of a dependency, you can
+</p>
+<pre class="wiki">brew install &lt;name&gt;
+</pre><p>
+To get a particular version of a dependency, you can
+</p>
+<pre class="wiki">brew install &lt;name&gt;@&lt;version&gt;
+</pre><p>
+but this may not be available for all packages.
+</p>
+<p>
+A full list of packages it's possible to install can be retrieved with
+</p>
+<pre class="wiki">brew search &lt;name&gt;
+</pre><p>
+For instance,
+</p>
+<pre class="wiki">brew search boost
+</pre><p>
+gives several options including
+</p>
+<pre class="wiki">boost # latest version, 1.65, currently incompatible with Chaste
+boost@1.55
+boost@1.57
+boost@1.60
+</pre><p>
+See <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a> for details on which dependency versions are compatible.
+Use the following as a guide, but put in specific version numbers, if available, if the default packages are incompatible with Chaste:
+</p>
+<pre class="wiki">brew install wget 
+brew install cmake
+brew install boost
+brew install xerces-c
+brew install metis
+brew install parmetis
+brew install sundials --with-mpi
+brew install hdf5 --with-mpi
+brew install vtk
+brew install petsc --with-mpi
+</pre><h2 id="CodesynthesisXSD">Codesynthesis XSD</h2>
+<p>
+Codesynthesis XSD is not available in homebrew and must be installed directly:
+</p>
+<pre class="wiki">wget https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/xsd-4.0.0-i686-macosx.tar.bz2
+tar -jxf xsd-4.0.0-i686-macosx.tar.bz2
+</pre><h2 id="PyCML">PyCML</h2>
+<pre class="wiki">pip install --user "python-dateutil==1.5"
+pip install --user "rdflib==2.4.2"
+pip install --user lxml
+pip install --user "Amara==1.2.0.2"
+</pre><p>
+If the above displays an error when installing Amara, try again with:
+</p>
+<pre class="wiki">sudo easy_install https://pypi.python.org/packages/2.5/A/Amara/Amara-1.2.0.2-py2.5.egg
+</pre><h2 id="Getthesourcecode">Get the source code</h2>
+<p>
+See
+</p>
+<p>
+<a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository">https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository</a>
+</p>
+<h2 id="Addingvariablestobashprofile">Adding variables to bash profile</h2>
+<p>
+We use the pre-compiled XSD, so must tell CMake where to find it.
+Edit your bash profile:
+</p>
+<pre class="wiki">nano ~/.bash_profile
+</pre><p>
+and add
+</p>
+<pre class="wiki">EXPORT XSD_ROOT=/path/to/xsd-4.0.0-i686-macosx
+</pre><p>
+Additionally, if you wish to use GCC rather than Apple-Clang, also add the following (or similar) to your bash profile:
+</p>
+<pre class="wiki">EXPORT CC=gcc-7
+EXPORT CXX=g++-7
+</pre><h2 id="Finishingup">Finishing up</h2>
+<p>
+Follow the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CmakeFirstRun">CMake first run guide</a>.
+</p>
+<hr />
+<h2 id="Handythings">Handy things</h2>
+<p>
+To be able to see the tmp folder in finder use 
+</p>
+<pre class="wiki">sudo chflags nohidden /tmp
+</pre><p>
+Useful aliases to add to <tt>~/.bash_profile</tt>
+</p>
+<pre class="wiki">nano ~/.bash_profile
+</pre><pre class="wiki">alias cdchaste='cd /Users/chaste/workspace/Chaste' #Or similar
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

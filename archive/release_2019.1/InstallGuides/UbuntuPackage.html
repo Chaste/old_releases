@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/UbuntuPackage - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteusingtheUbuntupackage">Installing Chaste using the Ubuntu package</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#InstallingChasteusingtheUbuntupackage">Installing Chaste using the Ubuntu package</a>
+    <ol>
+      <li>
+        <a href="#a1.AccessingtheChastePackage">1. Accessing the Chaste Package</a>
+      </li>
+      <li>
+        <a href="#a2.Gettingthecorrectdependencies">2. Getting the correct dependencies</a>
+        <ol>
+          <li>
+            <a href="#a2a.ForCodeUSERSworkingwithareleaseratherthandevelopers">2a. For Code USERS (working with a release, rather than developers)</a>
+            <ol>
+              <li>
+                <a href="#Installingpreviousreleases">Installing previous releases</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#a2b.ForCodeDEVELOPERSorusersworkingwiththelatesttrunkcodeandprojects">2b. For Code DEVELOPERS (or users working with the latest trunk code &hellip;</a>
+            <ol>
+              <li>
+                <a href="#Manualadjustments">Manual adjustments</a>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#a3.Possibleissues">3. Possible issues</a>
+        <ol>
+          <li>
+            <a href="#Errorsaftertests">Errors after tests</a>
+          </li>
+          <li>
+            <a href="#OldversionsofChaste">Old versions of Chaste</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+For Ubuntu users, there is a package available to greatly ease installation of the Chaste source code.
+It requires an Ubuntu version of Intrepid or newer, as several dependencies are not available as Ubuntu packages in older versions.
+We have also had success installing Chaste on a virtual machine running Ubuntu in other versions of Linux, Mac OS X and Windows.
+</p>
+<p>
+The package has been tested with all versions of Ubuntu from <strong>Intrepid (8.10)</strong> to <strong>Disco (19.04)</strong> inclusive, and will be adapted to new versions as soon as possible after they are released. 
+</p>
+<p>
+Each release of Chaste should work with <a class="ext-link" href="http://www.ubuntu.com/info/release-end-of-life"><span class="icon">​</span>all supported versions of Ubuntu</a> at the time of the Chaste release. But note that the latest Chaste releases won't work with the oldest (unsupported) Ubuntus, and the older Chaste releases (and their associated bolt-on projects) probably won't work with the newest Ubuntus without some updating (to use newer dependencies and compilers). The development code should always work with all the currently supported versions of Ubuntu.
+</p>
+<h2 id="a1.AccessingtheChastePackage">1. Accessing the Chaste Package</h2>
+<p>
+The package can be downloaded using your normal package manager (e.g. <a class="ext-link" href="http://packages.ubuntu.com/aptitude"><span class="icon">​</span>aptitude</a>) by adding our repository to your configuration.
+This can be done by, for example, opening a terminal and running
+</p>
+<pre class="wiki">sudo nano /etc/apt/sources.list.d/chaste.list
+</pre><p>
+and, depending on your version of Ubuntu, add <strong>one</strong> of the following lines to the <tt>chaste.list</tt> text file:
+</p>
+<table class="wiki">
+<tr><td> <strong>Ubuntu Version</strong> </td><td> <strong>Ubuntu codename</strong> </td><td> <strong>Line to add</strong> 
+</td></tr><tr><td> 13.10 or older </td><td> - </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu legacy/</tt> 
+</td></tr><tr><td> 14.04 LTS </td><td> trusty </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu trusty/</tt> 
+</td></tr><tr><td> 14.10 </td><td> utopic </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu utopic/</tt> 
+</td></tr><tr><td> 15.04 </td><td> vivid </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu vivid/</tt> 
+</td></tr><tr><td> 15.10 </td><td> wily </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu wily/</tt> 
+</td></tr><tr><td> 16.04 LTS </td><td> xenial </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu xenial/</tt> 
+</td></tr><tr><td> 16.10 </td><td> yakkety </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu yakkety/</tt> 
+</td></tr><tr><td> 17.04 </td><td> zesty </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu zesty/</tt> 
+</td></tr><tr><td> 17.10 </td><td> artful </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu artful/</tt> 
+</td></tr><tr><td> 18.04 LTS </td><td> bionic </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu bionic/</tt> 
+</td></tr><tr><td> 18.10 </td><td> cosmic </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu cosmic/</tt> 
+</td></tr><tr><td> 19.04 </td><td> disco </td><td> <tt>deb http://www.cs.ox.ac.uk/chaste/ubuntu disco/</tt> 
+</td></tr></table>
+<p>
+The last component of the line depends on your version of Ubuntu, as listed at <a class="ext-link" href="https://wiki.ubuntu.com/DevelopmentCodeNames"><span class="icon">​</span>https://wiki.ubuntu.com/DevelopmentCodeNames</a>. Type <tt>lsb_release -a</tt> to find this out if you don't already know it.
+Note that the trailing "/" is necessary!
+</p>
+<p>
+Next, install the Chaste public licence key.
+Back in the terminal, type:
+</p>
+<pre class="wiki">sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 422C4D99
+</pre><p>
+Note that you also need to ensure you have enabled 'multiverse' packages; this is normally the default.
+</p>
+<h2 id="a2.Gettingthecorrectdependencies">2. Getting the correct dependencies</h2>
+<p>
+After following point 1 above, you should be able to install the dependencies for Chaste by running:
+</p>
+<pre class="wiki">sudo apt-get update
+sudo apt-get install chaste-dependencies
+</pre><p>
+You should now decide whether you want to be a Code User or a Code Developer.
+</p>
+<ul><li>Code Users - are people who want to work with a stable released version of the Chaste code (a new release is made roughly every six months).
+</li><li>Code Developers - (both internal and external to the core team) are people who want to work with the latest development version of the Chaste code, between the main stable releases.
+</li></ul><p>
+See <a class="wiki" href="/chaste/tutorials/release_2019.1/GettingStarted.html">GettingStarted</a> for more detail if you still aren't sure.
+</p>
+<h3 id="a2a.ForCodeUSERSworkingwithareleaseratherthandevelopers">2a. For Code USERS (working with a release, rather than developers)</h3>
+<p>
+You can obtain the latest stable release of the Chaste source code from our GitHub repository:
+</p>
+<pre class="wiki">git clone -b release https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
+</pre><p>
+Finally, follow the <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/CmakeFirstRun.html">CMake First Run</a> guide to get up and running with Chaste.
+</p>
+<h4 id="Installingpreviousreleases">Installing previous releases</h4>
+<p>
+If you want a specific version of Chaste, and do not want to stay up-to-date with new versions on the <tt>release</tt> branch from our Git repository, you can download the source code from <a class="ext-link" href="https://github.com/Chaste/Chaste/releases"><span class="icon">​</span>our GitHub releases page</a>, back to Release 3.0.
+</p>
+<h3 id="a2b.ForCodeDEVELOPERSorusersworkingwiththelatesttrunkcodeandprojects">2b. For Code DEVELOPERS (or users working with the latest trunk code and projects)</h3>
+<p>
+To install the suggested packages:
+</p>
+<pre class="wiki"># first, make aptitude aware of the latest changes 
+sudo apt-get update
+# then install
+sudo apt-get install --install-recommends chaste-dependencies
+sudo apt-get install `dpkg -s chaste-dependencies | egrep "^Suggests" | cut -d "," -f 1-111 --output-delimiter " " | cut -d ":" -f 2`
+</pre><p>
+If you want to use eclipse to work with Chaste (as we do - recommended), after the above you will then need to:
+</p>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/AccessCodeRepository.html">clone the Chaste repository</a>.
+</li><li><a class="wiki" href="/trac/wiki/SetupEclipse">SetupEclipse</a> - update eclipse settings to use Chaste code formatting etc.
+</li></ul><p>
+If you don't want to use eclipse you can <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/AccessCodeRepository.html">checkout at the command line</a>.
+You can get information on the latest stable build on the <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/ExternalDeveloperGuide.html">external developer guide page</a>.
+</p>
+<p>
+If you have the necessary permissions, see also <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/CheckoutUserProject.html">Check out a user project</a> - to make a new user project, or get a copy of an existing one.
+</p>
+<h4 id="Manualadjustments">Manual adjustments</h4>
+<p>
+You can choose different blas/lapack implementations. Look particularly at the atlas packages, (<tt>apt-cache search libatlas</tt> to see the options).  Use <tt>libatlas-sse2-dev</tt> on Intel, <tt>libatlas-3dnow-dev</tt> on AMD, <tt>libatlas-base-dev</tt> otherwise.
+</p>
+<h2 id="a3.Possibleissues">3. Possible issues</h2>
+<h3 id="Errorsaftertests">Errors after tests</h3>
+<p>
+Some of the older versions of Ubuntu (oneiric/precise) come with Boost 1.46.1, which unfortunately contains <a class="ext-link" href="https://svn.boost.org/trac/boost/ticket/4842"><span class="icon">​</span>a bug</a> (fixed in quantal / boost 1.48).
+</p>
+<p>
+This bug leads to output like this, at the end of a test:
+</p>
+<pre class="wiki">Running 4 tests
+
+ ***** TestCell.hpp *****
+
+Entering TestUpdateCellProliferativeTypes
+Passed
+Entering TestWithWntCellCycleModel
+Passed
+Entering TestWithStochasticWntCellCycleModel
+Passed
+Entering TestWntMutantVariantsAndLabelling
+Passed
+OK!
+pure virtual method called
+terminate called without an active exception
+[csu7921:16267] *** Process received signal ***
+[csu7921:16267] Signal: Aborted (6)
+[csu7921:16267] Signal code:  (-6)
+[csu7921:16267] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0) [0x7f4f75a2ecb0]
+[csu7921:16267] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35) [0x7f4f75698445]
+[csu7921:16267] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x17b) [0x7f4f7569bbab]
+[csu7921:16267] [ 3] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x11d) [0x7f4f7620369d]
+[csu7921:16267] [ 4] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb5846) [0x7f4f76201846]
+[csu7921:16267] [ 5] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb5873) [0x7f4f76201873]
+[csu7921:16267] [ 6] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb628f) [0x7f4f7620228f]
+[csu7921:16267] [ 7] /usr/lib/libboost_serialization.so.1.46.1(_ZNK5boost13serialization16void_cast_detail11void_casterltERKS2_+0x26) [0x7f4f79df7466]
+[csu7921:16267] [ 8] /usr/lib/libboost_serialization.so.1.46.1(_ZNK5boost13serialization16void_cast_detail11void_caster20recursive_unregisterEv+0x9a) [0x7f4f79df755a]
+[csu7921:16267] [ 9] /home/wolf1768/workspace/Chaste/lib/libpde.so(_ZN5boost13serialization16void_cast_detail21void_caster_primitiveI22ConstBoundaryConditionILj1EE25AbstractBoundaryConditionILj1EEED1Ev+0x2b) [0x7f4f7db419dd]
+[csu7921:16267] [10] /home/wolf1768/workspace/Chaste/lib/libpde.so(_ZN5boost13serialization6detail17singleton_wrapperINS0_16void_cast_detail21void_caster_primitiveI22ConstBoundaryConditionILj1EE25AbstractBoundaryConditionILj1EEEEED1Ev+0x34) [0x7f4f7db41a80]
+[csu7921:16267] [11] /lib/x86_64-linux-gnu/libc.so.6(__cxa_finalize+0x9d) [0x7f4f7569dd3d]
+[csu7921:16267] [12] /home/wolf1768/workspace/Chaste/lib/libpde.so(+0x1992d6) [0x7f4f7daac2d6]
+[csu7921:16267] *** End of error message ***
+Aborted (core dumped)
+</pre><p>
+Fortunately this doesn't affect the running of the tests, which execute normally, but just display errors on shutdown. <strong>As long as you see "OK!", everything is OK!
+</strong></p>
+<p>
+If you do see this in tests, then when running a compiled executable you may see this at the end:
+</p>
+<pre class="wiki">terminate called after throwing an instance of 'Exception'
+Aborted
+</pre><p>
+this is not a problem either, and executable should have run correctly.
+</p>
+<p>
+If this really does offend you (it can be very annoying if you are doing development and/or memory testing), then precise (12.04 LTS) also makes boost 1.48 available which doesn't have this bug. Unfortunately this isn't the default and you have to install it manually.
+(NB: These instructions are for the release 3.1 package; with the latest beta you should be able to do just "<tt>sudo apt-get install libboost-serialization1.48-dev libboost-filesystem1.48-dev</tt>".)
+</p>
+<ol><li>Remove the existing chaste-dependencies which the system thinks relies on boost 1.46.
+<pre class="wiki">sudo apt-get remove chaste-dependencies
+</pre></li><li>List all the chaste dependencies with a command like this:
+<pre class="wiki">apt-cache show chaste-dependencies | head -30
+</pre></li><li>Copy the names of the ones you want
+</li><li>Replace <em><tt>libboost-serialization-dev</tt></em> and <em><tt>libboost-filesystem-dev</tt></em> with <strong><tt>libboost-serialization1.48-dev</tt></strong> and <strong><tt>libboost-filesystem1.48-dev</tt></strong>, 
+</li><li>Install them all (this can be done in multiple calls) with:
+<pre class="wiki">sudo apt-get install &lt;list of packages&gt;
+</pre></li></ol><h3 id="OldversionsofChaste">Old versions of Chaste</h3>
+<p>
+For release 2.0 of Chaste and earlier, note that 4 tests (<tt>TestQuadraticMesh</tt>, <tt>TestVoronoiTessellation</tt>, <tt>TestVertexMesh</tt>, and <tt>TestInventorVoronoiWriter</tt>) may be reported as failing.  This is due to a different version of <tt>tetgen</tt> being used in Ubuntu.  Release 2.1 packages <tt>tetgen</tt> in the Chaste distribution and so avoids the problem.
+</p>
+<p>
+If working with older versions, installing tetgen 1.4.2 manually as described at <a class="wiki" href="/trac/wiki/InstallTetgenAndTetview">InstallTetgenAndTetview</a> (and ensuring that this version appears on your PATH before the system version) resolves the problems.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

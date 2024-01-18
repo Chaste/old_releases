@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/FindingChasteDependencies - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="FindingChasteDependencies">Finding Chaste Dependencies</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#FindingChasteDependencies">Finding Chaste Dependencies</a>
+    <ol>
+      <li>
+        <a href="#Windows">Windows</a>
+      </li>
+      <li>
+        <a href="#SpecifyingaCompiler">Specifying a Compiler</a>
+      </li>
+      <li>
+        <a href="#SpecifyingPETSc">Specifying PETSc</a>
+      </li>
+      <li>
+        <a href="#SpecifyingSundials">Specifying Sundials</a>
+      </li>
+      <li>
+        <a href="#SpecifyingHDF5">Specifying HDF5</a>
+      </li>
+      <li>
+        <a href="#SpecifyingVTK">Specifying VTK</a>
+      </li>
+      <li>
+        <a href="#SpecifyingBoost">Specifying Boost</a>
+      </li>
+      <li>
+        <a href="#NotesforCHASTE_DEPS_ROOT_DIR">Notes for CHASTE_DEPS_ROOT_DIR</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#a.bashrc">~/.bashrc</a>
+  </li>
+  <li>
+    <a href="#Previousinstructions">Previous instructions</a>
+  </li>
+</ol>
+</div><p>
+Running the Chaste configure step
+</p>
+<pre class="wiki">cmake /path/to/Chaste
+</pre><p>
+should find all Chaste dependencies automatically.
+This should certainly be the case on supported Ubuntu versions, and if you have followed the <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/InstallGuide.html">InstallGuides/InstallGuide</a>, on all Mac and Linux distributions.
+</p>
+<p>
+This is a troubleshooting page with information for manually setting hints for dependency locations if they are not be found automatically, or if you wish to specify specific dependency versions when you have multiple versions installed.
+</p>
+<h2 id="Windows">Windows</h2>
+<p>
+For windows (on scratch at least) you need to specify a generator (using <tt>-G</tt>) and the location of the third party libraries (using <tt>-DCHASTE_DEPS_ROOT_DIR=</tt>). So on scratch the command is
+</p>
+<pre class="wiki">cmake -DCHASTE_DEPS_ROOT_DIR=D:\chaste_windows\build\install\third_party_libs -DChaste_USE_PETSC_HDF5=OFF -DHAVE_PARMETIS=ON -GVisual Studio 10 Win64 \path\to\source
+</pre><p>
+Note you need the <tt>-DChaste_USE_PETSC_HDF5=OFF</tt> because I'm using "Petsc for Windows" for Petsc, which doesn't include hdf5 libraries.
+</p>
+<p>
+You need <tt>-DHAVE_PARMETIS=ON</tt> to skip the step which checks that Parmetis is working, it works for the main Chaste build, so not to worry (for now).
+</p>
+<h2 id="SpecifyingaCompiler">Specifying a Compiler</h2>
+<p>
+You can specify a C++ and C compiler by setting the CXX and CC environment variables. eg.
+</p>
+<pre class="wiki">CXX=icpc CC=icc cmake /path/to/source
+</pre><p>
+or 
+</p>
+<pre class="wiki">CXX=clang++ CC=clang cmake /path/to/source
+</pre><h2 id="SpecifyingPETSc">Specifying PETSc</h2>
+<p>
+You can specify a PETSc folder and Arch by setting the PETSC_DIR and PETSC_ARCH environment variables. eg.
+</p>
+<pre class="wiki">PETSC_DIR=/path/to/petsc PETSC_ARCH=linux-intel cmake /path/to/source
+</pre><p>
+OR setting the PETSC_DIR and PETSC_ARCH cmake variables. eg.
+</p>
+<pre class="wiki">cmake -DPETSC_DIR=/path/to/petsc -DPETSC_ARCH=linux-intel /path/to/source
+</pre><p>
+Once CMake has successfully found and tested the PETSc setup, this find/test setup will not be run on subsequent calls to <tt>cmake</tt> unless either the PETSC_DIR or PETSC_ARCH cmake variables are changed, or the PETSC_CURRENT variable is set to <tt>NO</tt>. e.g.
+</p>
+<pre class="wiki">cmake -DPETSC_CURRENT=NO .
+</pre><h2 id="SpecifyingSundials">Specifying Sundials</h2>
+<p>
+You can specify a Sundials folder by setting the SUNDIALS_ROOT environment variables.
+</p>
+<h2 id="SpecifyingHDF5">Specifying HDF5</h2>
+<p>
+You can specify a HDF5 folder by setting the HDF5_ROOT environment variables.
+</p>
+<h2 id="SpecifyingVTK">Specifying VTK</h2>
+<p>
+You can specify a VTK directory by using the VTK_DIR CMake variable (note: NOT an environment variable). eg.
+</p>
+<pre class="wiki">cmake -DVTK_DIR=/path/to/vtk /path/to/source
+</pre><h2 id="SpecifyingBoost">Specifying Boost</h2>
+<p>
+You can specify a Boost directory by using the BOOST_ROOT CMake variable (note: NOT an environment variable).
+</p>
+<h2 id="NotesforCHASTE_DEPS_ROOT_DIR">Notes for CHASTE_DEPS_ROOT_DIR</h2>
+<p>
+(Windows only) Note that using this CMake option overwrites any specified library locations 
+</p>
+<h1 id="a.bashrc">~/.bashrc</h1>
+<p>
+You can, of course, configure your machine to set these environment variables automatically in every session.
+You can, most likely, do this by adding <tt>export VARIABLE=VALUE</tt> to your <tt>~/.bashrc</tt>.
+</p>
+<p>
+For instance, you may like to use clang and a specific petsc install, so could add the following:
+</p>
+<pre class="wiki">export CXX=clang++
+export CC=clang
+
+export PETSC_DIR=/path/to/favourite/petsc
+export PETSC_ARCH=linux-gnu
+</pre><h1 id="Previousinstructions">Previous instructions</h1>
+<p>
+This page supersedes the previous instructions for specifying dependencies, now available here: <a class="wiki" href="/trac/wiki/SconsArchive/HostconfigSystem">SconsArchive/HostconfigSystem</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

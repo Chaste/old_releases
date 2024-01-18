@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Huygens - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonHuygens">Installing Chaste on Huygens</h1>
+<p>
+Login node is p6012.huygens.sara.nl
+</p>
+<p>
+Support pages are at <a class="ext-link" href="https://subtrac.sara.nl/userdoc/wiki/huygens"><span class="icon">​</span>https://subtrac.sara.nl/userdoc/wiki/huygens</a>
+</p>
+<h2 id="Gridaccess">Grid access</h2>
+<p>
+If you do not have direct ssh access and are logging in using an e-Science certificate or equivalent then you will need to:
+</p>
+<ul><li>Get a Grid Certificate
+</li><li>Send the Distinguished Name (DN) of your certificate to your DEISA contact
+</li><li>Wait for the certificate details to propogate to other sites
+</li><li>Use a Grid-enabled tool such as gsissh to log in
+</li></ul><h2 id="gsissh-term">gsissh-term</h2>
+<p>
+If you don't have gsissh installed then there is a Java webstart of gsissh-term available at <a class="ext-link" href="http://www.grid.lrz-muenchen.de/res/globus/gsissh-term/applet/jws.jnlp"><span class="icon">​</span>http://www.grid.lrz-muenchen.de/res/globus/gsissh-term/applet/jws.jnlp</a>
+</p>
+<p>
+This is able to pull your credentials directly from your browser (which will need to be the one you requested the certificate from or has had the certificate exported too). You may also need to update the cryptography packages. Instructions are at <a class="ext-link" href="http://www.grid.lrz-muenchen.de/de/mware/globus/client/gsissh_term.html#OtherAuthMeth"><span class="icon">​</span>http://www.grid.lrz-muenchen.de/de/mware/globus/client/gsissh_term.html#OtherAuthMeth</a>
+</p>
+<p>
+Once you have access then you can install an ssh key to allow ssh access
+</p>
+<h1 id="Environment">Environment</h1>
+<p>
+To set up your environment do:
+</p>
+<pre class="wiki">. /home/hpx1wils/dependencies/profile
+</pre><p>
+which on 09/12/2009 contained:
+</p>
+<pre class="wiki">CHASTE_UTILS=/home/hpx1wils/dependencies
+export CHASTE_UTILS
+CHASTE_LIBS=$CHASTE_UTILS
+export CHASTE_LIBS
+
+PATH=${CHASTE_LIBS}/bin:${CHASTE_UTILS}/bin:$PATH
+for util in scons ; do 
+ PATH=${PATH}:$CHASTE_UTILS/$util/bin
+done
+export PATH
+
+module load sara hdf5-mp petsc
+
+module load lapack
+</pre><p>
+After sourcing the profile your module environment should be:
+</p>
+<pre class="wiki">module list
+
+Currently Loaded Modulefiles:
+ 1) compilerwrappers/yes  5) c++/ibm/10.1          9) hdf5-mp/1.6.7        
+ 2) gcc/4.2.1             6) fortran/ibm/12.1     10) petsc/2.3.3/real     
+ 3) java/ibm/1.5          7) subversion/1.5.4     11) lapack/3.1.1         
+ 4) c/ibm/10.1            8) sara                 
+</pre><h1 id="Compilation">Compilation</h1>
+<p>
+To build with the GNU compilers do:
+</p>
+<pre class="wiki">scons build=GccPower
+</pre><h2 id="InteractiveUse">Interactive Use</h2>
+<p>
+You can run short, low processor count parallel jobs on the login node. Instructions are at <a class="ext-link" href="https://subtrac.sara.nl/userdoc/wiki/huygens/usage/progavail/poe#UsingPOEinteractively"><span class="icon">​</span>https://subtrac.sara.nl/userdoc/wiki/huygens/usage/progavail/poe#UsingPOEinteractively</a>
+</p>
+<p>
+This is useful to run tests on the front-end when building Chaste.
+</p>
+<h1 id="Executable">Executable</h1>
+<p>
+A pre-built version of the executable is available at
+</p>
+<pre class="wiki">/home/hpx1wils/dependencies/bin/Chaste
+</pre><p>
+An example job script to run the executable can be found at
+</p>
+<pre class="wiki">/home/hpx1wils/dependencies/runchaste.q
+</pre><p>
+There are 101 nodes available for batch usage, each with 32 processors.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

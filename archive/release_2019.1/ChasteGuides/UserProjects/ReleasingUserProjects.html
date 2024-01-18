@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/UserProjects/ReleasingUserProjects - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#ReleasingUserProjects">Releasing User Projects</a>
+    <ol>
+      <li>
+        <a href="#Gitprojects2016onwards">Git projects (2016 onwards)</a>
+        <ol>
+          <li>
+            <a href="#Archiving">Archiving</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#SVNprojectspre2016">SVN projects (pre 2016)</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="ReleasingUserProjects">Releasing User Projects</h1>
+<p>
+This page discusses the procedure for 'releasing' a user project based on Chaste ('bolt-on project'). Typically you'll want to do this when there is a particular version of code associated with a paper/project that you want to provide as a download.
+</p>
+<h2 id="Gitprojects2016onwards">Git projects (2016 onwards)</h2>
+<p>
+Git projects should be made as detailed on <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/UserProjects.html">ChasteGuides/UserProjects</a>. Once they are ready for release, the recommended route is simply to <a class="ext-link" href="https://help.github.com/articles/creating-releases/"><span class="icon">​</span>follow the github release guide</a>.
+</p>
+<h3 id="Archiving">Archiving</h3>
+<p>
+Since Git repos can be deleted by their owner at any point, it is also good practice to permanently archive a copy of your repo somewhere. There are a few routes for this:
+</p>
+<ul><li><a class="ext-link" href="https://zenodo.org/"><span class="icon">​</span>Zenodo</a> is one tool for doing this <a class="ext-link" href="https://guides.github.com/activities/citable-code/"><span class="icon">​</span>instructions here</a>.
+</li><li><a class="ext-link" href="https://figshare.com/"><span class="icon">​</span>Figshare</a> is another, <a class="ext-link" href="https://support.figshare.com/support/solutions/articles/6000150264-how-to-connect-figshare-with-your-github-account"><span class="icon">​</span>instructions here</a>.
+</li></ul><p>
+Both have the benefit of providing you with a <a class="ext-link" href="https://en.wikipedia.org/wiki/Digital_object_identifier"><span class="icon">​</span>doi</a> to enable people to cite your code.
+</p>
+<h2 id="SVNprojectspre2016">SVN projects (pre 2016)</h2>
+<p>
+We often release the code that generated the results of a paper as a 'bolt-on project'. This is usually done as a 'tag' of a particular revision of a user project in the repository, rather than making the user project itself public. This ensures that no confidential history is released, and makes clear that we aren't going to maintain compatibility for the project with the development version of Chaste indefinitely.
+</p>
+<p>
+The rough work-flow is this (obviously change the name and release numbers appropriately!):
+</p>
+<ul><li><a class="wiki" href="/trac/wiki/ChasteGuides/UserProjects?version=51#Oldinformation">Check out the project</a>
+</li><li>Make sure that it compiles and continuous is clean (usually for a particular <a class="forbidden wiki" title="no permission to view this wiki page">release version of Chaste</a>).
+</li><li><em>Does your project pull in the current revision of the remote cellml project using <tt>svn:externals</tt>?</em> If so, then you will probably want to ensure that a certain revision of the cellml project is used too, in case anyone checks out your tag in future and expects the same CellML files. Do something like the following (more details in the cellml project readme: <a class="source" href="/trac/browser/projects/cellml/README.txt">projects/cellml/README.txt</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/projects/cellml/README.txt" title="Download">​</a>):
+<ul><li>Navigate to where in your project the cellml project is referenced.
+</li><li>Run the command (note the full stop): <tt>svn propedit svn:externals .</tt>
+</li><li>Change the line so that it says which revision of the cellml project to use, e.g. "<tt>cellml -r19716 https://chaste.cs.ox.ac.uk/svn/chaste/projects/cellml/cellml</tt>"
+</li></ul></li><li>Change directory into the root of the checked out project
+</li><li>Create an svn tag (note the '.'):
+<div class="code"><pre>svn copy . https://chaste.cs.ox.ac.uk/svn/chaste/tags/PhilTransA2009_release_1.1 <span class="se">\
+</span>    -m <span class="s2">"Tag for PhilTransA2009 release"</span>
+</pre></div></li><li>If you made any local modifications, e.g. to fix a revision of the cellml project as described above, now is a good point to revert them before you forget!
+<div class="code"><pre>svn revert -R .
+</pre></div></li><li>Grab a copy of the tag locally, without <tt>.svn</tt> folders:
+<div class="code"><pre>mkdir /tmp/projects
+<span class="nb">cd</span> /tmp/projects
+svn <span class="nb">export </span>https://chaste.cs.ox.ac.uk/svn/chaste/tags/PhilTransA2009_release_1.1 PhilTransA2009
+<span class="nb">cd</span> ..
+</pre></div></li><li>Tar and gzip:
+<div class="code"><pre>tar cvfz PhilTransA2009_release_1_1.tgz projects/PhilTransA2009/
+</pre></div></li></ul><p>
+If you want to host on the Chaste website, see <a class="missing wiki">an old version of the MakingARelease page?</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

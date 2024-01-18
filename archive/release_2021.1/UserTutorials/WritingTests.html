@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/WritingTests - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file global/test/TestWritingTestsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/5e8c8d7218a9/git_repo" title="Copyright mayhem!">5e8c8d7218a9/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Writingtests">Writing tests</h1>
+<p>
+We do not use <tt>int main()</tt> methods in Chaste. Instead, we write <em>tests</em>, which are run using CxxTest.
+Tests are used both as:
+(i) part of the testing environment - every class in the source code has an equivalent test file which tests each aspect of its functionality, making use of the <tt>TS_ASSERT</tt>s as described below; and
+(ii) for experimental work, which involve writing a 'test' as below but generally without <tt>TS_ASSERT</tt>s.
+</p>
+<p>
+This tutorial shows how to write a test using CxxTest. Note that the full code is given at the bottom of the page.
+</p>
+<p>
+First, the following header file needs to be included.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span>
+</pre></div><p>
+Now we have to define a class containing the tests. It is sensible to name the class with the same name as the file name. The class should inherit from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestWritingTestsTutorial</span><span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+</pre></div><p>
+Now we define some tests, which must be <strong>public</strong>, begin with the word 'Test', return <tt>void</tt>, and take in no parameters.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+    <span class="kt">void</span> <span class="nf">TestOnePlusOneEqualsTwo</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+To test whether two integers are equal, we can use the macro <tt>TS_ASSERT_EQUALS</tt>.
+</p>
+<div class="code"><pre>        <span class="kt">int</span> some_number <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>some_number<span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</pre></div><p>
+To test whether two numbers are equal to within a certain (absolute) tolerance we can use <tt>TS_ASSERT_DELTA</tt>.
+This should almost always be used when comparing two <tt>double</tt>s.  (See also <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2021.1/classCompareDoubles.html" title="Documentation for the CompareDoubles class"><span class="icon">​</span>class:CompareDoubles</a> for more
+advanced comparisons.)
+</p>
+<div class="code"><pre>        <span class="kt">double</span> another_number <span class="o">=</span> <span class="mf">1.000001</span> <span class="o">+</span> <span class="mf">1.0001</span><span class="p">;</span>
+        TS_ASSERT_DELTA<span class="p">(</span>another_number<span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+This second test shows some of the other <tt>TS_ASSERT</tt> macros that are available.
+The {{{}} part of the signature is there to make sure that full details of any
+uncaught exceptions are reported.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSomeOtherStuff</span><span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT<span class="p">(</span><span class="mi">1</span><span class="o">==</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// however, it is better to use TS_ASSERT_EQUALS, below
+</span>        TS_ASSERT_EQUALS<span class="p">((</span><span class="nb">true</span><span class="o">||</span><span class="nb">false</span><span class="p">),</span> <span class="nb">true</span><span class="p">);</span>
+        TS_ASSERT_DIFFERS<span class="p">(</span><span class="mf">1.348329534564385643543957436</span><span class="p">,</span> <span class="mf">1.348329534564395643543957436</span><span class="p">);</span>
+        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">2.71828183</span><span class="p">,</span> <span class="mf">3.14159265</span><span class="p">);</span> <span class="c1">// Note: to test if x is greater than y, use TS_ASSERT_LESS_THAN(y,x)
+</span>        TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span><span class="o">-</span><span class="mf">1e100</span><span class="p">,</span> <span class="mf">1e100</span><span class="p">);</span>
+        TS_ASSERT_THROWS_ANYTHING<span class="p">(</span><span class="k">throw</span> <span class="mi">0</span><span class="p">;);</span> <span class="c1">// normally you would put a function call inside the brackets
+</span>
+        <span class="kt">unsigned</span> x<span class="p">;</span>
+        <span class="c1">// The following TS_ASSERT_THROWS_NOTHING may be useful if you want to be certain that there are no uncaught exceptions
+</span>        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>x<span class="o">=</span><span class="mi">1</span><span class="p">;);</span>  <span class="c1">// normally you would put a function call inside the brackets
+</span>        TS_ASSERT_EQUALS<span class="p">(</span>x<span class="p">,</span> <span class="mi">1u</span><span class="p">);</span> <span class="c1">//Note that x and 1u are of the same type: unsigned integer
+</span>    <span class="p">}</span>
+
+</pre></div><p>
+Other useful macros include <tt>TS_ASSERT_THROWS_THIS</tt> and <tt>TS_ASSERT_THROWS_CONTAINS</tt> for testing exception
+messages.
+</p>
+<p>
+Note that methods that don't start with 'Test' are compiled but not run. So, if you want to stop a single
+test running, just put an 'x' or a 'donot' (for instance) before its name.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">donotTestThis</span><span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1</span><span class="p">,</span>   <span class="mi">2</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="mi">2u</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+To run this code, first copy it into a file, say, called <tt>TestWritingTests.hpp</tt> in the directory <tt>global/test/</tt>.
+Second, add the full name of your new file to the relevant continuous test pack, say <tt>[path/to/Chaste]/global/test/ContinuousTestPack.txt</tt>.
+Third, from the command line, run
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="o">[</span>path/to/ChasteBuild<span class="o">]</span>
+ccmake <span class="o">[</span>path/to/Chaste<span class="o">]</span>
+</pre></div><p>
+Then press <tt>c</tt> to configure, <tt>e</tt> to exit, and <tt>g</tt> to generate. Finally, run
+</p>
+<div class="code"><pre>make global
+ctest -V -R TestWritingTests
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestWritingTestsTutorial.hpp">File name <tt>TestWritingTestsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span>
+<span class="k">class</span> <span class="nc">TestWritingTestsTutorial</span><span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestOnePlusOneEqualsTwo<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kt">int</span> some_number <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>some_number<span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="kt">double</span> another_number <span class="o">=</span> <span class="mf">1.000001</span> <span class="o">+</span> <span class="mf">1.0001</span><span class="p">;</span>
+        TS_ASSERT_DELTA<span class="p">(</span>another_number<span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> TestSomeOtherStuff<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT<span class="p">(</span><span class="mi">1</span><span class="o">==</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// however, it is better to use TS_ASSERT_EQUALS, below
+</span>        TS_ASSERT_EQUALS<span class="p">((</span><span class="nb">true</span><span class="o">||</span><span class="nb">false</span><span class="p">),</span> <span class="nb">true</span><span class="p">);</span>
+        TS_ASSERT_DIFFERS<span class="p">(</span><span class="mf">1.348329534564385643543957436</span><span class="p">,</span> <span class="mf">1.348329534564395643543957436</span><span class="p">);</span>
+        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">2.71828183</span><span class="p">,</span> <span class="mf">3.14159265</span><span class="p">);</span> <span class="c1">// Note: to test if x is greater than y, use TS_ASSERT_LESS_THAN(y,x)
+</span>        TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span><span class="o">-</span><span class="mf">1e100</span><span class="p">,</span> <span class="mf">1e100</span><span class="p">);</span>
+        TS_ASSERT_THROWS_ANYTHING<span class="p">(</span><span class="k">throw</span> <span class="mi">0</span><span class="p">;);</span> <span class="c1">// normally you would put a function call inside the brackets
+</span>
+        <span class="kt">unsigned</span> x<span class="p">;</span>
+        <span class="c1">// The following TS_ASSERT_THROWS_NOTHING may be useful if you want to be certain that there are no uncaught exceptions
+</span>        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>x<span class="o">=</span><span class="mi">1</span><span class="p">;);</span>  <span class="c1">// normally you would put a function call inside the brackets
+</span>        TS_ASSERT_EQUALS<span class="p">(</span>x<span class="p">,</span> <span class="mi">1u</span><span class="p">);</span> <span class="c1">//Note that x and 1u are of the same type: unsigned integer
+</span>    <span class="p">}</span>
+
+    <span class="kt">void</span> donotTestThis<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1</span><span class="p">,</span>   <span class="mi">2</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="mi">2u</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

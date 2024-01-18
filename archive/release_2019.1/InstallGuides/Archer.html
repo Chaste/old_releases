@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Archer - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#InstallingChasteonArcher">Installing Chaste on Archer</a>
+    <ol>
+      <li>
+        <a href="#General">General</a>
+      </li>
+      <li>
+        <a href="#IO">I/O</a>
+        <ol>
+          <li>
+            <a href="#Lustrestriping">Lustre striping</a>
+          </li>
+          <li>
+            <a href="#SuggestionsforChaste">Suggestions for Chaste</a>
+            <ol>
+              <li>
+                <a href="#Sourcecodemanysmallfiles">Source code (many small files)</a>
+              </li>
+              <li>
+                <a href="#Largedatafilese.g.meshfiles">Large data files e.g. mesh files</a>
+              </li>
+              <li>
+                <a href="#largeHDF5datafiles">large HDF5 data files</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#Ifyouhavedatawithbadstripesettings">If you have data with "bad" stripe settings</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Dependenciesandenvironmentvariables">Dependencies and environment variables</a>
+      </li>
+      <li>
+        <a href="#Installation">Installation</a>
+        <ol>
+          <li>
+            <a href="#SCons">SCons</a>
+          </li>
+          <li>
+            <a href="#PyCmldependencies">PyCml dependencies</a>
+          </li>
+          <li>
+            <a href="#XSD">XSD</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#BuildingChaste">Building Chaste</a>
+      </li>
+      <li>
+        <a href="#RunningChaste">Running Chaste</a>
+      </li>
+      <li>
+        <a href="#CrayPat">CrayPat</a>
+        <ol>
+          <li>
+            <a href="#Sampling">Sampling</a>
+          </li>
+          <li>
+            <a href="#MPIprofiling">MPI profiling</a>
+          </li>
+          <li>
+            <a href="#Otherprofiling">Other profiling</a>
+          </li>
+          <li>
+            <a href="#GUI">GUI</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="InstallingChasteonArcher">Installing Chaste on Archer</h1>
+<p>
+(Last updated Nov 2016.)
+</p>
+<h2 id="General">General</h2>
+<p>
+<strong>Important:</strong> New users are encouraged to skim the Archer documentation first, in particular the <a class="ext-link" href="http://www.archer.ac.uk/documentation/getting-started/"><span class="icon">​</span>getting started guide</a>. Be aware that you have a /home and /work partition, and the <a class="ext-link" href="http://www.archer.ac.uk/documentation/user-guide/resource_management.php#sec-3.3"><span class="icon">​</span>differences</a> between them.
+</p>
+<p>
+In this document it is assumed that the dependencies will live in <tt>/work/.../chaste-libs</tt> and the Chaste code will live in <tt>/work/.../Chaste</tt>, where in both cases the "..." are something like "e462/e462/louiecn2".
+</p>
+<h2 id="IO">I/O</h2>
+<p>
+Serious consideration should be given to input/output (I/O) on a system like Archer. At the very least please read the section in tuning on <a class="ext-link" href="http://www.archer.ac.uk/documentation/best-practice-guide/tuning.php#sec-6.7"><span class="icon">​</span>I/O optimisation</a>. Getting the wrong settings can make things 1-2 orders of magnitude slower!
+</p>
+<p>
+Curious readers are advised to look at <a class="ext-link" href="https://www.archer.ac.uk/training/virtual/2015-11-25_Lustre_and_IO_Tuning/lustre.pdf"><span class="icon">​</span>these slides</a> (or <a class="ext-link" href="http://www.archer.ac.uk/training/courses/craytools/pdf/io.pdf"><span class="icon">​</span>these ones for more detail</a>), and search around for Lustre tips such as <a class="ext-link" href="http://www.nas.nasa.gov/hecc/support/kb/Lustre-Best-Practices_226.html"><span class="icon">​</span>this page</a>.
+</p>
+<h3 id="Lustrestriping">Lustre striping</h3>
+<p>
+<tt>/work</tt> is a Lustre filesystem, where files can be distributed and broken up ("striped") over a large number of hard disks ("OSTs") to improve parallel performance, but <strong>it's up to you</strong> to make sure things are working at their best. Before you do anything (and before copying data across) you should set this up properly.
+</p>
+<p>
+You basically have control over two parameters for every file and directory you own: the number of stripes, and the size of these stripes. For parallel access, slide 24 in the second link above contains a good rule of thumb:
+</p>
+<ul><li>If #files &gt; # OSTs
+Set stripe_count=1
+You will reduce the lustre contention and OST file locking this way and gain performance
+</li><li>#files==1
+Set stripe_count=#OSTs
+Assuming you have more than 1 I/O client
+</li><li>#files&lt;#OSTs
+Select stripe_count so that you use all OSTs
+Example : You have 8 OSTs and write 4 files at the same time, then select stripe_count=2
+</li></ul><p>
+(There are 48 OSTs at time of writing.)
+</p>
+<p>
+Other good rules of thumb are:
+</p>
+<ul><li>Use a stripe count of 1 for directories with many small files.
+</li><li>Increase the stripe_count for parallel writes to the same file - approximately 1 stripe per GB file size. E.g. you might try using 2 for files &lt; 1 GB, 8 for files &lt; 10 GB, and 24 for files &lt; 100 GB, etc.
+</li><li>Set stripe count to a factor of the number of parallel processes for best symmetry/load balancing.
+</li></ul><h3 id="SuggestionsforChaste">Suggestions for Chaste</h3>
+<h4 id="Sourcecodemanysmallfiles">Source code (many small files)</h4>
+<p>
+The source code is many small files, so we want striping off completely. To do this we'll make a Chaste directory and use setstripe so that when we checkout the code it inherits the setting.
+</p>
+<pre class="wiki">louiecn2@eslogin004:~&gt; cd /work/e462/e462/louiecn2/
+louiecn2@eslogin004:/work/e462/e462/louiecn2&gt; mkdir Chaste
+louiecn2@eslogin004:/work/e462/e462/louiecn2&gt; lfs setstripe --stripe-size 1M --stripe-count 1 --stripe-index -1 Chaste
+</pre><p>
+Note that we're also setting the stripe-index here just in case (it should ALWAYS be <tt>-1</tt> as this allows the system to load balance). Note also that the stripe-size makes no difference if <tt>stripe-count=1</tt>, it's just a good default.
+</p>
+<h4 id="Largedatafilese.g.meshfiles">Large data files e.g. mesh files</h4>
+<p>
+The process for data files you're copying over (e.g. mesh files) and data files that get created at run-time is slightly different.
+</p>
+<p>
+For large input files, the easiest solution is to change the directory settings <strong>before</strong> copying the data over (using <tt>scp</tt> or whatever), then change them back after. For example
+</p>
+<pre class="wiki">louiecn2@eslogin005:/work/e462/e462/louiecn2/Chaste/projects/louiecn/test/data&gt; lfs setstripe -c 8 .
+(copy big mesh files into data directory)
+louiecn2@eslogin005:/work/e462/e462/louiecn2/Chaste/projects/louiecn/test/data&gt; lfs setstripe -c 1 .
+</pre><p>
+stripes any new files over 8 OSTs. You can confirm the stripe settings worked using <tt>lfs getstripe .</tt> to check the <tt>stripe_count</tt>. For example for each file you should see something like
+</p>
+<pre class="wiki">./FullMeshVolume_bin.ele
+lmm_stripe_count:   8
+lmm_stripe_size:    1048576
+...
+</pre><p>
+which means the file is sliced up over 8 OSTs. 
+</p>
+<p>
+I use the above rule of thumb about roughly 1 stripe per GB and use factors of 12, e.g.:
+</p>
+<ul><li>1 stripe for small files (&lt;100 MB)
+</li><li>2 stripes for larger files (100 MB to a few GB)
+</li><li>4 stripes for ~several GB files
+</li><li>8 stripes for ~10 GB files
+</li><li>12 stripes for ~15 GB files
+</li><li>24 stripes... etc.
+</li></ul><p>
+It's a bit of a pain having to set it, copy a file or two, set it again, etc., but it only has to be done once so it's worth doing this optimally.
+</p>
+<h4 id="largeHDF5datafiles">large HDF5 data files</h4>
+<p>
+<strong>Do these three thing</strong> to make sure HDF5 files are striped properly.
+</p>
+<ol><li>Use an <tt>MPICH_MPIIO_HINTS</tt> environment variable to specify striping numbers for newly-created .h5 files. (See example bashrc below!) <tt>striping_factor=8</tt> will use 8 OSTs, but as above you might be better off using more or fewer, so experiment with the "one per GB" and/or "factor of # processes" rules. <tt>striping_unit=1048576</tt> means use 1 MB stripes, which works for me but you might benefit from something larger.
+</li><li>Whatever you set the stripe size to (previous point) you should let the cardiac problem know by adding a line in your test. E.g. if you used 1048576, call e.g. <tt>monodomain_problem.SetHdf5DataWriterTargetChunkSizeAndAlignment(1048576)</tt>. This makes it possible for the writer to divide the results into chunks that each fit neatly into a stripe.
+</li><li>Enable Hdf5DataWriter caching, again by adding a line to your test e.g. <tt>bidomain_problem.SetUseHdf5DataWriterCache()</tt>. This tells the writer to only write to disk after multiple timesteps, which massively improves bandwidth.
+</li></ol><h3 id="Ifyouhavedatawithbadstripesettings">If you have data with "bad" stripe settings</h3>
+<p>
+If you've already got data on the system and it's got sub-optimal settings (check with <tt>lfs getstripe ...</tt>), use the following template:
+</p>
+<pre class="wiki">mv dir old-dir
+mkdir dir
+lfs setstripe -i -1 -s 1M -c 1 dir
+cp -a old-dir/* dir/
+</pre><p>
+This moves the old directory somewhere safe, creates a new directory, sets the stripe properties, and copies the backed-up contents to the new directory, where it inherits the striping. You can then delete <tt>old-dir</tt>.
+</p>
+<h2 id="Dependenciesandenvironmentvariables">Dependencies and environment variables</h2>
+<p>
+Adapt the following (i.e. replace with <strong>your</strong> user name and paths) and put it at the end of your <tt>~/.bashrc</tt> file to set things up automatically every time you log in:
+</p>
+<pre class="wiki">export WORK=/work/e462/e462/louiecn2
+alias cdchaste='cd $WORK/Chaste'
+
+module swap PrgEnv-cray PrgEnv-intel
+module load cray-petsc cray-hdf5-parallel vtk boost xerces-c cray-tpsl svn python-compute craype-hugepages2M
+
+export CHASTE_LIBS=$WORK/chaste-libs
+export CHASTE_LOAD_ENV=1
+export CHASTE_TEST_OUTPUT=$WORK/testoutput
+
+export PATH=$CHASTE_LIBS/bin:$PATH
+export LD_LIBRARY_PATH=$WORK/Chaste/lib:$LD_LIBRARY_PATH # Lets us use cl=1
+export PYTHONPATH=$CHASTE_LIBS/lib/python:$PYTHONPATH
+
+# Convenient alias for scons, call it whatever you like, and invoke from Chaste directory like this:
+# Sco global/test/TestChasteBuildInfo.hpp
+function Sco {
+    scons -j8 b=IntelHpc co=1 br=1 do_inf_tests=0 $1
+}
+
+# Stripe h5 files over 8 OSTs. More/fewer may be better depending on your problem 
+# size and number of cores! Also note the 1 M stripe size (1048576 bytes)
+export MPICH_MPIIO_HINTS="*.h5:striping_factor=8:striping_unit=1048576"
+
+# Build dynamic exes
+#export CRAYPE_LINK_TYPE=dynamic
+</pre><p>
+Here we set <tt>MPICH_MPIIO_HINTS</tt> so that new .h5 files are striped over 8 OSTs (out of 48 at time of writing). This is sensible for HDF5 files on the order of 10 GB. For larger files you might benefit from more, even up to using all the OSTs. Another thing to consider if you're doing simulations on a relatively small number of processes, e.g. on 1 or 2 compute nodes (24 or 48 cores) then you could try replacing the <tt>striping_factor</tt> with the number of nodes (so that each node has a dedicated writer) or even the number of processes (so that every single process is a writer). As it's just an environment variable you could set this right in the job script itself so it's tailored to the specific job and node count.
+</p>
+<p>
+The final line (<tt>CRAYPE_LINK_TYPE</tt>) tells the compiler to use dynamic linking. I'd <strong>strongly</strong> recommend using this (i.e. uncomment the line), but do read what it means first <a class="ext-link" href="http://www.archer.ac.uk/documentation/user-guide/development.php#sec-4.6"><span class="icon">​</span>here</a>. The main effect is smaller executables that use much less memory, but be aware that it means the executable will use the versions of libraries specified by the module, which might change in future. In other words, if you compile a program with a module that later disappears (Archer periodically update the modules) then the program will no longer work without recompiling.
+</p>
+<p>
+On a related note, the <tt>module load</tt> line loads the default versions, which change over time and may not be the <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/DependencyVersions.html">recommended versions</a>. You can see which versions of things are installed using 
+</p>
+<p>
+<tt>module avail [modulefile]</tt>
+</p>
+<p>
+and load them specifically, e.g. <tt>module load cray-petsc/3.4.2.0</tt>.
+</p>
+<p>
+A useful list of libraries and their versions, and upcoming changes, can be found <a class="ext-link" href="http://www.archer.ac.uk/about-archer/software/modcatalogue/"><span class="icon">​</span>here</a>.
+</p>
+<p>
+Furthermore, the <tt>LD_LIBRARY_PATH</tt> line makes it possible to use Chaste's <tt>cl=1</tt> option.
+</p>
+<h2 id="Installation">Installation</h2>
+<p>
+<strong>If you've only just done your <tt>~/.bashrc</tt> file (the previous step), log out and log back in again before continuing! </strong>
+</p>
+<h3 id="SCons">SCons</h3>
+<p>
+Note: building with SCons was deprecated (in early 2016) in favour of CMake, but CMake has not yet been tested or configured on Archer. If anyone can look into this it would be useful! For now SCons is still acceptable.
+</p>
+<p>
+From $CHASTE_LIBS:
+</p>
+<pre class="wiki">wget http://downloads.sourceforge.net/project/scons/scons/2.3.0/scons-2.3.0.tar.gz
+tar zxf scons-2.3.0.tar.gz
+cd scons-2.3.0
+python setup.py install --prefix=$CHASTE_LIBS
+cd ..
+rm -rf scons-2.3.0.tar.gz scons-2.3.0
+</pre><h3 id="PyCmldependencies">PyCml dependencies</h3>
+<p>
+See <a class="wiki" href="/trac/wiki/InstallPyCml">InstallPyCml</a> for more explanation.
+</p>
+<p>
+You will need to do the following to make <tt>easy_install</tt> work:
+</p>
+<p>
+Create <tt>~/.pydistutils.cfg</tt> with the following content (replacing with <strong>your</strong> path to <tt>chaste-libs</tt>):
+</p>
+<pre class="wiki">[install]
+install_lib = /work/.../chaste-libs/lib/python
+install_scripts = /work/.../chaste-libs/bin
+</pre><p>
+and make the /lib/python directory, i.e.
+</p>
+<pre class="wiki">mkdir /work/.../chaste-libs/lib/python
+</pre><p>
+Then, again from $CHASTE_LIBS:
+</p>
+<pre class="wiki">wget http://peak.telecommunity.com/dist/ez_setup.py
+python ez_setup.py
+easy_install "python-dateutil==1.5"
+easy_install "Amara==1.2.0.2"
+easy_install rdflib
+</pre><p>
+(We don't need to do lxml as it's already installed.)
+</p>
+<h3 id="XSD">XSD</h3>
+<p>
+For XSD we get the binary. Again, from $CHASTE_LIBS:
+</p>
+<pre class="wiki">wget http://www.codesynthesis.com/download/xsd/3.3/linux-gnu/x86_64/xsd-3.3.0-x86_64-linux-gnu.tar.bz2
+tar -xjf xsd-3.3.0-x86_64-linux-gnu.tar.bz2
+mv xsd-3.3.0-x86_64-linux-gnu xsd
+ln -s $CHASTE_LIBS/xsd/bin/xsd $CHASTE_LIBS/bin/xsd
+rm -f xsd-3.3.0-x86_64-linux-gnu.tar.bz2
+</pre><p>
+As documented elsewhere, unfortunately there is a small bug with GCC and XSD. Fix it by modifying <tt>$CHASTE_LIBS/xsd/libxsd/xsd/cxx/zc-istream.txx</tt> and changing line 35 of <tt>zc-istream.txx</tt> to read
+</p>
+<pre class="wiki">this-&gt;setg(
+</pre><p>
+instead of 
+</p>
+<pre class="wiki">setg(
+</pre><h2 id="BuildingChaste">Building Chaste</h2>
+<p>
+From <tt>/work/.../</tt> check out a working copy of the source code according to <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a> i.e.
+</p>
+<pre class="wiki">git clone -b develop https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
+</pre><p>
+(Make sure you followed the I/O instructions earlier first!)
+</p>
+<p>
+Edit your SConscript file, see <a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/CheckoutUserProject.html#Important:touseexistingChastecode">InstallGuides/CheckoutUserProject#Important:touseexistingChastecode</a>.
+</p>
+<p>
+If the profile has loaded correctly then svn and scons should be in your PATH and you can check out the code and compile with:
+</p>
+<pre class="wiki">scons build=IntelHpc co=1 ...
+</pre><p>
+or if you used my example bashrc you can use the handy alias <tt>Sco</tt>. Either way you can't run anything on the login nodes so it's important to use <tt>compile_only=1</tt> (or <tt>co=1</tt>) to stop the test running right away. Parallel tests need to be run through the queue.
+</p>
+<p>
+<strong>Note</strong> that the IntelHpc build type has CC flags <tt>-DNDEBUG -O3 -no-prec-div</tt> which mean "turn off asserts", "aggressive optimisation", and "use less-accurate divisions", respectively. In my testing they have a large effect on performance (especially <tt>-DNDEBUG</tt>) but they might not be suitable for all simulations (especially <tt>-no-prec-div</tt>).
+</p>
+<p>
+If you're getting weird test failures try turning the asserts back on by leaving out the <tt>-DNDEBUG</tt> flag. It's not pretty but you can do this by removing it from the IntelHpc build type, i.e. edit <tt>python/BuildTypes.py</tt> as follows and recompile
+</p>
+<pre class="wiki">Index: python/BuildTypes.py
+===================================================================
+--- python/BuildTypes.py    (revision 26677)
++++ python/BuildTypes.py    (working copy)
+@@ -1104,7 +1104,7 @@
+         self.rdynamic_link_flag = '-dynamic'
+         self.tools['mpicxx'] = 'CC'
+         self.build_dir = 'intelhpc'
+-        self._cc_flags = ['-DNDEBUG','-O3','-no-prec-div']
++        self._cc_flags = ['-O3','-no-prec-div']
+         self.is_optimised = True
+</pre><p>
+See <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for more on the SCons arguments.
+</p>
+<h2 id="RunningChaste">Running Chaste</h2>
+<p>
+<strong><a class="ext-link" href="http://www.archer.ac.uk/documentation/user-guide/batch.php"><span class="icon">​</span>Read this to learn about submitting jobs</a></strong>, there's too much to cover in this short guide. In particular try out the handy <tt>bolt</tt> script, and note the commands <tt>qstat</tt> and <tt>qdel</tt>.
+</p>
+<p>
+Once you've read the above, you might find the following example job script helpful:
+</p>
+<pre class="wiki">#!/bin/bash --login
+#PBS -l select=10
+#PBS -N [job name]
+#PBS -A [credit quota]
+#PBS -l walltime=01:23:45
+#PBS -m abe
+#PBS -M [your email address]
+
+# Switch to current working directory
+cd $PBS_O_WORKDIR
+
+# Run the parallel program
+aprun -n 240 -N 24 -d 1 -S 12 -j 1 /work/.../Chaste/global/build/intelhpc/TestChasteBuildInfoRunner &gt;&amp; stdout.txt
+</pre><p>
+This script asks for 10 nodes (-l), for a total of 240 processes (-n). It assigns them 24 per node (-N) and 12 per NUMA region (-S), without hyperthreading (-j) or OpenMP threading (-d). If you have no idea what this means then you probably want to just change the <tt>select=10</tt>, <tt>-n 240</tt>, and <tt>walltime</tt> bits, so that <tt>-n</tt> is 24 times <tt>select=</tt>.
+</p>
+<p>
+The script may then be added to the job queue by typing
+</p>
+<pre class="wiki">qsub [script name]
+</pre><p>
+By appending <tt>&gt;&amp; stdout.txt</tt> you'll get some output in the path from which <tt>qsub</tt> was invoked. Without this, you get output in a file named after the job name (e.g. <tt>[job name].o1234567</tt> and <tt>[job name].e1234567</tt>). 
+<strong>Note:</strong> there is a performance penalty to doing this (that depends on the amount of output).
+</p>
+<p>
+Happy supercomputing!
+</p>
+<hr />
+<p>
+<strong>You can probably ignore the information below, it's been hanging around since this was a HECToR install guide, just in case it becomes useful again.</strong>
+</p>
+<hr />
+<h2 id="CrayPat">CrayPat</h2>
+<p>
+CrayPat is the Cray profiling suite. There is a section in the user manual above about automatic profile generation. It is not always successful.
+</p>
+<p>
+The process is "compile, use pat_build to instrument executable, run, use pat_report to examine profiling data".
+</p>
+<p>
+Load the CrayPat module before compiling.
+</p>
+<p>
+If automatic profiling process doesn't work then there are alternatives
+</p>
+<h3 id="Sampling">Sampling</h3>
+<p>
+The simplest profiling to perform is sampling
+</p>
+<pre class="wiki">module load xt-craypat
+scons build=... 
+pat_build \
+   notforrelease/build/craygcc_ndebug/TestChasteBenchmarksForPreDiCTRunner \
+   TestChasteBenchmarksForPreDiCTRunner+pat
+</pre><p>
+Above example creates an instrumented executable called "TestChasteBenchmarksForPreDiCTRunner+pat" from the original executable. Run this instrumented executable as normal and then use pat_report to analyze either the .xf (small # of processes) or directory produced.
+</p>
+<pre class="wiki">pat_report -O profile TestChasteBenchmarksForPreDiCTRunner+pat+21007-12441sdt
+</pre><p>
+This will give time spent in individual functions and the computational imbalance in those functions. It will not give information on the calltree.
+</p>
+<p>
+Several other pat_report options including:
+</p>
+<pre class="wiki">pat_report -T -O profile # report all functions, not just most important
+pat_report -s pe=ALL # report values for all processes
+</pre><p>
+see man page and CrayPat documentation for more information.
+</p>
+<h3 id="MPIprofiling">MPI profiling</h3>
+<p>
+CrayPat has a series of tracegroups that can be profiled, one of which is MPI.
+</p>
+<pre class="wiki">pat_build -g mpi executable-name instrumented-exectuable-name
+</pre><p>
+To get a calltree of where the MPI time is spent:
+</p>
+<pre class="wiki">pat_report -O calltree filename.xf
+</pre><p>
+Other -O options are load_balance, callers (plus others). See man page for more details.
+</p>
+<h3 id="Otherprofiling">Other profiling</h3>
+<p>
+CrayPat has other tracegroups (io, hdf5, lustre, system, blas, math, ...) which work in the same fashion as the mpi tracegroup.
+</p>
+<h3 id="GUI">GUI</h3>
+<p>
+Apprentice2 is a GUI to look at the results (packages are also available for download for use locally with profiling results, see user manual)
+</p>
+<pre class="wiki">module load apprentice2
+app2
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

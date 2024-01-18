@@ -1,0 +1,142 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/CheckpointingAndRestarting - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_2.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CardiacExecutable" href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable.html">CardiacExecutable</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CardiacExecutable/CheckpointingAndRestarting" href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting.html">CheckpointingAndRestarting</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h2 id="Checkpointing">Checkpointing</h2>
+<p>
+Checkpointing involves writing every aspect of a simulation to disk, midway through the simulation, so that it can later be restarted (possibly with new parameter values). In order to write a checkpoint you have to put the following line in the simulation block in the xml parameters file 
+</p>
+<div class="code"><pre><span class="nt">&lt;CheckpointSimulation</span> <span class="na">timestep=</span><span class="s">"1.0"</span> <span class="na">unit=</span><span class="s">"ms"</span> <span class="na">max_checkpoints_on_disk=</span><span class="s">"10"</span><span class="nt">/&gt;</span>
+</pre></div><p>
+The attached files can be run as an example.
+</p>
+<p>
+A checkpointed simulation produces the following output directory structure:
+</p>
+<pre class="wiki">CHASTE_TEST_OUTPUT
+    &lt;OutputDirectory&gt;
+    &lt;OutputDirectory&gt;_checkpoints
+        1.0ms                        (or whatever the checkpoint timestep is set to)
+            &lt;OutputDirectory&gt;        (a copy of the simulation output so far)
+            &lt;OutputDirectory&gt;_1.0ms  (the checkpoint data itself)
+            ResumeParameters.xml     (a parameters file for easy resuming from this checkpoint)
+        2.0ms
+            ...
+</pre><p>
+(For example, if the output directory is <tt>ChasteResults</tt>, the checkpoints will then be found in the directory <tt>$CHASTE_TEST_OUTPUT/ChasteResults_checkpoints</tt>.
+</p>
+<h2 id="Restarting">Restarting</h2>
+<p>
+First run the attached simulation. The following steps guide you through the process of restarting the simulation using the final checkpoint.
+</p>
+<p>
+First, copy the checkpoint directory to a new directory (not technically required but advisable) and change directory into it.
+</p>
+<div class="code"><pre><span class="nb">cd </span>testoutput/ChasteResults_checkpoints/
+cp -r 5ms 5ms_extended
+<span class="nb">cd </span>5ms_extended
+</pre></div><p>
+The <tt>ResumeParameters.xml</tt> file is the new parameters file to be given to the executable, and has to be edited before being run. Open the <tt>ResumeParameters.xml</tt> file and change <tt>SimulationDuration</tt> to 10ms.
+</p>
+<p>
+Also, when running the new simulation, you need to first do
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">CHASTE_TEST_OUTPUT</span><span class="o">=</span>.
+</pre></div><p>
+so that the line
+</p>
+<div class="code"><pre><span class="nt">&lt;ArchiveDirectory</span> <span class="na">relative_to=</span><span class="s">'chaste_test_output'</span><span class="nt">&gt;</span>ChasteResults_1ms<span class="nt">&lt;/ArchiveDirectory&gt;</span>
+</pre></div><p>
+in <tt>ResumeParameters.xml</tt> finds the checkpoint files.
+</p>
+<p>
+Finally, run the simulation again with <tt>ResumeParameters.xml</tt> as the input xml file. The new results folder is <tt>./ChasteResults</tt>, or, from the original directory <tt>testoutput/ChasteResults_checkpoints/5ms_extended/ChasteResults</tt>. The output files in here include the simulation results from <i>before and after</i> the checkpoint.
+</p>
+<p>
+<strong>Notes:</strong>
+</p>
+<ul><li>The timestep specifies how frequently to checkpoint, and must be a multiple of the printing timestep. 
+</li><li>You can optionally specify the maximum number of checkpoints to keep on disk; when this limit is reached, the oldest checkpoint will be deleted before a new checkpoint is made.
+</li><li>Note that making a checkpoint does add a significant overhead at present, in particular because the mesh is written out to disk at each checkpoint. This is to ensure that each checkpoint directory contains everything needed to resume the simulation. In particular, the mesh written out will be in permuted form if it was partitioned for a parallel simulation.
+</li><li>Meshes written in checkpoints use a binary form of the Triangle/Tetgen mesh format. This makes checkpoints significantly smaller but will cause portability problems if checkpoints are moved between little-endian systems (e.g. x86) and big-endian systems (e.g. PowerPC).
+</li><li>Checkpoints may be resumed on any number of processes &mdash; you are not restricted to the number on which it was saved. However, the mesh will not be re-partitioned if loaded on a different number of processes, so the parallel efficiency of the simulation may be significantly reduced in this case.
+</li><li>Resuming a checkpoint will attempt to extend the original results h5 file, if present, so that the file contains the complete simulation results. If this file does not exist, a new file will be created to contain just the results from the resume point. 
+</li><li>Various parameters can be altered when resuming from a checkpoint, by specifying new settings in the <tt>ResumeParameters.xml</tt> file.  The file <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/heart/test/data/xml/ChasteParametersResumeSimulationFullFormat.xml">source:trunk/heart/test/data/xml/ChasteParametersResumeSimulationFullFormat.xml</a> (also shipped with the standalone executable) explains what can be changed.
+</li></ul><h2 id="UsingcheckpointsfrompreviousChastereleases">Using checkpoints from previous Chaste releases</h2>
+<p>
+We endeavour to ensure that new versions of Chaste will always be able to load checkpoint files created by the previous release.  Sometimes, however, some manual conversion of the checkpoint will be required.  This is the case in order to upgrade from release 2.0 to 2.1.  A script <tt>archive_convert.sed</tt> is provided in both the source and executable releases of Chaste to assist with this process.  It must be run as follows:
+</p>
+<div class="code"><pre>sed -i -f archive_convert.sed path_to_checkpoint_data_folder/*.arch*
+</pre></div>
+        
+        
+      </div>
+          <h3>Attachments</h3>
+          <ul>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/sheet_800_elements.edge" title="View attachment">sheet_800_elements.edge</a>
+      (<span title="1004 bytes">1.0 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/sheet_800_elements.ele" title="View attachment">sheet_800_elements.ele</a>
+      (<span title="20055 bytes">19.6 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/sheet_800_elements.node" title="View attachment">sheet_800_elements.node</a>
+      (<span title="21982 bytes">21.5 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/sheet_800_elements.ortho" title="View attachment">sheet_800_elements.ortho</a>
+      (<span title="39231 bytes">38.3 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/ChasteParameters_2_1.xsd" title="View attachment">ChasteParameters_2_1.xsd</a>
+      (<span title="56162 bytes">54.8 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/UserTutorials/CardiacExecutable/CheckpointingAndRestarting/CheckpointExample.xml" title="View attachment">CheckpointExample.xml</a>
+      (<span title="2045 bytes">2.0 KB</span>)
+              </li>
+          </ul>
+
+    </div>
+  </body>
+</html>

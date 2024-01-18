@@ -1,0 +1,16 @@
+--- Portfile.orig	2009-10-11 20:38:55.000000000 +0100
++++ Portfile	2009-10-11 20:48:02.000000000 +0100
+@@ -42,6 +42,13 @@
+     configure.args-append       --enable-threadsafe --disable-cxx
+ }
+ 
++variant parallel description {Enable parallel (experimental and un-supported)} {
++    configure.args-delete --enable-cxx
++    configure.args-append --disable-cxx --enable-parallel
++    configure.cc        ${prefix}/bin/openmpicc
++    configure.cxx       ${prefix}/bin/openmpicxx
++}
++
+ livecheck.type      regex
+ livecheck.url       http://www.hdfgroup.org/HDF5/release/obtain5.html
+ livecheck.regex     5-(\[0-9.\]+)

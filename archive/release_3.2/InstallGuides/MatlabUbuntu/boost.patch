@@ -1,0 +1,38 @@
+Index: libs/serialization/src/void_cast.cpp
+=========================================================================
+*** libs/serialization/src/void_cast.cpp	Wed Jan 19 10:31:02 2011
+--- libs/serialization/src/void_cast.cpp	Thu Mar 10 18:50:28 2011
+***************
+*** 290,296 ****
+      void_cast_detail::set_type::iterator it;
+      for(it = s.begin(); it != s.end();){
+          const void_caster * vc = *it;
+!         if(vc->m_parent == this){
+              s.erase(it);
+              delete vc;
+              it = s.begin();
+--- 290,299 ----
+      void_cast_detail::set_type::iterator it;
+      for(it = s.begin(); it != s.end();){
+          const void_caster * vc = *it;
+!         if(vc == this){
+!             s.erase(it++);
+!         }
+!         else if(vc->m_parent == this){
+              s.erase(it);
+              delete vc;
+              it = s.begin();
+***************
+*** 298,308 ****
+          else
+              it++;
+      }
+- 
+-     // delete this guy if he's in there
+-     it = s.find(this);
+-     if(it != s.end())
+-         s.erase(it);
+  }
+  
+  } // namespace void_cast_detail
+--- 301,306 ----

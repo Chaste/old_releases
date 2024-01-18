@@ -1,0 +1,483 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/EquivalentMonoAndBidomain - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestEquivalentMonoAndBidomainTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23380 on (default)">r23380</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#HowtorunaBidomainsimulationanditsequivalentMonodomainreduction">How to run a Bidomain simulation and its equivalent Monodomain reduction</a>
+    <ol>
+      <li>
+        <a href="#Introduction">Introduction</a>
+      </li>
+      <li>
+        <a href="#SettingBidomainConductivities">Setting Bidomain Conductivities</a>
+      </li>
+      <li>
+        <a href="#ReductiontoMonodomain">Reduction to Monodomain</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#Code">Code</a>
+    <ol>
+      <li>
+        <a href="#FilenameTestEquivalentMonoAndBidomainTutorial.hpp">File name <tt>TestEquivalentMonoAndBidomainTutorial.hpp</tt></a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="HowtorunaBidomainsimulationanditsequivalentMonodomainreduction">How to run a Bidomain simulation and its equivalent Monodomain reduction</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste is used to run a standard mono and a standard bidomain simulation.
+With equivalent parameters so that the bidomain could be reduced to the monodomain case.
+</p>
+<p>
+The bulk of this tutorial is the same as <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a>, so for details of each line see that page.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span><span class="c1">// The main classes to be used for running simulations.
+</span><span class="cp">#include "BidomainProblem.hpp"
+#include "MonodomainProblem.hpp"
+#include "SimpleStimulus.hpp"
+</span><span class="c1">///* All tests which run cardiac simulations (which use Petsc) should include
+// * {{{PetscSetupAndFinalize.hpp}}}.  This class ensures that {{{PetscInitialise()}}}
+// * is called with the appropriate arguments before any tests in the suite are run. */
+</span><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="c1">///* The above files are contained in the source release and can be located and studied. Cardiac cell
+// * models are different: the C++ code is automatically generated from cellml files. To use a particular
+// * cellml file, place it in `heart/src/odes/cellml` (there are several in here already). If the cellml
+// * is called `&lt;CELLMODEL&gt;.cellml`, a file `&lt;CELLMODEL&gt;.hpp` will be automatically generated, which will define
+// * a class called `Cell&lt;CELLMODEL&gt;FromCellML`. So to use a particular cell model in a tissue simulation,
+// * given the cellml, you just have to do two things: include this `.hpp` file, and then use the class.
+// * For example, we will use the !LuoRudy1991 model, so we have to include the following, and
+// * later on use {{{CellLuoRudy1991FromCellML}}} as the cell model class.
+// * See ["ChasteGuides/CodeGenerationFromCellML"] for more information on this process.
+// */
+</span><span class="cp">#include "LuoRudy1991.hpp"
+</span>
+<span class="c1">// * == Defining a cell factory ==
+// *
+// * All mono/bidomain simulations need a ''cell factory'' as input. This is a class
+// * which tells the problem class what type of cardiac cells to create. The cell-factory
+// * class has to inherit from {{{AbstractCardiacCellFactory&lt;DIM&gt;}}}, which means it must
+// * implement the method {{{CreateCardiacCellForTissueNode(Node&lt;DIM&gt;*)}}}, which returns
+// * a pointer to an {{{AbstractCardiacCell}}}. Note, some concrete cell factories have
+// * been defined, such as the {{{PlaneStimulusCellFactory}}} (see later tutorials), which
+// * could be used in the simulation, but for completeness we create our own cell factory in
+// * this test. For complicated problems with, say, heterogeneous cell types or particular stimuli,
+// * a new cell factory will have to be defined by the user for their particular problem.
+// *
+// * This cell factory is a simple cell factory where every cell is a Luo-Rudy 91 cell,
+// * and only the cell at position (0) is given a non-zero stimulus.
+// */
+</span><span class="k">class</span> <span class="nc">PointStimulus2dCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="c1">///* Declare (smart) pointer to a {{{SimpleStimulus}}} for the cell which is stimulated.
+// * Note that {{{AbstractCardiacCellFactory}}} also has as protected members: {{{mpZeroStimulus}}}
+// * of type {{{boost::shared_ptr&lt;ZeroStimulus&gt;}}}; {{{mpMesh}}}, a pointer to the mesh used (the problem
+// * class will set this before it calls {{{CreateCardiacCellForTissueNode}}}, so it can be used
+// * in that method); {{{mTimestep}}}, a double (see below); and {{{boost::shared_ptr&lt;mpSolver&gt;}}}
+// * a forward euler ode solver (see below). */
+</span><span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    <span class="c1">// Our contructor takes in nothing. It calls the constructor of {{{AbstractCardiacCellFactory}}}
+</span>    <span class="c1">// and we also initialise the stimulus to have magnitude -500000 uA/cm^3 and duration 0.5 ms.
+</span>    PointStimulus2dCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">5e5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+<span class="c1">//     * Now we implement the pure method which needs to be implemented. We return
+//     * a LR91 cell for each node, with the nodes in a 0.2mm block given the non-zero stimulus,
+//     * and all other nodes given the zero stimulus. Note that we use {{{mpMesh}}},
+//     * {{{mTimestep}}}, {{{mpZeroStimulus}}} and {{{mpSolver}}} which are all
+//     * members of the base class. The timestep and solver are defined in the base
+//     * class just so that the user doesn't have to create them here.
+</span>    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span> <span class="o">&amp;&amp;</span> y<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="p">{</span>
+<span class="c1">//            * Create a LR91 cell with the non-zero stimulus. This is a volume stimulus, ie
+//            * the function on the right-hand side of the first of the two bidomain equations.
+//            * An equal and opposite extra-cellular stimulus is implicitly enforced by the code,
+//            * which corresponds to having zero on the right-hand side of the second of the
+//            * bidomain equations.
+//            *
+</span>            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="c1">// The other cells have zero stimuli.
+</span>            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1">// We have no need for a destructor, since the problem class deals with deleting the cells.
+</span><span class="p">};</span>
+
+<span class="c1">///*
+// * == Running the mono- and bi-domain simulations ==
+// *
+// * Now we can define the test class, which must inherit from {{{CxxTest::TestSuite}}}
+// * as described in the writing basic tests tutorial. */
+</span><span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="c1">// Tests should be public...
+</span><span class="nl">public:</span>
+    <span class="c1">// Define the test. Note the {{{throw(Exception)}}} - without this exception messages
+</span>    <span class="c1">// might not get printed out.
+</span>    <span class="kt">void</span> TestCompareMonoAndBidomain<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides.html">ChasteGuides</a> page
+for information on default parameter values.
+</p>
+<p>
+See <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a> for more details.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"EquivalentMonoAndBidomainTutorial"</span><span class="p">);</span>
+
+</pre></div><p>
+This is how to reset the surface-area-to-volume ratio and the capacitance.
+(Here, we are actually just resetting them to their default values).
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSurfaceAreaToVolumeRatio<span class="p">(</span><span class="mi">1400</span><span class="p">);</span> <span class="c1">// 1/cm
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCapacitance<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span> <span class="c1">// uF/cm^2
+</span>
+        <span class="c1">// This is how to set the ode timestep (the timestep used to solve the cell models)
+</span>        <span class="c1">// the pde timestep (the timestep used in solving the bidomain PDE), and the
+</span>        <span class="c1">// printing timestep (how often the output is written to file). The defaults are
+</span>        <span class="c1">// all 0.01, here we increase the printing timestep.
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        <span class="c1">// Next, we have to create a cell factory of the type we defined above.
+</span>        PointStimulus2dCellFactory cell_factory<span class="p">;</span>
+
+</pre></div><h2 id="SettingBidomainConductivities">Setting Bidomain Conductivities</h2>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> intracellular_conductivities <span class="o">=</span> Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> extracellular_conductivities <span class="o">=</span> Create_c_vector<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mf">0.76</span><span class="p">);</span>
+
+        ReplicatableVector<span class="o">*</span> p_bidomain_results<span class="p">;</span>
+        <span class="c1">// Bidomain
+</span>        <span class="p">{</span>
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"bidomain_results"</span><span class="p">);</span>
+
+            <span class="c1">// Now we create a problem class using (a pointer to) the cell factory.
+</span>            BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+</pre></div><p>
+Here we have conductivities that can be expressed as sigma_i = scalar * sigma_e.
+</p>
+<p>
+Then this is a special case, in which the bidomain equations can be reduced to the monodomain
+equation. They are exactly equivalent.
+</p>
+<p>
+In this test we check that Chaste says this too when doing both simulations.
+</p>
+<p>
+This is how we set intracellular and extracellular conductivity directions.
+Note that the extracellular is a constant scaling (4x) of the intracellular,
+and hence a reduction to the monodomain equation can be made.
+</p>
+<p>
+For more information on this see e.g. Keener &amp; Sneyd, Mathematical Physiology textbook.
+</p>
+<div class="code"><pre>            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>intracellular_conductivities<span class="p">);</span>
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>extracellular_conductivities<span class="p">);</span>
+
+</pre></div><p>
+Initialise and solve as normal
+</p>
+<div class="code"><pre>            bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+            bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+NB: the easiest way to look at the resultant voltage values from the code
+(for the last timestep - the data for the previous timesteps is written to file
+but not retained) is to use a <tt>ReplicatableVector</tt>.
+<tt>bidomain_problem.GetSolution())</tt> returns a PetSc vector
+of the form (V_0, phi_0, V_1, phi_e_1, ... V_n, phi_e_n), and we can create a
+<tt>ReplicatableVector</tt> for easy access to this PetSc vector's data.
+(This won't be very efficient with huge problems in parallel - the next tutorial
+will mention how to do parallel access).
+</p>
+<div class="code"><pre>            p_bidomain_results <span class="o">=</span> <span class="k">new</span> ReplicatableVector<span class="p">(</span>bidomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="p">}</span>
+
+        ReplicatableVector<span class="o">*</span> p_monodomain_results<span class="p">;</span>
+        <span class="c1">// Monodomain
+</span>        <span class="p">{</span>
+</pre></div><h2 id="ReductiontoMonodomain">Reduction to Monodomain</h2>
+<p>
+We now work out the equivalent conductivity to use in the monodomain. Note that
+we set this with the <tt>SetIntracellularConductivities()</tt> method. Which is perhaps
+better described as "Set first domain conductivities".
+</p>
+<p>
+So we calculate the equivalent conductivity according to (elementwise)
+</p>
+<p>
+sigma_monodomain = sigma_i sigma_e / (sigma_i + sigma_e)
+</p>
+<div class="code"><pre>            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> monodomain_conductivities<span class="p">;</span>
+
+            <span class="c1">// Just a little check that this reduction is valid in case you copy and paste this code!
+</span>            <span class="kt">double</span> x_scaling <span class="o">=</span> extracellular_conductivities<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> intracellular_conductivities<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y_scaling <span class="o">=</span> extracellular_conductivities<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> intracellular_conductivities<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+            TS_ASSERT_DELTA<span class="p">(</span>x_scaling<span class="p">,</span> y_scaling<span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> dim<span class="o">=</span><span class="mi">0</span><span class="p">;</span> dim<span class="o">&lt;</span><span class="mi">2</span><span class="p">;</span> dim<span class="o">++</span><span class="p">)</span>
+            <span class="p">{</span>
+                monodomain_conductivities<span class="p">[</span>dim<span class="p">]</span> <span class="o">=</span> intracellular_conductivities<span class="p">[</span>dim<span class="p">]</span><span class="o">*</span>extracellular_conductivities<span class="p">[</span>dim<span class="p">]</span>
+                                               <span class="o">/</span> <span class="p">(</span>intracellular_conductivities<span class="p">[</span>dim<span class="p">]</span> <span class="o">+</span> extracellular_conductivities<span class="p">[</span>dim<span class="p">]);</span>
+            <span class="p">}</span>
+
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>monodomain_conductivities<span class="p">);</span>
+
+</pre></div><p>
+Now we create a monodomain problem class in exactly the same way as bidomain above
+</p>
+<div class="code"><pre>            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"monodomain_results"</span><span class="p">);</span>
+            MonodomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+            monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+            monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+            p_monodomain_results <span class="o">=</span> <span class="k">new</span> ReplicatableVector<span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+The bidomain solution includes extracellular (phi_e) so should be twice as big as monodomain solution.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>p_bidomain_results<span class="o">-&gt;</span>GetSize<span class="p">(),</span><span class="mi">2</span><span class="o">*</span>p_monodomain_results<span class="o">-&gt;</span>GetSize<span class="p">());</span>
+
+</pre></div><p>
+We then check that the voltage at each node at the end of the simulation is the same
+whether we did a bidomain simulation, or the equivalent monodomain simulation.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_monodomain_results<span class="o">-&gt;</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_DELTA<span class="p">((</span><span class="o">*</span>p_monodomain_results<span class="p">)[</span>i<span class="p">],</span> <span class="p">(</span><span class="o">*</span>p_bidomain_results<span class="p">)[</span><span class="mi">2u</span><span class="o">*</span>i<span class="p">],</span> <span class="mf">1e-6</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">delete</span> p_monodomain_results<span class="p">;</span>
+        <span class="k">delete</span> p_bidomain_results<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestEquivalentMonoAndBidomainTutorial.hpp">File name <tt>TestEquivalentMonoAndBidomainTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span><span class="c1">// The main classes to be used for running simulations.
+</span><span class="cp">#include "BidomainProblem.hpp"
+#include "MonodomainProblem.hpp"
+#include "SimpleStimulus.hpp"
+</span><span class="c1">///* All tests which run cardiac simulations (which use Petsc) should include
+// * {{{PetscSetupAndFinalize.hpp}}}.  This class ensures that {{{PetscInitialise()}}}
+// * is called with the appropriate arguments before any tests in the suite are run. */
+</span><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="c1">///* The above files are contained in the source release and can be located and studied. Cardiac cell
+// * models are different: the C++ code is automatically generated from cellml files. To use a particular
+// * cellml file, place it in `heart/src/odes/cellml` (there are several in here already). If the cellml
+// * is called `&lt;CELLMODEL&gt;.cellml`, a file `&lt;CELLMODEL&gt;.hpp` will be automatically generated, which will define
+// * a class called `Cell&lt;CELLMODEL&gt;FromCellML`. So to use a particular cell model in a tissue simulation,
+// * given the cellml, you just have to do two things: include this `.hpp` file, and then use the class.
+// * For example, we will use the !LuoRudy1991 model, so we have to include the following, and
+// * later on use {{{CellLuoRudy1991FromCellML}}} as the cell model class.
+// * See ["ChasteGuides/CodeGenerationFromCellML"] for more information on this process.
+// */
+</span><span class="cp">#include "LuoRudy1991.hpp"
+</span>
+<span class="c1">// * == Defining a cell factory ==
+// *
+// * All mono/bidomain simulations need a ''cell factory'' as input. This is a class
+// * which tells the problem class what type of cardiac cells to create. The cell-factory
+// * class has to inherit from {{{AbstractCardiacCellFactory&lt;DIM&gt;}}}, which means it must
+// * implement the method {{{CreateCardiacCellForTissueNode(Node&lt;DIM&gt;*)}}}, which returns
+// * a pointer to an {{{AbstractCardiacCell}}}. Note, some concrete cell factories have
+// * been defined, such as the {{{PlaneStimulusCellFactory}}} (see later tutorials), which
+// * could be used in the simulation, but for completeness we create our own cell factory in
+// * this test. For complicated problems with, say, heterogeneous cell types or particular stimuli,
+// * a new cell factory will have to be defined by the user for their particular problem.
+// *
+// * This cell factory is a simple cell factory where every cell is a Luo-Rudy 91 cell,
+// * and only the cell at position (0) is given a non-zero stimulus.
+// */
+</span><span class="k">class</span> <span class="nc">PointStimulus2dCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="c1">///* Declare (smart) pointer to a {{{SimpleStimulus}}} for the cell which is stimulated.
+// * Note that {{{AbstractCardiacCellFactory}}} also has as protected members: {{{mpZeroStimulus}}}
+// * of type {{{boost::shared_ptr&lt;ZeroStimulus&gt;}}}; {{{mpMesh}}}, a pointer to the mesh used (the problem
+// * class will set this before it calls {{{CreateCardiacCellForTissueNode}}}, so it can be used
+// * in that method); {{{mTimestep}}}, a double (see below); and {{{boost::shared_ptr&lt;mpSolver&gt;}}}
+// * a forward euler ode solver (see below). */
+</span><span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    <span class="c1">// Our contructor takes in nothing. It calls the constructor of {{{AbstractCardiacCellFactory}}}
+</span>    <span class="c1">// and we also initialise the stimulus to have magnitude -500000 uA/cm^3 and duration 0.5 ms.
+</span>    PointStimulus2dCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">5e5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+<span class="c1">//     * Now we implement the pure method which needs to be implemented. We return
+//     * a LR91 cell for each node, with the nodes in a 0.2mm block given the non-zero stimulus,
+//     * and all other nodes given the zero stimulus. Note that we use {{{mpMesh}}},
+//     * {{{mTimestep}}}, {{{mpZeroStimulus}}} and {{{mpSolver}}} which are all
+//     * members of the base class. The timestep and solver are defined in the base
+//     * class just so that the user doesn't have to create them here.
+</span>    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span> <span class="o">&amp;&amp;</span> y<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="p">{</span>
+<span class="c1">//            * Create a LR91 cell with the non-zero stimulus. This is a volume stimulus, ie
+//            * the function on the right-hand side of the first of the two bidomain equations.
+//            * An equal and opposite extra-cellular stimulus is implicitly enforced by the code,
+//            * which corresponds to having zero on the right-hand side of the second of the
+//            * bidomain equations.
+//            *
+</span>            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="c1">// The other cells have zero stimuli.
+</span>            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1">// We have no need for a destructor, since the problem class deals with deleting the cells.
+</span><span class="p">};</span>
+
+<span class="c1">///*
+// * == Running the mono- and bi-domain simulations ==
+// *
+// * Now we can define the test class, which must inherit from {{{CxxTest::TestSuite}}}
+// * as described in the writing basic tests tutorial. */
+</span><span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="c1">// Tests should be public...
+</span><span class="nl">public:</span>
+    <span class="c1">// Define the test. Note the {{{throw(Exception)}}} - without this exception messages
+</span>    <span class="c1">// might not get printed out.
+</span>    <span class="kt">void</span> TestCompareMonoAndBidomain<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"EquivalentMonoAndBidomainTutorial"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSurfaceAreaToVolumeRatio<span class="p">(</span><span class="mi">1400</span><span class="p">);</span> <span class="c1">// 1/cm
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCapacitance<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span> <span class="c1">// uF/cm^2
+</span>
+        <span class="c1">// This is how to set the ode timestep (the timestep used to solve the cell models)
+</span>        <span class="c1">// the pde timestep (the timestep used in solving the bidomain PDE), and the
+</span>        <span class="c1">// printing timestep (how often the output is written to file). The defaults are
+</span>        <span class="c1">// all 0.01, here we increase the printing timestep.
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        <span class="c1">// Next, we have to create a cell factory of the type we defined above.
+</span>        PointStimulus2dCellFactory cell_factory<span class="p">;</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> intracellular_conductivities <span class="o">=</span> Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> extracellular_conductivities <span class="o">=</span> Create_c_vector<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mf">0.76</span><span class="p">);</span>
+
+        ReplicatableVector<span class="o">*</span> p_bidomain_results<span class="p">;</span>
+        <span class="c1">// Bidomain
+</span>        <span class="p">{</span>
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"bidomain_results"</span><span class="p">);</span>
+
+            <span class="c1">// Now we create a problem class using (a pointer to) the cell factory.
+</span>            BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>intracellular_conductivities<span class="p">);</span>
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>extracellular_conductivities<span class="p">);</span>
+
+            bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+            bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+            p_bidomain_results <span class="o">=</span> <span class="k">new</span> ReplicatableVector<span class="p">(</span>bidomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="p">}</span>
+
+        ReplicatableVector<span class="o">*</span> p_monodomain_results<span class="p">;</span>
+        <span class="c1">// Monodomain
+</span>        <span class="p">{</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> monodomain_conductivities<span class="p">;</span>
+
+            <span class="c1">// Just a little check that this reduction is valid in case you copy and paste this code!
+</span>            <span class="kt">double</span> x_scaling <span class="o">=</span> extracellular_conductivities<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> intracellular_conductivities<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y_scaling <span class="o">=</span> extracellular_conductivities<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> intracellular_conductivities<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+            TS_ASSERT_DELTA<span class="p">(</span>x_scaling<span class="p">,</span> y_scaling<span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> dim<span class="o">=</span><span class="mi">0</span><span class="p">;</span> dim<span class="o">&lt;</span><span class="mi">2</span><span class="p">;</span> dim<span class="o">++</span><span class="p">)</span>
+            <span class="p">{</span>
+                monodomain_conductivities<span class="p">[</span>dim<span class="p">]</span> <span class="o">=</span> intracellular_conductivities<span class="p">[</span>dim<span class="p">]</span><span class="o">*</span>extracellular_conductivities<span class="p">[</span>dim<span class="p">]</span>
+                                               <span class="o">/</span> <span class="p">(</span>intracellular_conductivities<span class="p">[</span>dim<span class="p">]</span> <span class="o">+</span> extracellular_conductivities<span class="p">[</span>dim<span class="p">]);</span>
+            <span class="p">}</span>
+
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>monodomain_conductivities<span class="p">);</span>
+
+            HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"monodomain_results"</span><span class="p">);</span>
+            MonodomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+            monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+            monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+            p_monodomain_results <span class="o">=</span> <span class="k">new</span> ReplicatableVector<span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="p">}</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>p_bidomain_results<span class="o">-&gt;</span>GetSize<span class="p">(),</span><span class="mi">2</span><span class="o">*</span>p_monodomain_results<span class="o">-&gt;</span>GetSize<span class="p">());</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_monodomain_results<span class="o">-&gt;</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_DELTA<span class="p">((</span><span class="o">*</span>p_monodomain_results<span class="p">)[</span>i<span class="p">],</span> <span class="p">(</span><span class="o">*</span>p_bidomain_results<span class="p">)[</span><span class="mi">2u</span><span class="o">*</span>i<span class="p">],</span> <span class="mf">1e-6</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">delete</span> p_monodomain_results<span class="p">;</span>
+        <span class="k">delete</span> p_bidomain_results<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

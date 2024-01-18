@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Cygwin - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonCygwinexperimental">Installing Chaste on Cygwin (experimental)</h1>
+<p>
+I've been experimenting on my laptop, mostly following <a class="source" href="/trac/browser/tags/release_1/README_INSTALLATION.txt">source:tags/release_1/README_INSTALLATION.txt</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/tags/release_1/README_INSTALLATION.txt" title="Download">​</a>
+</p>
+<p>
+I installed Boost via cygwin.
+</p>
+<p>
+MPI configuration is different, since cygwin doesn't support ch_shmem:
+</p>
+<pre class="wiki">./configure --prefix=$CHASTE_LIBS/mpi --enable-sharedlib --disable-f77 --with-device=ch_p4 -rsh=ssh
+</pre><p>
+After installation I then edited <tt>$CHASTE_LIBS/mpi/share/machines.CYGWIN_NT</tt> to list <tt>127.0.0.1</tt> twice (dual-core machine).  You'll need to add an exception for sshd in the Windows firewall if you don't want lots of 'this program has been blocked' popups.  (Although my firewall seems to have a habit of ignoring this exception when it feels like it.)
+</p>
+<p>
+I also haven't installed <tt>tetgen</tt> or <tt>triangle</tt>.
+</p>
+<p>
+Some changes are needed to the Chaste build system (and some #includes - these may also help on MacOS); see <a class="changeset" href="/trac/changeset/5604/chaste" title="Changes to enable building under cygwin.">r5604</a> and <a class="changeset" href="/trac/changeset/5612/chaste" title="More changes to make the cygwin build work.">r5612</a>.
+</p>
+<p>
+To build the standalone executable, we need a static xerces.  Just doing the following after the section in the installation guide worked for me:
+</p>
+<pre class="wiki"># Create a static library (this is a bit of a hack!)
+cd $XERCESCROOT/obj/CYGWIN
+ar cru libxerces-c.a `find . -name "*.o"`
+ranlib libxerces-c.a
+mv libxerces-c.a $CHASTE_LIBS/xerces/lib/
+</pre><p>
+We also need a different XSD:
+</p>
+<pre class="wiki">cd $CHASTE_LIBS
+wget http://www.codesynthesis.com/download/xsd/2.3/windows/i686/xsd-2.3.1-i686-windows.zip
+unzip xsd-2.3.1-i686-windows.zip
+ln -s $CHASTE_LIBS/xsd-2.3.1-i686-windows/bin/xsd.exe $CHASTE_LIBS/bin/xsd.exe
+</pre><p>
+<a class="closed ticket" href="/trac/ticket/1008" title="user story: Fix Chaste problems on Cygwin (closed: wontfix)">#1008</a>: While I did manage to get the executable to build and run successfully, I haven't yet managed to get many of the continuous tests to pass.  Currently I'm up to "Failed 42 out of 141 test suites"; many of them just die with no output, which is a pain to debug!  There also appear to be issues relating to archiving; this may be a boost 1.33 issue, or something different.  File handling in general is dodgy on Windows (see e.g. <a class="changeset" href="/trac/changeset/5911/chaste" title="Fix non-terminating test on cygwin.  Annoying Windows filesystem...">r5911</a>).  And of course I don't have the tetgen binary installed yet, so that breaks some remeshing tests.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

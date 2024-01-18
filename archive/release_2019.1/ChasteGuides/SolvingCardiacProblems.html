@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/SolvingCardiacProblems - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Solvingacardiacproblem">Solving a cardiac problem</h1>
+<p>
+This page gives a high-level overview of the code execution flow when solving a cardiac problem.  To run simulations, see <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials.html">UserTutorials</a>. For an overview of the PDE solver hierarchy, see <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>. The steps that occur are as follows
+</p>
+<ul><li>The user calls <tt>AbstractCardiacProblem::Solve()</tt> on their monodomain or bidomain problem object (after calling <tt>Initialise</tt>)
+</li><li>The <tt>AbstractCardiacProblem</tt> owns a particular mono/bidomain finite element <em>solver</em> (of base-class type <tt>AbstractDynamicLinearPdeSolver</tt>; the concrete class can be matrix-based or not; see <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a> for more details); and for each printing timestep, does the following:
+<ul><li>sets the current time and end time on the solver
+</li><li>sets the latest voltage solution on the solver as the initial condition 
+</li><li>calls <tt>Solve</tt> on the solver.
+</li></ul></li></ul><hr />
+<p>
+The <tt>Solve</tt> method on <tt>AbstractDynamicLinearPdeSolver</tt> does the following, for each PDE timestep
+</p>
+<ul><li>calls <tt>PrepareForSetupLinearSystem</tt> -- <em>solves cell models, see below</em>
+</li><li>calls <tt>SetupLinearSystem</tt>  -- <em>see below</em>
+</li><li>calls <tt>FinaliseLinearSystem</tt>  -- relevant for bidomain solves, things like checking compatibility, setting up a null space
+</li><li>solves the linear system to obtain the solution (voltage, and phi_e in bidomain setting) at the next timestep
+</li></ul><hr />
+<ol><li><tt>PrepareForLinearSystem</tt> is where the cell models are solved. It is implemented in <tt>AbstractMonodomainSolver</tt>/<tt>AbstractBidomainSolver</tt>, where it just calls <tt>SolveCellSystems</tt> on the <tt>MonodomainTissue</tt>/<tt>BidomainTissue</tt>. This is implemented in <tt>AbstractCardiacTissue::SolveCellSystems</tt>, which essentially does the following for each cell:
+<ol><li>Set <em>V</em> from the current PDE solution
+</li><li>Call the cell's <tt>ComputeExceptVoltage</tt> to solve for all state variables except <em>V</em> until the next PDE time step
+</li><li>Call <tt>UpdateCaches</tt>. This calls the cell's <tt>GetIIonic</tt> to compute the <em>I_ion</em> term and stores it in <tt>mIionicCacheReplicated</tt> (replicated over each process so no parallel communication is required later). It similarly also calculates and caches the intracellular stimulus at each cell.
+</li></ol></li></ol><hr />
+<ol start="2"><li><tt>SetupLinearSystem</tt> uses any assemblers it has to set up the linear system <em>Ax=b</em> that will be solved that timestep. <em>A</em> is just assembled once the first timestep. For <em>b</em> the solver (or its assemblers) will require the ionic current and stimulus at each cell; this is obtained by calling, for example, <tt>mpMonodomainTissue-&gt;rGetIionicCacheReplicated()[index]</tt>. For more details on setting up <em>b</em> and the method <tt>SetupLinearSystem</tt> see <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>.
+</li></ol></div>
+          
+
+    </div>
+  </body>
+</html>

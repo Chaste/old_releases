@@ -1,0 +1,146 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Centos?version=3 - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/Centos" href="/chaste/tutorials/release_3.2/InstallGuides/Centos.html">Centos</a>
+        <br style="clear: both" />
+      </p>
+        <table id="info" summary="Revision info">
+          <tbody>
+            <tr><th scope="row">
+                Version 3 (modified by jonc@&hellip;, <a class="timeline" href="/trac/timeline?from=2010-10-08T12%3A08%3A59%2B0100&amp;precision=second" title="2010-10-08T12:08:59+0100 in Timeline">4 years</a> ago)
+            </th></tr>
+            <tr><td class="message">
+              <p>
+--
+</p>
+
+            </td></tr>
+          </tbody>
+        </table>
+      <div class="wikipage searchable">
+        
+          <h1 id="ChasteinstallationonCentos">Chaste installation on Centos</h1>
+<p>
+These are the steps that I followed to install all the Chaste dependencies, run the test pack and build the executable.
+</p>
+<p>
+Details of the machine are:
+</p>
+<p>
+Linux version 2.6.18-164.10.1.el5. Red Hat 4.1.2-46
+</p>
+<h2 id="Preliminary">Preliminary</h2>
+<p>
+Install gcc, g++, libz and forrtan compiler (the CentOS operating system apparently comes with none of these).
+</p>
+<pre class="wiki">sudo yum install gcc 
+sudo yum install gcc-c++
+sudo yum install zlib-devel
+sudo yum install gcc-gfortran
+</pre><h2 id="Scons">Scons</h2>
+<p>
+Download tarball from  <a class="ext-link" href="http://prdownloads.sourceforge.net/scons/scons-1.2.0.tar.gz"><span class="icon">&nbsp;</span>http://prdownloads.sourceforge.net/scons/scons-1.2.0.tar.gz</a>
+</p>
+<p>
+Then:
+</p>
+<pre class="wiki">tar -xzvf scons-1.2.0.tar.gz
+cd scons-1.2.0
+python setup.py install --prefix=$HOME
+</pre><h2 id="Petscversion3">Petsc (version 3)</h2>
+<p>
+Download the tarball from <a class="ext-link" href="http://www.mcs.anl.gov/petsc/petsc-as/download/index.html"><span class="icon">&nbsp;</span>http://www.mcs.anl.gov/petsc/petsc-as/download/index.html</a>.
+Petsc 3 takes care of downloading, compiling and installing blas, lapack, openmpi, hdf5, hypre
+</p>
+<pre class="wiki">tar -xzvf petsc-3.0.0-p11.tar.gz
+cd petsc-3.0.0-p11
+export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu
+./config/configure.py --with-gnu-compilers==true --download-f-blas-lapack=1 --with-x=false --with-clanguage=cxx --download-hypre=yes --download-openmpi=yes --CXXFLAGS=-fPIC --CFLAGS=-fPIC --download-hdf5=yes
+make all test
+
+export PETSC_ARCH=linux-gnu-opt
+./config/configure.py --with-gnu-compilers==true --download-f-blas-lapack=1 --with-x=false --with-clanguage=cxx --download-hypre=yes --download-openmpi=yes --CXXFLAGS=-fPIC --CFLAGS=-fPIC --with-debugging=0 --download-hdf5=ifneeded
+make all test
+</pre><p>
+Add to the PATH the mpicc inside the petsc/linuxgnu
+</p>
+<h2 id="XMLTools">XML Tools</h2>
+<p>
+The CentOs yum repository seems not to have xerces-c libraries.
+Either you change the yum config file and add more repositories or download xerces-c and xerces-c-devel from <a class="ext-link" href="http://dag.wieers.com/rpm/packages/xerces-c/"><span class="icon">&nbsp;</span>http://dag.wieers.com/rpm/packages/xerces-c/</a>
+and then
+</p>
+<pre class="wiki">sudo rpm -i xerces-c-2.7.0-1.2.el4.rf.i386.rpm
+sudo rpm -i xerces-c-devel-2.7.0-1.2.el4.rf.i386.rpm
+</pre><p>
+For xsd (assuming our installation directory is ~/Chaste
+</p>
+<pre class="wiki">cd ~/Chaste
+wget http://codesynthesis.com/download/xsd/2.3/linux-gnu/i686/xsd-2.3.1-i686-linux-gnu.tar.bz2
+tar -xjf xsd-2.3.1-i686-linux-gnu.tar.bz2
+ln -s ~/Chaste/xsd-2.3.1-i686-linux-gnu/bin/xsd ~/Chaste/bin/xsd
+</pre><h2 id="Boost">Boost</h2>
+<p>
+Download the boost-jam rpm from <a class="ext-link" href="http://sourceforge.net/projects/boost/files/boost-jam/"><span class="icon">&nbsp;</span>http://sourceforge.net/projects/boost/files/boost-jam/</a>
+</p>
+<pre class="wiki">rpm -i boost-jam-3.1.12-1.i386.rpm
+</pre><p>
+Download boost (1.37) from <a class="ext-link" href="http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=8041"><span class="icon">&nbsp;</span>http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=8041</a>
+</p>
+<pre class="wiki">tar -zxvf boost_1_37_0.tar.gz
+cd boost_1_37_0
+bjam "-sTOOLS=gcc" --prefix=$HOME/boost install
+</pre><h2 id="METIS">METIS</h2>
+<pre class="wiki">cd $HOME
+wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-4.0.tar.gz
+tar -zxf metis-4.0.tar.gz
+</pre><p>
+Edit the file Makefile.in, changing the line CC = cc to CC = gcc.
+</p>
+<p>
+Then run 
+</p>
+<pre class="wiki">make
+</pre>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

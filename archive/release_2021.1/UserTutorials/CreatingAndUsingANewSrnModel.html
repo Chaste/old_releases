@@ -1,0 +1,845 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewSrnModel - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestCreatingAndUsingANewSrnModelTutorial.hpp at revision <a class="changeset" href="/trac/changeset/5e8c8d7218a9/git_repo" title="Copyright mayhem!">5e8c8d7218a9/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="AnexampleshowinghowtocreateanewsubcellularreactionnetworkSRNmodelanduseitinacell-basedsimulation.">An example showing how to create a new subcellular reaction network (SRN) model and use it in a cell-based simulation.</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In the previous cell-based Chaste tutorials, we used existing cell-cycle and SRN models to define how cells
+proliferate and update and subcellular model. In this tutorial, we show how to create a new SRN model class, and how this
+can be used in a cell-based simulation.
+</p>
+<h2 id="Includingheaderfiles">Including header files</h2>
+<p>
+We begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The next header includes the Boost shared_ptr smart pointer, and defines some useful
+macros to save typing when using it.
+</p>
+<div class="code"><pre><span class="cp">#include "SmartPointers.hpp"
+</span></pre></div><p>
+The next header includes the NEVER_REACHED macro, used in one of the methods below.
+</p>
+<div class="code"><pre><span class="cp">#include "Exception.hpp"
+</span>
+</pre></div><p>
+The next header defines a base class for ode-based SRN models.
+Our new SRN model will inherit from this abstract class.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractOdeSrnModel.hpp"
+</span>
+</pre></div><p>
+These headers specify the methods to solve the ODE system.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractOdeSystem.hpp"
+#include "OdeSystemInformation.hpp"
+#include "RungeKutta4IvpOdeSolver.hpp"
+</span>
+</pre></div><p>
+This header specifies the ODE solvers.
+</p>
+<div class="code"><pre><span class="cp">#include "CellCycleModelOdeSolver.hpp"
+</span>
+</pre></div><p>
+The following headers are needed for checkpointing.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;boost/serialization/base_object.hpp&gt;
+#include &lt;boost/serialization/shared_ptr.hpp&gt;
+</span>
+</pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based Chaste
+tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "UniformG1GenerationalCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "StemCellProliferativeType.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+</span>
+<span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><h2 id="DefiningtheSRNmodelandODEsystemclasses">Defining the SRN model and ODE system classes</h2>
+<p>
+As an example, let us consider a SRN model in which we solve a simple ODE
+dx/dt = -0.25*y
+dy/dt = x
+This has exact solution x = A cos 0.5t + B sin 0.5t
+where A and B are determined by the initial condions.
+</p>
+<p>
+To implement this model we define a new SRN model, <tt>MySrnModel</tt>,
+which inherits from <tt>AbstractOdeSrnModel</tt> and
+contains a <tt>MyOdeSystem</tt>.
+</p>
+<p>
+Note that usually this code would be separated out into a separate declaration in
+a .hpp file and definition in a .cpp file.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">MyOdeSystem</span> <span class="o">:</span> <span class="k">public</span> AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+</pre></div><p>
+We only need to include the next block of code if we wish to be able
+to archive (save or load) the ODE system (and therefore the SRN model) object in a cell-based simulation.
+The code consists of a serialize method, in which we archive the ODE system
+using the serialization code defined in the base class
+<tt>AbstractOdeSystem</tt>.
+</p>
+<div class="code"><pre>    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractOdeSystem<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+    MyOdeSystem<span class="p">(</span>std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> stateVariables<span class="o">=</span>std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">())</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeSystem<span class="o">&gt;::</span>Instance<span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span>stateVariables <span class="o">!=</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            SetStateVariables<span class="p">(</span>stateVariables<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.25</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        rDY<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+As in the ODE tutorials we need to define the ODE system information.
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeSystem<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"x"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">MySrnModel</span> <span class="o">:</span> <span class="k">public</span> AbstractOdeSrnModel
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+</pre></div><p>
+We only need to include the next block of code if we wish to be able
+to archive (save or load) the SRN model object in a cell-based simulation.
+The code consists of a serialize method, in which we archive the SRN
+model using the serialization code defined in the base class
+<tt>AbstractOdeSrnModel</tt>.
+</p>
+<div class="code"><pre>    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractOdeSrnModel<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">protected:</span>
+    <span class="cm">/**
+     * We need to define a protected copy-constructor for use by CreateSrnModel.
+     * The only way for external code to create a copy of a SRN model
+     * is by calling that method, to ensure that a model of the correct subclass is created.
+     * This copy-constructor helps subclasses to ensure that all member variables are correctly copied when this happens.
+     *
+     * Note that the parent SRN model will have had ResetForDivision() called just before CreateSrnModel() is called,
+     * so performing an exact copy of the parent is suitable behaviour. Any daughter-cell-specific initialisation
+     * can be done in InitialiseDaughterCell().
+     */</span>
+    MySrnModel<span class="p">(</span><span class="k">const</span> MySrnModel<span class="o">&amp;</span> rModel<span class="p">)</span>
+        <span class="o">:</span> AbstractOdeSrnModel<span class="p">(</span>rModel<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+These lines copy the ODE system.
+</p>
+<div class="code"><pre>        assert<span class="p">(</span>rModel<span class="p">.</span>GetOdeSystem<span class="p">());</span>
+        SetOdeSystem<span class="p">(</span><span class="k">new</span> MyOdeSystem<span class="p">(</span>rModel<span class="p">.</span>GetOdeSystem<span class="p">()</span><span class="o">-&gt;</span>rGetStateVariables<span class="p">()));</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The first public method is a constructor, which just calls the base
+constructor.  Note you can include an optional argument to specify the ODE solver.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+
+    MySrnModel<span class="p">()</span>
+        <span class="o">:</span> AbstractOdeSrnModel<span class="p">(</span><span class="mi">2</span><span class="p">,</span> boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCellCycleModelOdeSolver<span class="o">&gt;</span><span class="p">())</span>
+    <span class="p">{</span>
+
+        mpOdeSolver <span class="o">=</span> CellCycleModelOdeSolver<span class="o">&lt;</span>MySrnModel<span class="p">,</span> RungeKutta4IvpOdeSolver<span class="o">&gt;::</span>Instance<span class="p">();</span>
+        mpOdeSolver<span class="o">-&gt;</span>Initialise<span class="p">();</span>
+        SetDt<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        assert<span class="p">(</span>mpOdeSolver<span class="o">-&gt;</span>IsSetUp<span class="p">());</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The second public method overrides <tt>CreateSrnModel()</tt>. This is a
+builder method to create new copies of the SRN model. We call
+the (protected) copy constructor which creates a copy of the cell cycle model.
+</p>
+<div class="code"><pre>    AbstractSrnModel<span class="o">*</span> <span class="nf">CreateSrnModel</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> MySrnModel<span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The third public method overrides <tt>Initialise()</tt>.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">Initialise</span><span class="p">()</span>
+    <span class="p">{</span>
+        AbstractOdeSrnModel<span class="o">::</span>Initialise<span class="p">(</span><span class="k">new</span> MyOdeSystem<span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The fourth public method runs the ODEs at each timestep and saves some results to <tt>CellData</tt>.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">SimulateToCurrentTime</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// run the ODE simulation as needed
+</span>        AbstractOdeSrnModel<span class="o">::</span>SimulateToCurrentTime<span class="p">();</span>
+
+</pre></div><p>
+this line outputs the ODE system variable to <tt>CellData</tt>.
+</p>
+<div class="code"><pre>        mpCell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"x"</span><span class="p">,</span>mpOdeSystem<span class="o">-&gt;</span>rGetStateVariables<span class="p">()[</span><span class="mi">0</span><span class="p">]);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Finally we define a method to output any parameters in our model, this needs to be included in every SRN model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">OutputSrnModelParameters</span><span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// No new parameters to output, so just call method on direct parent class
+</span>        AbstractOdeSrnModel<span class="o">::</span>OutputSrnModelParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+We need to include the next block of code if you want to be able to archive (save or load)
+the SRN model object in a cell-based simulation. It is also required for writing out
+the parameters file describing the settings for a simulation - it provides the unique
+identifier for our new SRN model. Thus every SRN model class must provide this,
+or you'll get errors when running simulations.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyOdeSystem<span class="p">)</span>
+CHASTE_CLASS_EXPORT<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+<span class="cp">#include "CellCycleModelOdeSolverExportWrapper.hpp"
+</span>EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+</pre></div><p>
+Since we're defining the new SRN model and ODEs within the test file, we need to include the
+following stanza as well, to make the code work with newer versions of the Boost libraries.
+Normally the above export declaration would occur in the SRN model's .hpp file, and
+the following lines would appear in the .cpp file.  See <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a> for
+more information.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyOdeSystem<span class="p">)</span>
+CHASTE_CLASS_EXPORT<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+</pre></div><p>
+Need to re-include this after <tt>SerializationExportWrapperForCpp.hpp</tt>. This is to export the
+components that would normally be in a seperate cpp file.
+</p>
+<div class="code"><pre><span class="cp">#include "CellCycleModelOdeSolverExportWrapper.hpp"
+</span>EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+</pre></div><p>
+This completes the code for <tt>MySrnModel</tt>. Note that usually this code would
+be separated out into a separate declaration in a .hpp file and definition in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewSrnModelTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="TestingtheSRNmodel">Testing the SRN model</h2>
+<p>
+We begin by testing that our new cell-cycle model is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestMySrnModel</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+Test that we can construct a <tt>MySrnModel</tt> object:
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>MySrnModel srn_model<span class="p">);</span>
+
+</pre></div><p>
+Now we construct and initialise a cell with a <tt>MySrnModel</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+        MySrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+        CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+        p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+        p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+        p_cell<span class="o">-&gt;</span>InitialiseSrnModel<span class="p">();</span>
+
+</pre></div><p>
+Now increment time and check the ODE in <tt>MySrnModel</tt> is solved correctly.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> end_time <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+        <span class="kt">unsigned</span> num_steps <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span>end_time<span class="p">,</span> num_steps<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_steps<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+            <span class="kt">double</span> current_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">();</span>
+
+</pre></div><p>
+Check that the ODE system is solved correctly
+</p>
+<div class="code"><pre>            p_srn_model<span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+            <span class="c1">// Test converged to steady state
+</span>            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Lastly, we briefly test that archiving of <tt>MySrnModel</tt> has
+been implemented correctly. Create an <tt>OutputFileHandler</tt> and use
+this to define a filename for the archive.
+</p>
+<div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_srn_model.arch"</span><span class="p">;</span>
+
+</pre></div><p>
+Create an output archive.
+</p>
+<div class="code"><pre>        <span class="p">{</span>
+</pre></div><p>
+Destroy the current instance of <tt>SimulationTime</tt> and create another instance.
+Set the start time, end time and number of time steps.
+</p>
+<div class="code"><pre>            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+</pre></div><p>
+Create a cell with associated srn and cell-cycle model.
+</p>
+<div class="code"><pre>            UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+            AbstractSrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            p_cell<span class="o">-&gt;</span>InitialiseSrnModel<span class="p">();</span>
+
+</pre></div><p>
+Move forward two time steps.
+</p>
+<div class="code"><pre>            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+</pre></div><p>
+Solve the SRN.
+</p>
+<div class="code"><pre>            p_srn_model<span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+            <span class="kt">double</span> current_time <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+</pre></div><p>
+Now archive the cell-cycle model through its cell.
+</p>
+<div class="code"><pre>            CellPtr <span class="k">const</span> p_const_cell <span class="o">=</span> p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_const_cell<span class="p">;</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Now create an input archive. Begin by again destroying the current
+instance of <tt>SimulationTime</tt> and creating another instance. Set
+the start time, end time and number of time steps. note that this is
+overwritten when you load the archive.
+</p>
+<div class="code"><pre>        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+</pre></div><p>
+Create a pointer to a cell.
+</p>
+<div class="code"><pre>            CellPtr p_cell<span class="p">;</span>
+
+</pre></div><p>
+Create an input archive and restore the cell from the archive.
+</p>
+<div class="code"><pre>            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+            input_arch <span class="o">&gt;&gt;</span> p_cell<span class="p">;</span>
+
+</pre></div><p>
+Test that the state of the ODES has been restored correctly.
+</p>
+<div class="code"><pre>            <span class="kt">double</span> current_time <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> current_time<span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+</pre></div><p>
+Move forward two more time steps.
+</p>
+<div class="code"><pre>            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+</pre></div><p>
+Solve the SRN.
+</p>
+<div class="code"><pre>            p_cell<span class="o">-&gt;</span>GetSrnModel<span class="p">()</span><span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+</pre></div><p>
+Check it's moved on OK
+</p>
+<div class="code"><pre>            current_time <span class="o">=</span> <span class="mf">3.0</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> current_time<span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="UsingtheSRNmodelinacell-basedsimulation">Using the SRN model in a cell-based simulation</h2>
+<p>
+We conclude with a brief test demonstrating how <tt>MySrnModel</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOffLatticeSimulationWithMySrnModel</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We use the honeycomb vertex mesh generator to create a vertex mesh.
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+</pre></div><p>
+Next, we create some cells. First, define the cells vector.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+</pre></div><p>
+We must create a shared_ptr to a <tt>CellMutationState</tt> with which to bestow the cells.
+We make use of the macro MAKE_PTR to do this: the first argument is the class and
+the second argument is the name of the shared_ptr.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+</pre></div><p>
+Then we loop over the nodes.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+For each node we create a cell with our SRN model and simple Stochastic cell cycle model.
+</p>
+<div class="code"><pre>            UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+            MySrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+
+</pre></div><p>
+We choose to initialise the concentrations to random levels in each cell.
+</p>
+<div class="code"><pre>            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_conditions<span class="p">;</span>
+            initial_conditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            initial_conditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            p_srn_model<span class="o">-&gt;</span>SetInitialConditions<span class="p">(</span>initial_conditions<span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+
+</pre></div><p>
+Now, we define a random birth time, chosen from [-T,0], where
+T is the typical cell cycle duration
+</p>
+<div class="code"><pre>            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span> p_cell_cycle_model<span class="o">-&gt;</span>GetAverageStemCellCycleTime<span class="p">();</span>
+</pre></div><p>
+We then set the birth time and push the cell back into the vector of cells.
+</p>
+<div class="code"><pre>            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the cell population, forces, areas modifier, and simulation
+in the same way as the other tutorials.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMySrnModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+</pre></div><p>
+Finally to run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/TestOffLatticeSimulationWithMySrnModel/results_from_time_0/results.pvd</tt>,
+and color by <tt>x</tt>.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewSrnModelTutorial.hpp">File name <tt>TestCreatingAndUsingANewSrnModelTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "SmartPointers.hpp"
+#include "Exception.hpp"
+</span>
+<span class="cp">#include "AbstractOdeSrnModel.hpp"
+</span>
+<span class="cp">#include "AbstractOdeSystem.hpp"
+#include "OdeSystemInformation.hpp"
+#include "RungeKutta4IvpOdeSolver.hpp"
+</span>
+<span class="cp">#include "CellCycleModelOdeSolver.hpp"
+</span>
+<span class="cp">#include &lt;boost/serialization/base_object.hpp&gt;
+#include &lt;boost/serialization/shared_ptr.hpp&gt;
+</span>
+<span class="cp">#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "UniformG1GenerationalCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "StemCellProliferativeType.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+</span>
+<span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MyOdeSystem</span> <span class="o">:</span> <span class="k">public</span> AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractOdeSystem<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+    MyOdeSystem<span class="p">(</span>std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> stateVariables<span class="o">=</span>std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">())</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeSystem<span class="o">&gt;::</span>Instance<span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span>stateVariables <span class="o">!=</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            SetStateVariables<span class="p">(</span>stateVariables<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.25</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        rDY<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">template</span><span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeSystem<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"x"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">MySrnModel</span> <span class="o">:</span> <span class="k">public</span> AbstractOdeSrnModel
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractOdeSrnModel<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">protected:</span>
+    <span class="cm">/**
+     * We need to define a protected copy-constructor for use by CreateSrnModel.
+     * The only way for external code to create a copy of a SRN model
+     * is by calling that method, to ensure that a model of the correct subclass is created.
+     * This copy-constructor helps subclasses to ensure that all member variables are correctly copied when this happens.
+     *
+     * Note that the parent SRN model will have had ResetForDivision() called just before CreateSrnModel() is called,
+     * so performing an exact copy of the parent is suitable behaviour. Any daughter-cell-specific initialisation
+     * can be done in InitialiseDaughterCell().
+     */</span>
+    MySrnModel<span class="p">(</span><span class="k">const</span> MySrnModel<span class="o">&amp;</span> rModel<span class="p">)</span>
+        <span class="o">:</span> AbstractOdeSrnModel<span class="p">(</span>rModel<span class="p">)</span>
+    <span class="p">{</span>
+        assert<span class="p">(</span>rModel<span class="p">.</span>GetOdeSystem<span class="p">());</span>
+        SetOdeSystem<span class="p">(</span><span class="k">new</span> MyOdeSystem<span class="p">(</span>rModel<span class="p">.</span>GetOdeSystem<span class="p">()</span><span class="o">-&gt;</span>rGetStateVariables<span class="p">()));</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    MySrnModel<span class="p">()</span>
+        <span class="o">:</span> AbstractOdeSrnModel<span class="p">(</span><span class="mi">2</span><span class="p">,</span> boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCellCycleModelOdeSolver<span class="o">&gt;</span><span class="p">())</span>
+    <span class="p">{</span>
+
+        mpOdeSolver <span class="o">=</span> CellCycleModelOdeSolver<span class="o">&lt;</span>MySrnModel<span class="p">,</span> RungeKutta4IvpOdeSolver<span class="o">&gt;::</span>Instance<span class="p">();</span>
+        mpOdeSolver<span class="o">-&gt;</span>Initialise<span class="p">();</span>
+        SetDt<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        assert<span class="p">(</span>mpOdeSolver<span class="o">-&gt;</span>IsSetUp<span class="p">());</span>
+    <span class="p">}</span>
+
+    AbstractSrnModel<span class="o">*</span> CreateSrnModel<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> MySrnModel<span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> Initialise<span class="p">()</span>
+    <span class="p">{</span>
+        AbstractOdeSrnModel<span class="o">::</span>Initialise<span class="p">(</span><span class="k">new</span> MyOdeSystem<span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> SimulateToCurrentTime<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// run the ODE simulation as needed
+</span>        AbstractOdeSrnModel<span class="o">::</span>SimulateToCurrentTime<span class="p">();</span>
+
+        mpCell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"x"</span><span class="p">,</span>mpOdeSystem<span class="o">-&gt;</span>rGetStateVariables<span class="p">()[</span><span class="mi">0</span><span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> OutputSrnModelParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// No new parameters to output, so just call method on direct parent class
+</span>        AbstractOdeSrnModel<span class="o">::</span>OutputSrnModelParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyOdeSystem<span class="p">)</span>
+CHASTE_CLASS_EXPORT<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+<span class="cp">#include "CellCycleModelOdeSolverExportWrapper.hpp"
+</span>EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyOdeSystem<span class="p">)</span>
+CHASTE_CLASS_EXPORT<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+<span class="cp">#include "CellCycleModelOdeSolverExportWrapper.hpp"
+</span>EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER<span class="p">(</span>MySrnModel<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewSrnModelTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestMySrnModel<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>MySrnModel srn_model<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+        MySrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+        CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+        p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+        p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+        p_cell<span class="o">-&gt;</span>InitialiseSrnModel<span class="p">();</span>
+
+        <span class="kt">double</span> end_time <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+        <span class="kt">unsigned</span> num_steps <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span>end_time<span class="p">,</span> num_steps<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_steps<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+            <span class="kt">double</span> current_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">();</span>
+
+            p_srn_model<span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+            <span class="c1">// Test converged to steady state
+</span>            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_srn_model.arch"</span><span class="p">;</span>
+
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+            UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+            AbstractSrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            p_cell<span class="o">-&gt;</span>InitialiseSrnModel<span class="p">();</span>
+
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_srn_model<span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+            <span class="kt">double</span> current_time <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+            CellPtr <span class="k">const</span> p_const_cell <span class="o">=</span> p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_const_cell<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+            input_arch <span class="o">&gt;&gt;</span> p_cell<span class="p">;</span>
+
+            <span class="kt">double</span> current_time <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> current_time<span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_cell<span class="o">-&gt;</span>GetSrnModel<span class="p">()</span><span class="o">-&gt;</span>SimulateToCurrentTime<span class="p">();</span>
+
+            current_time <span class="o">=</span> <span class="mf">3.0</span><span class="p">;</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_simulation_time<span class="o">-&gt;</span>GetTime<span class="p">(),</span> current_time<span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_cell<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>GetItem<span class="p">(</span><span class="s">"x"</span><span class="p">),</span> cos<span class="p">(</span><span class="mf">0.5</span><span class="o">*</span>current_time<span class="p">),</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMySrnModel<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            UniformG1GenerationalCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> UniformG1GenerationalCellCycleModel<span class="p">();</span>
+            MySrnModel<span class="o">*</span> p_srn_model <span class="o">=</span> <span class="k">new</span> MySrnModel<span class="p">;</span>
+
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_conditions<span class="p">;</span>
+            initial_conditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            initial_conditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            p_srn_model<span class="o">-&gt;</span>SetInitialConditions<span class="p">(</span>initial_conditions<span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">,</span> p_srn_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span> p_cell_cycle_model<span class="o">-&gt;</span>GetAverageStemCellCycleTime<span class="p">();</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMySrnModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

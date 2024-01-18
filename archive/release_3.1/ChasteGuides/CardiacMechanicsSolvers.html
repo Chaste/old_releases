@@ -1,0 +1,106 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/CardiacMechanicsSolvers - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/CardiacMechanicsSolvers" href="/chaste/tutorials/release_3.1/ChasteGuides/CardiacMechanicsSolvers.html">CardiacMechanicsSolvers</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h2 id="Mechanicssolvers">Mechanics solvers</h2>
+<p>
+There are (as of the time of writing, Nov 11) two mechanics solvers, an incompressible nonlinear elasticity solver and a compressible nonlinear elasticity solver, with the following hierarchy:
+</p>
+<div class="code"><pre>       AbstractNonlinearElasticitySolver 
+         <span class="o">^</span>                          <span class="o">^</span>
+         <span class="o">|</span>                          <span class="o">|</span>
+IncompressibleSolver        CompressibleSolver
+</pre></div><p>
+(Here and throughout this page we shorten class names - for example <tt>CompressibleSolver</tt> is actually called <tt>CompressibleNonlinearElasticitySolver</tt>). See mechanics tutorials for more information on these classes.
+</p>
+<h2 id="Cardiacmechanicssolvers">Cardiac mechanics solvers</h2>
+<p>
+Cardiac mechanics solvers solve mechanics problems for which the forcing comes from active tension developed in the tissue. Both incompressible and compressible versions are required, and the cardiac-specific part of a <tt>CardiacMechanicsSolver</tt> doesn't really care whether it is a compressible or incompressible problem.
+</p>
+<p>
+To complicate matters, there are two types of <tt>CardiacMechanicsSolver</tt>, an implicit solver and an explicit solver. The explicit solver basically uses active tensions computed
+at the previous timestep, whereas the implicit solver uses the current solution in computing the active tensions. (The appropriate choice of solver depends on the types of contraction model used). For more details on all of this see <a class="ext-link" href="http://dx.doi.org/10.1093/qjmam/hbq014"><span class="icon">&nbsp;</span>http://dx.doi.org/10.1093/qjmam/hbq014</a>.
+</p>
+<p>
+There are therefore four combinations: <tt>{incompressible,compressible} x {implicit,explicit}</tt>. The cardiac mechanics solvers are templated over the solver they should inherit from.
+</p>
+<pre class="wiki">                IncompressibleSolver or CompressibleSolver
+                                     ^
+                                     |
+                     template&lt;class SOLVER&gt;
+                     AbstractCardiacMechanicsSolver : public SOLVER
+                      ^                    ^
+                      |                    |
+  template&lt;class SOLVER&gt;                  template&lt;class SOLVER&gt;
+  ExplicitSolver                          ImplicitSolver
+</pre><p>
+To avoid <tt>CardiacElectroMechanicsProblem</tt> (the class used by a user) also having to be templated over the solver to use, which would be a pain for a user, all declarations of the methods in <tt>AbstractCardiacMechanicsSolver&lt;SOLVER,DIM&gt;</tt> are in <tt>AbstractCardiacMechanicsSolverInterface&lt;DIM&gt;</tt>, so that the problem class can just hold a pointer to the latter:
+</p>
+<div class="code"><pre>           AbstractNonlinearElasticitySolver 
+                           <span class="o">^</span>
+                           <span class="o">|</span>
+      IncompressibleSolver or CompressibleSolver       AbstractCardiacMechanicsSolverInterface  
+                           <span class="o">^</span>                               <span class="o">^</span>
+                           <span class="o">|</span>                               <span class="o">|</span>
+                template<span class="o">&lt;</span>class SOLVER<span class="o">&gt;</span>                     <span class="o">|</span>
+                AbstractCardiacMechanicsSolver ____________<span class="o">|</span>
+                  <span class="o">^</span>                    <span class="o">^</span>
+                  <span class="o">|</span>                    <span class="o">|</span>
+template<span class="o">&lt;</span>class SOLVER<span class="o">&gt;</span>                template<span class="o">&lt;</span>class SOLVER<span class="o">&gt;</span>
+ExplicitSolver                        ImplicitSolver
+</pre></div><p>
+<tt>CardiacElectroMechanicsProblem&lt;DIM&gt;</tt> holds pointer to <tt>AbstractCardiacMechanicsSolverInterface&lt;DIM&gt;</tt> and allocates this to be one of
+</p>
+<ul><li><tt>ExplicitSolver&lt;IncompressibleSolver,DIM&gt;</tt>
+</li><li><tt>ExplicitSolver&lt;CompressibleSolver,DIM&gt;</tt>
+</li><li><tt>ImplicitSolver&lt;IncompressibleSolver,DIM&gt;</tt>
+</li><li><tt>ImplicitSolver&lt;CompressibleSolver,DIM&gt;</tt>
+</li></ul><p>
+depending on whether the user wants compressible or incompressible, and based on which contraction model is used.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

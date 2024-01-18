@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/Profiling - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ProfilingPagestillverymuchunderconstruction">Profiling (Page still very much under construction!)</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#ProfilingPagestillverymuchunderconstruction">Profiling (Page still very much under construction!)</a>
+    <ol>
+      <li>
+        <a href="#GProf">GProf</a>
+      </li>
+      <li>
+        <a href="#GPerfTools">GPerfTools</a>
+      </li>
+      <li>
+        <a href="#Post-processingtheprofilingresults">Post-processing the profiling results</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This page provides some information on profiling Chaste simulations, and assumes Chaste is being built using CMake. CMake is pre-configured to enable profiling with either the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling.html#GProf">gnu profiler (gprof)</a>, or with <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling.html#GPerfTools">google performance tools (gperftools)</a>.
+</p>
+<p>
+Information on how to enable profiling can be found in the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#Profiling">CMake Build Guide</a>.
+</p>
+<p>
+Examples in the following text are based on running <tt>Test2DVertexBasedCryptRepresentativeSimulation.hpp</tt>.
+</p>
+<hr />
+<h2 id="GProf">GProf</h2>
+<p>
+Running <tt>Test2DVertexBasedCryptRepresentativeSimulation.hpp</tt> generates the file <tt>Test2DVertexBasedCryptRepresentativeSimulation_simulation_.gmon</tt> in <tt>/path_to_build_directory/profile</tt>.  This is a plain text file with first few lines
+</p>
+<pre class="wiki">Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 10.56     11.28    11.28 9354625363     0.00     0.00  boost::numeric::ublas::c_vector&lt;double, 2ul&gt;::operator()(unsigned long)
+  7.86     19.68     8.40 1167048388     0.00     0.00  void boost::numeric::ublas::indexing_vector_assign&lt;boost::numeric::ublas::scalar_assign, boost::numeric::ublas::c_vector&lt;double, 2ul&gt;, boost::numeric::ublas::vector_binary&lt;boost::numeric::ublas::c_vector&lt;double, 2ul&gt;, boost::numeric::ublas::c_vector&lt;double, 2ul&gt;, boost::numeric::ublas::scalar_minus&lt;double, double&gt; &gt; &gt;(boost::numeric::ublas::c_vector&lt;double, 2ul&gt;&amp;, boost::numeric::ublas::vector_expression&lt;boost::numeric::ublas::vector_binary&lt;boost::numeric::ublas::c_vector&lt;double, 2ul&gt;, boost::numeric::ublas::c_vector&lt;double, 2ul&gt;, boost::numeric::ublas::scalar_minus&lt;double, double&gt; &gt; &gt; const&amp;)
+  6.59     26.71     7.04 5256369461     0.00     0.00  unsigned long boost::numeric::ublas::same_impl_ex&lt;unsigned long&gt;(unsigned long const&amp;, unsigned long const&amp;, char const*, int)
+
+</pre><p>
+This text output can be converted to a <tt>dot graph</tt> using several utilities (see the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling.html#Post-processingtheprofilingresults">post-processing section</a>).
+</p>
+<p>
+Running <tt>gprof2dot.py -s -n1 -e1 Test2DVertexBasedCryptRepresentativeSimulation_simulation_.gmon | dot -Tsvg -o gprof.svg</tt> produces the following image:
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gprof.svg"><img width="800px" alt="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GProf output of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gprof.svg" /></a>
+</p>
+<h2 id="GPerfTools">GPerfTools</h2>
+<p>
+GPerfTools handles visualisation of the results itself, so changing any parameters must be done within <tt>ChasteMacros.cmake</tt>.  Parameters to set are:
+</p>
+<ul><li><tt>--&lt;ext&gt;</tt> the file extension of the visualisation.  The Chaste default is <tt>gif</tt> but others include <tt>svg</tt>, <tt>eps</tt>, and <tt>pdf</tt>.
+</li><li><tt>--nodefraction=x</tt> where <tt>x</tt> is the threshold below which nodes in the dot graph are not visualised.  The Chaste default is 0.0001 (0.01% of total run time), but this can produce too much detail.
+</li><li><tt>--edgefraction=x</tt> where <tt>x</tt> is the threshold below which edges in the dot graph are not visualised.  The Chaste default is 0.0001 (0.01% of total run time), but this can produce too much detail.
+</li></ul><p>
+Running <tt>Test2DVertexBasedCryptRepresentativeSimulation.hpp</tt> with <tt>--svg --nodefraction=0.01 --edgefraction=0.01</tt> generates two files in <tt>/path_to_build_directory/profile</tt>:
+</p>
+<ul><li><tt>Test2DVertexBasedCryptRepresentativeSimulation_simulation_.prof</tt>, a non human-readable output
+</li><li><tt>Test2DVertexBasedCryptRepresentativeSimulation_simulation_.svg</tt>, the image below (converted to png; original svg attached).
+</li></ul><p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gperftools_default.png"><img width="400px" alt="Default GPerfTools output (converted to png)" title="Default GPerfTools output (converted to png)" src="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gperftools_default.png" /></a>
+</p>
+<p>
+It is possible to post process results from GPerfTools using <tt>gprof2dot</tt>, however this requires setting the <tt>--&lt;ext&gt;</tt> flag to <tt>--callgrind</tt>, a format readable by <tt>gprof2dot</tt>.
+</p>
+<p>
+Running <tt>gprof2dot.py -f callgrind -s -n1 -e1 Test2DVertexBasedCryptRepresentativeSimulation_simulation_.cg | dot -Tsvg -o gperftools_modified.svg</tt> produces the following image:
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gperftools_modified.svg"><img width="800px" alt="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" title="GPerfTools output run through gprof2dot of Test2DVertexBasedCryptRepresentativeSimulation.hpp" src="/chaste/tutorials/release_2018.1/ChasteGuides/Profiling/gperftools_modified.svg" /></a>
+</p>
+<h2 id="Post-processingtheprofilingresults">Post-processing the profiling results</h2>
+<p>
+<a class="ext-link" href="https://github.com/jrfonseca/gprof2dot"><span class="icon">​</span>gprof2dot</a> is a great utility for producing dot graphs from multiple different profilers.
+</p>
+<p>
+Example usage is <tt>gprof2dot.py -f &lt;format&gt; &lt;other options&gt; | dot -T&lt;ext&gt; -o output.&lt;ext&gt;</tt>, where
+</p>
+<ul><li><tt>&lt;format&gt;</tt> defaults to prof, which is the default <tt>.gmon</tt> file produced by <tt>gprof</tt>, but above is used as <tt>callgrind</tt> for using <tt>gperftools</tt>
+</li><li><tt>&lt;other options&gt;</tt> include:
+<ul><li><tt>-s</tt> to strip function arguments and template information, without which the boxes are often too wide
+</li><li><tt>-nx</tt> the node threshold (where x is the percent of total run time), below which nodes are not visualised
+</li><li><tt>-ex</tt> the edge threshold (where x is the percent of total run time), below which edges are not visualised
+</li></ul></li><li><tt>&lt;ext&gt;</tt> is the output format and can be, for instance, <tt>svg</tt>, <tt>eps</tt>, <tt>pdf</tt>, or <tt>png</tt>
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

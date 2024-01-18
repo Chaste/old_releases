@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/Monodomain3dExampleWithCvode - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestMonodomain3dExampleWithCvodeTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23380 on (default)">r23380</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="a3DmonodomainexampleusingCVODEforODEsolution">3D monodomain example using CVODE for ODE solution</h1>
+<p>
+This tutorial is based on <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> except this time we will
+use CVODE solvers. To highlight the changes needed to run with CVODE we omit the usual
+explanations of the rest of the code - see <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> for these.
+</p>
+<p>
+First include the headers
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+</span></pre></div><p>
+Chaste actually has two ways of using CVODE for solution of cardiac action potential model ODEs:
+</p>
+<ol><li>via a <tt>CvodeAdaptor</tt> solver - this would work on the usual cell model as in the previous tutorial.
+</li></ol><ol start="2"><li>via an <tt>AbstractCvodeCell</tt> instead of an <tt>AbstractCardiacCell</tt> - this class uses native CVODE vectors.
+</li></ol><p>
+In order to generate CVODE cells please see <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/CodeGenerationFromCellML.html">CodeGenerationFromCellML</a>.
+</p>
+<p>
+<strong>NB:</strong> recent improvements (becoming available from release 3.2) mean that
+maple can be used to generate an <em>analytic jacobian</em> which is then made available to CVODE via the
+native <tt>AbstractCvodeCell</tt>, and this will provide a speed up of between 5-30% (depending on the size of
+the ODE system). But this is not compulsory to use CVODE, which will still work well.
+</p>
+<p>
+So here we do the <tt>#include</tt> to import the native CVODE version of the cell model.
+</p>
+<div class="code"><pre><span class="cp">#include "LuoRudy1991Cvode.hpp"
+</span></pre></div><p>
+then include the rest of the headers as usual
+</p>
+<div class="code"><pre><span class="cp">#include "TetrahedralMesh.hpp"
+#include "SimpleStimulus.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+Since CVODE is an optional extra dependency for Chaste - albeit now
+one that is highly recommended - see the <a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/InstallGuide.html">InstallGuide</a>.
+</p>
+<p>
+We guard any code that relies upon it with the following <tt>#ifdef</tt>.
+This CHASTE_CVODE flag is set automatically if your hostconfig file
+(in python/hostconfig) sets <tt>use_cvode</tt> and calls <tt>DetermineCvodeVersion(&lt;path to CVODE includes&gt;)</tt>.
+See the end of the file python/hostconfig/default.py for an example of this.
+</p>
+<div class="code"><pre><span class="cp">#ifdef CHASTE_CVODE
+</span>
+</pre></div><p>
+The major changes required to run with CVODE cells are in the cell factory.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">BenchmarkCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    BenchmarkCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">100000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The following method definition changes to return an <tt>AbstractCvodeCell</tt>
+instead of an <tt>AbstractCardiacCell</tt>.
+</p>
+<div class="code"><pre>    AbstractCvodeCell<span class="o">*</span> <span class="nf">CreateCardiacCellForTissueNode</span><span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCvodeCell<span class="o">*</span> p_cell<span class="p">;</span>
+</pre></div><p>
+Purely in order to maintain a consistent interface,
+an <tt>AbstractCvodeCell</tt> expects an <tt>AbstractIvpOdeSolver</tt> in its
+constructor, but it is not used (CVODE is instead). So an empty
+pointer can be passed.
+</p>
+<div class="code"><pre>        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractIvpOdeSolver<span class="o">&gt;</span> p_empty_solver<span class="p">;</span>
+
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+</pre></div><p>
+We then create a 'native' CVODE cell - each cell has its own solver embedded within it.
+Each cell needs its own solver because CVODE saves information about the solver state
+between runs to perform its adaptive scheme.
+</p>
+<p>
+<strong>NB:</strong> this will use more memory than the standard approach of sharing one solver
+object between all of the action potential models on a processor.
+</p>
+<div class="code"><pre>        <span class="k">if</span> <span class="p">(</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>z<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="p">)</span>
+        <span class="p">{</span>
+            p_cell <span class="o">=</span> <span class="k">new</span> CellLuoRudy1991FromCellMLCvode<span class="p">(</span>p_empty_solver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            p_cell <span class="o">=</span> <span class="k">new</span> CellLuoRudy1991FromCellMLCvode<span class="p">(</span>p_empty_solver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+We can also set the tolerances of the ODE solver (in this case,
+the method is just setting them to the same as the default, but is shown for completeness).
+</p>
+<p>
+If you ever get a state variable going out of range with CVODE, then tighten these tolerances .
+(but we haven't had that problem with these settings -
+that are better than anything but a ridiculously small Forward Euler step).
+</p>
+<div class="code"><pre>        p_cell<span class="o">-&gt;</span>SetTolerances<span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span><span class="mf">1e-7</span><span class="p">);</span>
+
+        <span class="k">return</span> p_cell<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#endif </span><span class="c1">// CHASTE_CVODE
+</span>
+</pre></div><p>
+The rest of the test is almost identical to the non-CVODE cell case,
+</p>
+<ul><li>just note the #ifdef tag and the comment about ODE timesteps.
+</li></ul><div class="code"><pre><span class="k">class</span> <span class="nc">TestMonodomain3dExample</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestMonodomain3d<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+<span class="cp">#ifdef CHASTE_CVODE
+</span>        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        <span class="kt">double</span> h<span class="o">=</span><span class="mf">0.02</span><span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span>h<span class="p">,</span> <span class="mf">0.8</span> <span class="cm">/*length*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*depth*/</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputUsingOriginalNodeOrdering<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dExampleWithCvode"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+</pre></div><p>
+Note - when using CVODE in cardiac tissue simulations the ODE timestep
+should be set to the same as the PDE timestep.
+</p>
+<p>
+CVODE will take as many adaptive internal timesteps as it requires each time
+it is called, so we should just call it once per PDE timestep - i.e. set the
+ODE and PDE timesteps to be the same.
+</p>
+<p>
+<strong>NB</strong>: CVODE will only give you a big speedup when the ODE/PDE timestep is larger than
+a typical Forward Euler timestep would be for that model. But it doesn't
+seem to be any slower than Forward Euler, even at this PDE resolution.
+</p>
+<p>
+A convergence analysis should be performed to ensure that the PDE is being solved
+accurately before reducing the step just to get faster ODE solution!
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+The rest of the code is unchanged.
+</p>
+<div class="code"><pre>        BenchmarkCellFactory cell_factory<span class="p">;</span>
+        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        monodomain_problem<span class="p">.</span>SetMesh<span class="p">(</span> <span class="o">&amp;</span>mesh <span class="p">);</span>
+
+        <span class="kt">bool</span> partial_output <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span>partial_output<span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> nodes_to_be_output<span class="p">;</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">((</span><span class="kt">unsigned</span><span class="p">)</span>round<span class="p">(</span> <span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="p">));</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+            monodomain_problem<span class="p">.</span>SetOutputNodes<span class="p">(</span>nodes_to_be_output<span class="p">);</span>
+        <span class="p">}</span>
+
+        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        ReplicatableVector <span class="nf">voltage</span><span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+
+</pre></div><p>
+<strong>NB</strong>: CVODE almost certainly gives a more accurate ODE solution than
+Forward Euler, so this result has been tweaked from previous tutorial (34.9032mV previously).
+</p>
+<div class="code"><pre>        TS_ASSERT_DELTA<span class="p">(</span>voltage<span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">34.7740</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">);</span> <span class="c1">// Slack tolerance for different CVODE versions.
+</span>
+</pre></div><p>
+Here we add a visual warning in case CVODE is not installed and/or set up.
+If you want to make sure CVODE is run in your own tests you could add in
+the <tt>TS_ASSERT(false);</tt> line.
+</p>
+<p>
+Since CVODE is still optional for Chaste we allow the test to pass without it,
+but note that if this is the case, then the test is not doing anything!
+</p>
+<div class="code"><pre><span class="cp">#else
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"CVODE is not installed, or CHASTE is not configured to use it, check your hostconfig settings."</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        <span class="c1">// TS_ASSERT(false); // uncomment if you want to ensure CVODE is set up on your system.
+</span><span class="cp">#endif </span><span class="c1">// CHASTE_CVODE
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestMonodomain3dExampleWithCvodeTutorial.hpp">File name <tt>TestMonodomain3dExampleWithCvodeTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+#include "LuoRudy1991Cvode.hpp"
+#include "TetrahedralMesh.hpp"
+#include "SimpleStimulus.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="cp">#ifdef CHASTE_CVODE
+</span>
+<span class="k">class</span> <span class="nc">BenchmarkCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    BenchmarkCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">100000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCvodeCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCvodeCell<span class="o">*</span> p_cell<span class="p">;</span>
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractIvpOdeSolver<span class="o">&gt;</span> p_empty_solver<span class="p">;</span>
+
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>z<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="p">)</span>
+        <span class="p">{</span>
+            p_cell <span class="o">=</span> <span class="k">new</span> CellLuoRudy1991FromCellMLCvode<span class="p">(</span>p_empty_solver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            p_cell <span class="o">=</span> <span class="k">new</span> CellLuoRudy1991FromCellMLCvode<span class="p">(</span>p_empty_solver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        p_cell<span class="o">-&gt;</span>SetTolerances<span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span><span class="mf">1e-7</span><span class="p">);</span>
+
+        <span class="k">return</span> p_cell<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#endif </span><span class="c1">// CHASTE_CVODE
+</span>
+<span class="k">class</span> <span class="nc">TestMonodomain3dExample</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestMonodomain3d<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+<span class="cp">#ifdef CHASTE_CVODE
+</span>        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        <span class="kt">double</span> h<span class="o">=</span><span class="mf">0.02</span><span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span>h<span class="p">,</span> <span class="mf">0.8</span> <span class="cm">/*length*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*depth*/</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputUsingOriginalNodeOrdering<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dExampleWithCvode"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        BenchmarkCellFactory cell_factory<span class="p">;</span>
+        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        monodomain_problem<span class="p">.</span>SetMesh<span class="p">(</span> <span class="o">&amp;</span>mesh <span class="p">);</span>
+
+        <span class="kt">bool</span> partial_output <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span>partial_output<span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> nodes_to_be_output<span class="p">;</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">((</span><span class="kt">unsigned</span><span class="p">)</span>round<span class="p">(</span> <span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="p">));</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+            monodomain_problem<span class="p">.</span>SetOutputNodes<span class="p">(</span>nodes_to_be_output<span class="p">);</span>
+        <span class="p">}</span>
+
+        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        ReplicatableVector <span class="nf">voltage</span><span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>voltage<span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">34.7740</span><span class="p">,</span> <span class="mf">1e-1</span><span class="p">);</span> <span class="c1">// Slack tolerance for different CVODE versions.
+</span>
+<span class="cp">#else
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"CVODE is not installed, or CHASTE is not configured to use it, check your hostconfig settings."</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        <span class="c1">// TS_ASSERT(false); // uncomment if you want to ensure CVODE is set up on your system.
+</span><span class="cp">#endif </span><span class="c1">// CHASTE_CVODE
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

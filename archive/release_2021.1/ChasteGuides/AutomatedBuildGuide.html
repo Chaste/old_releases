@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/AutomatedBuildGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#Fixingbadcommits">Fixing bad commits</a>
+    <ol>
+      <li>
+        <a href="#a1.Isthebadcommitmyfault">1. Is the "bad commit" my fault?</a>
+        <ol>
+          <li>
+            <a href="#Whatwentwrong">What went wrong?</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#a2.Nightlytests">2. Nightly tests</a>
+        <ol>
+          <li>
+            <a href="#Memorytesting">Memory testing</a>
+          </li>
+          <li>
+            <a href="#Coverage">Coverage</a>
+          </li>
+          <li>
+            <a href="#Doxygencoverage">Doxygen coverage</a>
+          </li>
+          <li>
+            <a href="#Parallel">Parallel</a>
+          </li>
+          <li>
+            <a href="#Profiling">Profiling</a>
+          </li>
+          <li>
+            <a href="#Windows">Windows</a>
+          </li>
+          <li>
+            <a href="#Copyrights">Copyrights</a>
+          </li>
+          <li>
+            <a href="#Orphanedtestsandduplicatefilenames">Orphaned tests and duplicate file names</a>
+          </li>
+          <li>
+            <a href="#Testskilledoff">Tests killed off</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="Fixingbadcommits">Fixing bad commits</h1>
+<p>
+Once code is committed to the repository, a sequence of automated builds will kick off on <a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall">the BuildBot</a>.
+The waterfall will sequentially run through the:
+</p>
+<ul><li>Compiler builders - verify that all of Chaste compiles, with GCC, Clang, and Intel
+</li><li>Continuous builders - core test suites, infrastructure tests, and parallel tests
+</li><li>Nightly builders - longer tests, utilities including memory testing and profiling, and the continuous test pack run in parallel
+</li><li>Portability builders - continuous and nightly test packs, run against multiple combinations of supported dependencies
+</li><li>Weekly builders - much longer tests, compiled with an optimised Intel build 
+</li></ul><p>
+See also <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/BestPracticeGuide.html">ChasteGuides/BestPracticeGuide</a>.
+</p>
+<h2 id="a1.Isthebadcommitmyfault">1. Is the "bad commit" my fault?</h2>
+<p>
+If any builders fail, they will go red on <a href="https://chaste.cs.ox.ac.uk/buildbot/waterfall">the Waterfall</a>.  Clicking through to a specific numbered build will give you:
+</p>
+<ul><li>a list of <tt>Responsible Users</tt>, containing the names of everyone who has committed code since that builder last passed;
+</li><li>a list of <tt>All Changes</tt>, showing every commit since the last passing build.
+</li></ul><h3 id="Whatwentwrong">What went wrong?</h3>
+<p>
+For a given red builder on the Buildbot, it will be clear whether the step that failed was <tt>Configure</tt>, <tt>Compile</tt>, or <tt>Test</tt>.
+First off, click through to see the output from the build step.
+If it doesn't look like anything you did, you can always "force" a new build, and tick the "fresh build directory" box, just to be sure it's a genuine error.
+Then, if the error is at
+</p>
+<ul><li>Configure: Unless you have edited any CMake infrastructure, the configure step is unlikely to fail.  If it does, try forcing a fresh build.
+</li><li>Compile: Check the trace.  It should be clear if the compile error relates to what you have committed.
+</li><li>Test: Check the trace.  See which tests failed, and how. If the failure appears to be in code that you have not been working on, check the other <tt>Responsible Users</tt>.
+</li></ul><h2 id="a2.Nightlytests">2. Nightly tests</h2>
+<p>
+Here we list some common causes of nightly test failures (with specific examples) and how to fix them.
+</p>
+<h3 id="Memorytesting">Memory testing</h3>
+<p>
+A common cause of memory leaks is forgetting to <tt>delete</tt> a <tt>new</tt> pointer at the end of a test. We now provide an example of this type of memory leak and how to fix it. The memory testing nightly build for <a class="changeset" href="/trac/changeset/13190/chaste" title="typo">r13190</a> <a href="https://chaste.cs.ox.ac.uk/tests.py/summary?type=nightly&amp;revision=13190&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=MemoryTesting">failed</a> 1 out of 256 test suites. Memory leaks were found in the <tt>TestForces</tt> test suite. Part of the <a href="https://chaste.cs.ox.ac.uk/tests.py/testsuite?type=nightly&amp;revision=13190&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=MemoryTesting&amp;testsuite=TestForces&amp;status=Leaky&amp;runtime=7">output</a> for this test suite is shown below:
+</p>
+<pre class="wiki">160 bytes in 1 blocks are definitely lost in loss record 3 of 6
+   at 0x4C23809: operator new(unsigned long) (vg_replace_malloc.c:230)
+   by 0x7FB662: TestForces::TestRepulsionForceMethods() (TestForces.hpp:678)
+   by 0x7FCD57: TestDescription_TestForces_TestRepulsionForceMethods::runTest() (TestForcesRunner.cpp:73)
+   by 0x718E39: CxxTest::RealTestDescription::run() (RealDescriptions.cpp:96)
+   by 0x742FDB: CxxTest::TestRunner::runTest(CxxTest::TestDescription&amp;) (TestRunner.h:74)
+   by 0x7430B7: CxxTest::TestRunner::runSuite(CxxTest::SuiteDescription&amp;) (TestRunner.h:61)
+   by 0x7C6704: CxxTest::TestRunner::runWorld() (TestRunner.h:46)
+   by 0x7C67C0: CxxTest::TestRunner::runAllTests(CxxTest::TestListener&amp;) (TestRunner.h:23)
+   by 0x7C6846: CxxTest::ErrorFormatter::run() (ErrorFormatter.h:47)
+   by 0x719135: main (TestForcesRunner.cpp:19)
+</pre><p>
+From this output we can see that a memory leak occurred because a <tt>new</tt> pointer was created within the test <tt>TestRepulsionForceMethods()</tt>, but was not deleted at the end of this test. This memory leak was fixed in <a class="changeset" href="/trac/changeset/13191/chaste" title="#1722 Fixing Memory leak
+">r13191</a>.
+</p>
+<p>
+See also <a class="forbidden wiki" title="no permission to view this wiki page">FixingMemoryTesting</a>.
+</p>
+<h3 id="Coverage">Coverage</h3>
+<p>
+A common cause of coverage failures is forgetting to add tests for all possible cases in an <tt>if/else</tt> or <tt>switch</tt> statement, or test that any <tt>EXCEPTION</tt>s are thrown under the correct circumstances. We now provide an example of this type of coverage failure and how to fix it. The coverage nightly build for <a class="missing changeset" title="No permission to view changeset 12897 on (default)">r12897</a> <a href="https://chaste.cs.ox.ac.uk/tests.py/summary?type=nightly&amp;revision=12897&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=Coverage">failed</a> 1 out of 604 test suites. A coverage failure was found in the file <tt>AbstractFeCableObjectAssembler.hpp</tt>. Part of the <a href="https://chaste.cs.ox.ac.uk/tests.py/testsuite?type=nightly&amp;revision=12897&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=Coverage&amp;testsuite=pde-src-solver-AbstractFeCableObjectAssembler.hpp&amp;status=12_99&amp;runtime=0">output</a> for this file is shown below:
+</p>
+<pre class="wiki">        1:  389:    if (mAssembleMatrix)
+        -:  390:    {
+        1:  391:        assemble_event = HeartEventHandler::ASSEMBLE_SYSTEM;
+        -:  392:    }
+        -:  393:    else
+        -:  394:    {
+    #####:  395:        assemble_event = HeartEventHandler::ASSEMBLE_RHS;
+        -:  396:    }
+        -:  397:
+        1:  398:    if (mAssembleMatrix &amp;&amp; mMatrixToAssemble==NULL)
+        -:  399:    {
+    #####:  400:        EXCEPTION("Matrix to be assembled has not been set");
+        -:  401:    }
+        1:  402:    if (mAssembleVector &amp;&amp; mVectorToAssemble==NULL)
+        -:  403:    {
+    #####:  404:        EXCEPTION("Vector to be assembled has not been set");
+        -:  405:    }
+</pre><p>
+From this output we can see that further tests are required to cover the lines marked <tt>#####</tt>. This coverage failure was fixed in <a class="changeset" href="/trac/changeset/12914/chaste" title="#1798 create common class for normal and cable assemblers and do some ...">r12914</a>.
+</p>
+<h3 id="Doxygencoverage">Doxygen coverage</h3>
+<p>
+A common cause of Doxygen coverage failures is forgetting to correctly document input arguments for a method. We now provide an example of this type of Doxygen coverage failure and how to fix it. The Doxygen coverage nightly build for <a class="missing changeset" title="No permission to view changeset 13261 on (default)">r13261</a> <a href="https://chaste.cs.ox.ac.uk/tests.py/summary?type=nightly&amp;revision=13261&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=DoxygenCoverage">failed</a> 1 out of 722 test suites. A Doxygen coverage failure was found in the file <tt>SolidMechanicsProblemDefinition.hpp</tt>. Part of the <a href="https://chaste.cs.ox.ac.uk/tests.py/testsuite?type=nightly&amp;revision=13261&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=DoxygenCoverage&amp;testsuite=pde-src-problem-SolidMechanicsProblemDefinition.hpp&amp;status=2_2&amp;runtime=0">output</a> for this file is shown below:
+</p>
+<pre class="wiki">/home/bob/eclipse/workspace/trunk-13261-2011-07-26-01_39_49/pde/src/problem/SolidMechanicsProblemDefinition.hpp:179: 
+  Warning: argument `X' of command @param is not found in the argument list of 
+  SolidMechanicsProblemDefinition&lt; DIM &gt;::EvaluateBodyForceFunction(c_vector&lt; double, DIM &gt; &amp;rX, double t)
+/home/bob/eclipse/workspace/trunk-13261-2011-07-26-01_39_49/pde/src/problem/SolidMechanicsProblemDefinition.hpp:179: 
+  Warning: The following parameters of SolidMechanicsProblemDefinition::EvaluateBodyForceFunction(c_vector&lt; double, DIM &gt; &amp;rX, double t) are not documented:
+  parameter rX
+</pre><p>
+From this output we can see that the input argument <tt>rX</tt> for the method <tt>SolidMechanicsProblemDefinition::EvaluateBodyForceFunction()</tt> was incorrectly documented as <tt>X</tt>. This Doxygen coverage failure was fixed in <a class="changeset" href="/trac/changeset/13262/chaste" title="dox">r13262</a>.
+</p>
+<h3 id="Parallel">Parallel</h3>
+<p>
+One cause for parallel build failures is forgetting to add the macro <tt>EXIT_IF_PARALLEL</tt> to tests that are only intended to be run sequentially. We now provide an example of this type of parallel build failure and how to fix it. The parallel nightly build for <a class="missing changeset" title="No permission to view changeset 13407 on (default)">r13407</a> <a href="https://chaste.cs.ox.ac.uk/tests.py/summary?type=nightly&amp;revision=13407&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=Parallel3_Continuous_fpe">failed</a> 4 out of 264 test suites. Failures were found in the test suites <tt>TestCellBasedSimulationWithBuskeForces</tt>, <tt>TestForcesNotForRelease</tt>, <tt>TestWritingPdeSolversTutorial</tt> and <tt>TestPeriodicForces</tt>. Part of the <a href="https://chaste.cs.ox.ac.uk/tests.py/testsuite?type=nightly&amp;revision=13407&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=Parallel3_Continuous_fpe&amp;testsuite=TestCellBasedSimulationWithBuskeForces&amp;status=Unknown&amp;runtime=0">output</a> for the test suite <tt>TestCellBasedSimulationWithBuskeForces</tt> is shown below:
+</p>
+<pre class="wiki"> ***** TestCellBasedSimulationWithBuskeForces.hpp *****
+
+Entering TestSimpleMonolayerWithBuskeAdhesiveForce
+Entering TestSimpleMonolayerWithBuskeAdhesiveForce
+TestCellBasedSimulationWithBuskeForcesRunner: cell_based/src/mesh/HoneycombMeshGenerator.cpp:41: HoneycombMeshGenerator::HoneycombMeshGenerator(unsigned int, unsigned int, unsigned int, double): Assertion `PetscTools::IsSequential()' failed.
+TestCellBasedSimulationWithBuskeForcesRunner: cell_based/src/mesh/HoneycombMeshGenerator.cpp:41: HoneycombMeshGenerator::HoneycombMeshGenerator(unsigned int, unsigned int, unsigned int, double): Assertion `PetscTools::IsSequential()' failed.
+TestCellBasedSimulationWithBuskeForcesRunner: cell_based/src/mesh/HoneycombMeshGenerator.cpp:41: HoneycombMeshGenerator::HoneycombMeshGenerator(unsigned int, unsigned int, unsigned int, double): Assertion `PetscTools::IsSequential()' failed.
+/home/bob/mpi/bin/mpirun.ch_shmem: line 91: 12384 Aborted                 /home/bob/eclipse/workspace/trunk-13407-2011-08-10-04_06_44/notforrelease_cell_based/build/debug_fpe/simulation/TestCellBasedSimulationWithBuskeForcesRunner
+</pre><p>
+From this output we can see that the class <tt>HoneycombMeshGenerator</tt> is not intended to be used in parallel, and the <tt>EXIT_IF_PARALLEL</tt> macro (defined in the header file <tt>PetscTools.hpp</tt>) should be added to the start of <tt>TestSimpleMonolayerWithBuskeAdhesiveForce</tt>. This parallel build failure was fixed in <a class="missing changeset" title="No permission to view changeset 13416 on (default)">r13416</a>.
+</p>
+<h3 id="Profiling">Profiling</h3>
+<p>
+When running a profiling build (to identify areas for potential optimisation) the compiler performs extra code analysis, and hence can spot further potential errors in your code.  These typically consist of variables that it thinks might sometimes be used before being assigned to, for example in <a href="https://chaste.cs.ox.ac.uk/out/nightly/13448.chaste-bob.comlab.ox.ac.uk.Profile_ndebug">this case</a>:
+</p>
+<pre class="wiki">heart/src/odes/AbstractRushLarsenCardiacCell.cpp: In member function 'virtual OdeSolution AbstractRushLarsenCardiacCell::Compute(double, double, double)':
+heart/src/odes/AbstractRushLarsenCardiacCell.cpp:81: warning: 'curr_time' may be used uninitialized in this function
+scons: *** [heart/build/profile_ndebug/src/odes/AbstractRushLarsenCardiacCell.o] Error 1
+</pre><p>
+These can be fixed by altering the code logic, most commonly by initialising the variable to a dummy value when it is declared.
+</p>
+<p>
+Another particularly common case is when a variable is only used within an <tt>assert</tt>.  Since the profile builds define <tt>NDEBUG</tt>, assertions are turned off, and hence such variables will trigger an 'unused variable' error.  For example <a href="https://chaste.cs.ox.ac.uk/out/nightly/13407.chaste-bob.comlab.ox.ac.uk.Profile_ndebug">here</a>:
+</p>
+<pre class="wiki">notforrelease_cell_based/src/population/mechanics/GeneralisedPeriodicLinearSpringForce.cpp: In member function 'boost::numeric::ublas::c_vector&lt;double, DIM&gt; GeneralisedPeriodicLinearSpringForce&lt;DIM&gt;::CalculateForceBetweenNodes(unsigned int, unsigned int, AbstractCellPopulation&lt;U&gt;&amp;) [with unsigned int DIM = 1u]':
+notforrelease_cell_based/src/population/mechanics/GeneralisedPeriodicLinearSpringForce.cpp:192:   instantiated from here
+notforrelease_cell_based/src/population/mechanics/GeneralisedPeriodicLinearSpringForce.cpp:110: warning: unused variable 'ageA'
+notforrelease_cell_based/src/population/mechanics/GeneralisedPeriodicLinearSpringForce.cpp:111: warning: unused variable 'ageB'
+</pre><p>
+Either don't store the value tested in a variable, or assign it to itself (e.g. <tt>ageA=ageA;</tt>) to circumvent the error.
+</p>
+<h3 id="Windows">Windows</h3>
+<p>
+Windows builds are run using CMake on a <tt>scratch.cs</tt> but it's best for you to run specific tests in MS Visual Studio.
+</p>
+<ul><li>Rdesktop onto <tt>scratch.cs</tt>.  (Caution here: this will kick off anyone who has that session).
+</li><li>Start Visual Studio (pinned to taskbar).
+</li><li>Load the Chaste project (see "Recent projects")
+</li><li>To run a single test:
+<ul><li>(Sequential) In "Solution Explorer" right click the offending test and select "Debug"
+</li><li>(Parallel) <tt> cd ~/chaste_windows/build/chaste ; mpiexec.exe /np 2 global/test/Debug/TestDebugRunner.exe </tt>
+<ul><li>(If anyone knows a nice way of doing this from VS with debugger, please tell us!)
+</li></ul></li></ul></li><li>To switch revision <tt>cdchaste; /usr/bin/svn up</tt>
+</li></ul><p>
+Helpful debugging hints:
+</p>
+<ul><li>Stick a breakpoint in line 45 of <tt>d:\chaste_windows\build\third_party_libs\downloads\boost\boost_1_53_0\libs\serialization\src\archive_exception.cpp</tt> to track down unregistered class type errors in archiving.
+</li></ul><h3 id="Copyrights">Copyrights</h3>
+<p>
+All Chaste source and test files must include the standard Chaste copyright notice.  If you omit this, the special '<tt>Copyrights</tt>' test will fail, as for example <a href="https://chaste.cs.ox.ac.uk/tests.py/testsuite?type=continuous&amp;revision=13539&amp;machine=chaste-bob.comlab.ox.ac.uk&amp;buildType=default&amp;testsuite=Copyrights&amp;status=3_1276&amp;runtime=16">here</a>.  Fix this by adding the copyright comment to the top of your file.
+</p>
+<h3 id="Orphanedtestsandduplicatefilenames">Orphaned tests and duplicate file names</h3>
+<p>
+All tests must be listed within a test pack file.  These are text files in the <tt>test</tt> folders named like "<tt>SomethingTestPack.txt</tt>", and define groups of tests to run in standard builds (see also <a class="wiki" href="/trac/wiki/TestingStrategy">TestingStrategy</a>).  Any tests not listed will cause the special '<tt>OrphanedTests</tt>' test to fail.  Simply add your test to a suitable test pack (e.g. 'Continuous', 'Nightly', or 'Weekly') to fix this.
+</p>
+<p>
+Similarly, all Chaste source and test files must have a unique name, or the build system will get confused.  If you've created a file with a duplicate name, the special '<tt>DuplicateFileNames</tt>' test will fail.  Rename your file to fix this.
+</p>
+<h3 id="Testskilledoff">Tests killed off</h3>
+<p>
+Most of the automated builds apply a run time limit to tests; the exact limit depends on the kind of build.  Tests that run for too long will be killed, and a message including "timed out" will appear at the end of the output.
+</p>
+<p>
+If the build machines are busy when the build is kicked off, this can cause tests to take much longer than normal.  It is often worth rebuilding specific builders after a "time out" failure.
+</p>
+<p>
+In addition, common culprits are continuous tests taking too long; however this may not lead to the continuous build failing.  Problems could also show up in the <tt>MemoryTesting</tt> or <tt>lofty</tt> nightly builds in particular.
+</p>
+<p>
+Fix this problem by making the test shorter!  For example, run a simulation for less time (or optimise the code).  However, make sure that you don't break coverage by doing so.  Consider whether tests could be refactored to reduce duplication.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

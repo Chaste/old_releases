@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/MathsInstitute - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="MathsInstituteInstallGuide">Maths Institute Install Guide</h1>
+<p>
+The Maths Institute already most of the packages listed in <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DebianEtch.html">InstallGuides/DebianEtch</a> installed, so begin by connecting to the Chaste repository as described in the <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>. 
+</p>
+<h2 id="XSD">XSD</h2>
+<p>
+Although the Maths Institute system has XSD installed, it seems to be missing some required files, which can result in a build error message. Therefore install a full version of XSD in the directory /scratch/chaste by opening a terminal and typing the following.
+</p>
+<pre class="wiki">bash
+export base="/scratch/chaste"
+
+cd $base
+
+# For 32 bit:
+wget http://codesynthesis.com/download/xsd/2.3/linux-gnu/i686/xsd-2.3.1-i686-linux-gnu.tar.bz2
+tar -xjf xsd-2.3.1-i686-linux-gnu.tar.bz2
+
+# For 64 bit you might need to do this instead:
+#wget http://codesynthesis.com/download/xsd/2.3/linux-gnu/x86_64/xsd-2.3.1-x86_64-linux-gnu.tar.bz2
+#tar -xjf xsd-2.3.1-x86_64-linux-gnu.tar.bz2
+
+cd $base/src
+wget http://www.apache.org/dist/xerces/c/2/sources/xerces-c-src_2_8_0.tar.gz
+tar -zxf xerces-c-src_2_8_0.tar.gz
+export XERCESCROOT=$base/src/xerces-c-src_2_8_0
+cd $XERCESCROOT/src/xercesc/
+./runConfigure -plinux -cgcc -xg++ -P$base
+make
+make install
+</pre><h2 id="IntelCompiler">Intel Compiler</h2>
+<p>
+If you need to install the Intel compiler, follow the <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>. Install it in the directory /scratch/chaste, since that's the intel_path that is in the maths.py configuration script.
+</p>
+<h2 id="PETScandMPI">PETSc and MPI</h2>
+<p>
+The Maths Institute has PETSc 2.3.2-p6 installed. In your hostconfig file, set <tt>petsc_2_3_path</tt> to <tt>/usr/lib/petsc/</tt>.
+</p>
+<p>
+Download MPICH from <a class="ext-link" href="ftp://ftp.mcs.anl.gov/pub/mpi/mpich.tar.gz"><span class="icon">​</span>ftp://ftp.mcs.anl.gov/pub/mpi/mpich.tar.gz</a>  , unpack and do
+</p>
+<pre class="wiki">cd mpich-1.2.7p1
+./configure --prefix=$base -with-comm=shared --with-device=ch_shmem --enable-sharedlib --disable-f77
+make
+cd examples/test/
+make testing
+cd ../..
+make install
+# You may now remove the mpich-1.2.7p1 folder if you wish.
+</pre><h2 id="Hdf5">Hdf5</h2>
+<p>
+Type the following:
+</p>
+<pre class="wiki">export base="/scratch/chaste"
+cd $base/src
+wget ftp://ftp.hdfgroup.org/HDF5/prev-releases/hdf5-1.6.6/src/hdf5-1.6.6.tar.gz
+tar -zxf hdf5-1.6.6.tar.gz
+cd hdf5-1.6.6
+export CC=mpicc 
+./configure --enable-parallel --prefix=$base/hdf5
+make
+cd test
+make check
+cd ../testpar
+make check
+cd ..
+make install
+</pre><h2 id="InstallCVODE">Install CVODE</h2>
+<p>
+As <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a>, but use <tt>--prefix=$base</tt>
+</p>
+<h2 id="InstallparMETIS">Install parMETIS</h2>
+<p>
+As <a class="wiki" href="/trac/wiki/InstallParMetis">InstallParMetis</a>, but do <tt>cd $base</tt> instead of <tt>cd $HOME</tt>. The Maths Institute doesn't have MPI installed, so there is no "mpi.h" in <tt>/usr/include</tt>. To tell parMETIS to look into where you installed MPI (see above), prior to doing <tt>make</tt> you should edit <tt>Makefile.in</tt> as follows: add <tt> -I/scratch/chaste/mpich-1.2.7p1/include</tt> to the line starting <tt>INCDIR</tt> and add <tt>-L/scratch/chaste/mpich-1.2.7p1/lib</tt> to the line starting <tt>LIBDIR</tt>.
+</p>
+<h2 id="Eclipse">Eclipse</h2>
+<p>
+Lastly, go to Window-&gt;Preferences-&gt;C/C++-&gt;Editor-&gt;Appearance and select "Insert spaces for tabs". This ensures nice tabbing.
+</p>
+<p>
+(Also, see extra options in <a class="wiki" href="/trac/wiki/SetupEclipse">SetupEclipse</a>)
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

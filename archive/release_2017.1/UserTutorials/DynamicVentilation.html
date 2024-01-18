@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/DynamicVentilation - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file lung/test/tutorials/TestDynamicVentilationTutorial.hpp at revision <a class="changeset" href="/trac/changeset/8af276d/git_repo" title="#2933 #2935 Remove dynamic exception specifications [ throw(Exception) ...">8af276d/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtosimulateventilationoverafullbreathingcycle.">An example showing how to simulate ventilation over a full breathing cycle.</h1>
+<p>
+In this tutorial we demonstrate the use of DynamicVentilationProblem to simulate breathing over a
+single breathing cycle. Acini are represented by linear balloon models and the simulation is driven
+by an oscillating pleural pressure. Simulation results are written to a VTK unstructured grid file
+for visualisation.
+</p>
+<p>
+NB. UMFPACK or KLU is required for this test to execute. The test has a reasonably long run time (~6 minutes on a quad core i7).
+Progress can be followed by watching the file $CHASTE_TEST_OUTPUT/TestDynamicVentilationTutorial/progress_status.txt
+</p>
+<p>
+The usual headers are included
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+</pre></div><p>
+DynamicVentilationProblem does most of the work in calculating a ventilation distribution.
+</p>
+<div class="code"><pre><span class="cp">#include "DynamicVentilationProblem.hpp"
+</span>
+</pre></div><p>
+A number of acinar models could be used. Here we include the simplest possible model: a linear elastic balloon.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleBalloonAcinarUnit.hpp"
+</span>
+</pre></div><p>
+Note that this tutorial only works with UMFPACK or KLU -- we need to warn the user if it's not installed.
+</p>
+<div class="code"><pre><span class="cp">#include "Warnings.hpp"
+</span>
+</pre></div><p>
+DynamicVentilationProblem uses the Petsc solver library. This setups up Petsc ready for use.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><h2 id="AcinarUnitFactory">Acinar Unit Factory</h2>
+<p>
+DynamicVentilationProblem couples a ventilation model on an airway tree to acinar dynamics models. The
+distal ends of the airway tree have an acinar model associated with them. These models are specified
+by subclassing AbstractAcinarUnitFactory as shown here.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">SimpleAcinarUnitFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractAcinarUnitFactory
+<span class="p">{</span>
+<span class="nl">public:</span>
+    SimpleAcinarUnitFactory<span class="p">(</span><span class="kt">double</span> acinarCompliance<span class="p">,</span>
+                            <span class="kt">double</span> frequency <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">:</span> mAcinarCompliance<span class="p">(</span>acinarCompliance<span class="p">),</span>
+                                                      mFrequency<span class="p">(</span>frequency<span class="p">)</span>
+    <span class="p">{}</span>
+
+</pre></div><p>
+DynamicVentilationProblem calls this method once for each terminal node.
+The user must create, configure and return an Acinar model. The created
+model is subsequently used in the ventilation simulation.
+</p>
+<div class="code"><pre>    <span class="k">virtual</span> AbstractAcinarUnit<span class="o">*</span> <span class="nf">CreateAcinarUnitForNode</span><span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Here we use the simplest possible acinar model: a linear elastic balloon.
+</p>
+<div class="code"><pre>        SimpleBalloonAcinarUnit<span class="o">*</span> p_acinus <span class="o">=</span> <span class="k">new</span> SimpleBalloonAcinarUnit<span class="p">;</span>
+
+</pre></div><p>
+The acinar model can be configured in different ways.
+Here we simply set a constant spatially homogeneous compliance and
+a spatially homogeneous initial volume. However,
+things like gravitational gradients can easily be configured here by
+altering the compliance (or other parameters) based on the nodal
+location (obtained from pNode-&gt;rGetLocation()).
+</p>
+<div class="code"><pre>        p_acinus<span class="o">-&gt;</span>SetCompliance<span class="p">(</span>mAcinarCompliance<span class="p">);</span>
+        p_acinus<span class="o">-&gt;</span>SetUndeformedVolume<span class="p">(</span>mAcinarCompliance<span class="o">*</span><span class="mi">500</span><span class="p">);</span>
+
+        <span class="k">return</span> p_acinus<span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+DynamicVentilationProblems are driven by a change in Pleural pressure. DynamicVentilationProblem
+calls this method to determine what the current pleural pressure is. Here
+we specify a spatially homogeneous oscillating pressure in the tidal breathing range.
+</p>
+<div class="code"><pre>    <span class="k">virtual</span> <span class="kt">double</span> <span class="nf">GetPleuralPressureForNode</span><span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">750</span> <span class="o">-</span> <span class="mi">250</span><span class="o">*</span>sin<span class="p">(</span><span class="mi">2</span><span class="o">*</span>M_PI<span class="o">*</span>mFrequency<span class="o">*</span><span class="p">(</span>time <span class="o">-</span> <span class="mf">0.25</span><span class="p">));</span>
+    <span class="p">}</span>
+
+<span class="nl">private:</span>
+    <span class="kt">double</span> mAcinarCompliance<span class="p">;</span>
+    <span class="kt">double</span> mFrequency<span class="p">;</span>
+<span class="p">};</span>
+
+</pre></div><p>
+Define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestDynamicVentilationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestSimulateTidalBreathing<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+DynamicVentilationProblem is not (yet) parallel.
+</p>
+<div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><h2 id="IMPORTANT">IMPORTANT</h2>
+<p>
+See the note below about use of direct solvers. This tutorial cannot be run without a direct solver.
+</p>
+<div class="code"><pre><span class="cp">#if defined(LUNG_USE_UMFPACK) || defined(LUNG_USE_KLU)
+</span>
+</pre></div><p>
+First we need to create an acinar unit factory object from the class we specified earlier.
+An acinar compliance is specified in Pa/m<sup>3</sup>. The given value is roughly equal to a lung compliance
+of 0.1 cmH2O/L (assuming there are 30000 acini).
+</p>
+<div class="code"><pre>        <span class="kt">double</span> acinar_compliance <span class="o">=</span> <span class="mf">0.1</span><span class="o">/</span><span class="mf">98.0665</span><span class="o">/</span><span class="mf">1e3</span><span class="o">/</span><span class="mi">30000</span><span class="p">;</span>
+        SimpleAcinarUnitFactory <span class="nf">factory</span><span class="p">(</span>acinar_compliance<span class="p">);</span>
+
+</pre></div><p>
+We now create a DynamicVentilationProblem object that does most of the work in simulating ventilation.
+The factory we just created is passed to the constructor along with the location of an airways mesh.
+</p>
+<div class="code"><pre>        DynamicVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="o">&amp;</span>factory<span class="p">,</span> <span class="s">"lung/test/data/simplified_airways"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+
+</pre></div><p>
+We assign a zero pressure boundary condition at the entrance to the trachea.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetOutflowPressure<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+</pre></div><p>
+The mesh we are using is specified in millimetres rather than in metres.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetMeshInMilliMetres<span class="p">();</span>
+
+</pre></div><p>
+The mesh we are using specifies airway radii on the edges rather than the nodes.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetRadiusOnEdge<span class="p">();</span>
+
+</pre></div><p>
+Tell the solver to use a more accurate Pedley based dynamic resistance scheme.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetDynamicResistance<span class="p">();</span>
+
+</pre></div><p>
+Here we tell the solver the time step size to use. The given value will typically
+result in a stable numerical scheme. However, users should assess the time step
+size required to achieve a suitable level of numerical convergence when setting
+up their own simulations.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">0.02</span><span class="p">);</span>
+
+</pre></div><p>
+Tell the solver where to write its output to.
+The solver will also write out a progress_status.txt file to
+this directory to allow the user to monitor progress.
+We specify output in VTK format for
+easy visualisation.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestDynamicVentilationTutorial"</span><span class="p">);</span>
+        problem<span class="p">.</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"tidal_breathing"</span><span class="p">);</span>
+        problem<span class="p">.</span>SetWriteVtkOutput<span class="p">();</span>
+
+</pre></div><p>
+Tell the solver how often to write output. Here we ask for output every 5 time steps.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetSamplingTimeStepMultiple<span class="p">(</span><span class="mi">5u</span><span class="p">);</span>
+
+</pre></div><p>
+Specify when to end the simulation (in seconds) and solve. Note that
+after solving it is possible to set a new end time and solve again if needed.
+</p>
+<p>
+For execution speed reasons we only simulate an inspiration. Try setting a later
+end time to see a full breathing cycle.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+It is now possible to analyse the data produced by the ventilation simulation. Typically
+this will be done using the output written to disk and an external program. This simulation
+will output a file in $CHASTE_TEST_OUTPUT/TestDynamicVentilationTutorial/tidal_breathing.vtu for easy visualisation.
+For demonstration purposes we perform a simple check of the final lung volume here.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> AbstractAcinarUnit<span class="o">*&gt;&amp;</span> acinar_map <span class="o">=</span> problem<span class="p">.</span>rGetAcinarUnitMap<span class="p">();</span>
+        <span class="kt">double</span> lung_volume <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span>std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> AbstractAcinarUnit<span class="o">*&gt;::</span>iterator iter <span class="o">=</span> acinar_map<span class="p">.</span>begin<span class="p">();</span>
+             iter <span class="o">!=</span> acinar_map<span class="p">.</span>end<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            lung_volume <span class="o">+=</span> iter<span class="o">-&gt;</span>second<span class="o">-&gt;</span>GetVolume<span class="p">();</span>
+        <span class="p">}</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"The total lung volume at the end of the simulation is "</span> <span class="o">&lt;&lt;</span> lung_volume<span class="o">*</span><span class="mf">1e3</span> <span class="o">&lt;&lt;</span> <span class="s">" L. "</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+<span class="cp">#else
+</span>        WARNING<span class="p">(</span><span class="s">"Not compiled with a direct solver. Test not executed."</span><span class="p">);</span>
+<span class="cp">#endif
+</span>    <span class="p">}</span>
+
+</pre></div><h2 id="IMPORTANT:UsingUMFPACKKLU">IMPORTANT: Using UMFPACK/KLU</h2>
+<p>
+Ventilation problems lead to very badly conditioned matrices. Iterative solvers such as GMRES can stall on these
+matrices. When running problems on large airway trees it is vital that to change the linear solver to a direct
+solver such as UMFPACK or KLU. UMFPACK and KLU are not pre-requisites for installing Chaste, hence this is not (currently)
+the default linear solver for ventilation problems.
+</p>
+<p>
+<em>UMFPACK or KLU should be considered pre-requisites for large ventilation problems</em>
+</p>
+<p>
+To use UMFPACK or KLU, you need to have PETSc installed with UMFPACK/KLU.
+</p>
+<p>
+To switch on UMFPACK or KLU on within chaste, set "ccflags='-DLUNG_USE_UMFPACK'" or
+"ccflags='-DLUNG_USE_KLU'" in your local.py or
+open the file <tt>lung/src/ventilation/MatrixVentilationProblem.hpp</tt> and uncomment the line
+#define LUNG_USE_UMFPACK near the top of the file.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestDynamicVentilationTutorial.hpp">File name <tt>TestDynamicVentilationTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+<span class="cp">#include "DynamicVentilationProblem.hpp"
+</span>
+<span class="cp">#include "SimpleBalloonAcinarUnit.hpp"
+</span>
+<span class="cp">#include "Warnings.hpp"
+</span>
+<span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">SimpleAcinarUnitFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractAcinarUnitFactory
+<span class="p">{</span>
+<span class="nl">public:</span>
+    SimpleAcinarUnitFactory<span class="p">(</span><span class="kt">double</span> acinarCompliance<span class="p">,</span>
+                            <span class="kt">double</span> frequency <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">:</span> mAcinarCompliance<span class="p">(</span>acinarCompliance<span class="p">),</span>
+                                                      mFrequency<span class="p">(</span>frequency<span class="p">)</span>
+    <span class="p">{}</span>
+
+    <span class="k">virtual</span> AbstractAcinarUnit<span class="o">*</span> CreateAcinarUnitForNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        SimpleBalloonAcinarUnit<span class="o">*</span> p_acinus <span class="o">=</span> <span class="k">new</span> SimpleBalloonAcinarUnit<span class="p">;</span>
+
+        p_acinus<span class="o">-&gt;</span>SetCompliance<span class="p">(</span>mAcinarCompliance<span class="p">);</span>
+        p_acinus<span class="o">-&gt;</span>SetUndeformedVolume<span class="p">(</span>mAcinarCompliance<span class="o">*</span><span class="mi">500</span><span class="p">);</span>
+
+        <span class="k">return</span> p_acinus<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">virtual</span> <span class="kt">double</span> GetPleuralPressureForNode<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">750</span> <span class="o">-</span> <span class="mi">250</span><span class="o">*</span>sin<span class="p">(</span><span class="mi">2</span><span class="o">*</span>M_PI<span class="o">*</span>mFrequency<span class="o">*</span><span class="p">(</span>time <span class="o">-</span> <span class="mf">0.25</span><span class="p">));</span>
+    <span class="p">}</span>
+
+<span class="nl">private:</span>
+    <span class="kt">double</span> mAcinarCompliance<span class="p">;</span>
+    <span class="kt">double</span> mFrequency<span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">class</span> <span class="nc">TestDynamicVentilationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestSimulateTidalBreathing<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+<span class="cp">#if defined(LUNG_USE_UMFPACK) || defined(LUNG_USE_KLU)
+</span>
+        <span class="kt">double</span> acinar_compliance <span class="o">=</span> <span class="mf">0.1</span><span class="o">/</span><span class="mf">98.0665</span><span class="o">/</span><span class="mf">1e3</span><span class="o">/</span><span class="mi">30000</span><span class="p">;</span>
+        SimpleAcinarUnitFactory <span class="nf">factory</span><span class="p">(</span>acinar_compliance<span class="p">);</span>
+
+        DynamicVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="o">&amp;</span>factory<span class="p">,</span> <span class="s">"lung/test/data/simplified_airways"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+
+        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetOutflowPressure<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetMeshInMilliMetres<span class="p">();</span>
+
+        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetRadiusOnEdge<span class="p">();</span>
+
+        problem<span class="p">.</span>rGetMatrixVentilationProblem<span class="p">().</span>SetDynamicResistance<span class="p">();</span>
+
+        problem<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">0.02</span><span class="p">);</span>
+
+        problem<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestDynamicVentilationTutorial"</span><span class="p">);</span>
+        problem<span class="p">.</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"tidal_breathing"</span><span class="p">);</span>
+        problem<span class="p">.</span>SetWriteVtkOutput<span class="p">();</span>
+
+        problem<span class="p">.</span>SetSamplingTimeStepMultiple<span class="p">(</span><span class="mi">5u</span><span class="p">);</span>
+
+        problem<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> AbstractAcinarUnit<span class="o">*&gt;&amp;</span> acinar_map <span class="o">=</span> problem<span class="p">.</span>rGetAcinarUnitMap<span class="p">();</span>
+        <span class="kt">double</span> lung_volume <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span>std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> AbstractAcinarUnit<span class="o">*&gt;::</span>iterator iter <span class="o">=</span> acinar_map<span class="p">.</span>begin<span class="p">();</span>
+             iter <span class="o">!=</span> acinar_map<span class="p">.</span>end<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            lung_volume <span class="o">+=</span> iter<span class="o">-&gt;</span>second<span class="o">-&gt;</span>GetVolume<span class="p">();</span>
+        <span class="p">}</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"The total lung volume at the end of the simulation is "</span> <span class="o">&lt;&lt;</span> lung_volume<span class="o">*</span><span class="mf">1e3</span> <span class="o">&lt;&lt;</span> <span class="s">" L. "</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+<span class="cp">#else
+</span>        WARNING<span class="p">(</span><span class="s">"Not compiled with a direct solver. Test not executed."</span><span class="p">);</span>
+<span class="cp">#endif
+</span>    <span class="p">}</span>
+
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

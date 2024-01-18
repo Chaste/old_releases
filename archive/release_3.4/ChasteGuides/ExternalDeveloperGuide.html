@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/ExternalDeveloperGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="HelpfulresourcesforusersofdevelopmentversionsofChaste">Helpful resources for users of development versions of Chaste</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#HelpfulresourcesforusersofdevelopmentversionsofChaste">Helpful resources for users of development versions of Chaste</a>
+    <ol>
+      <li>
+        <a href="#Documentation">Documentation</a>
+      </li>
+      <li>
+        <a href="#Themostrecentgoodrevision">The most recent "good revision"</a>
+      </li>
+      <li>
+        <a href="#CodingStandards">Coding Standards</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This page is intended to assist those external to the core Chaste team who still want to develop with the "bleeding edge" latest development code, rather than merely the last official release.
+</p>
+<p>
+Since some parts of the Chaste code-base are not released (e.g. those relating specifically to papers in preparation), some of the developer resources, such as results from the automated tests and full documentation for the latest revision, are not made publicly available.  We have now created some additional resources to improve this situation.
+</p>
+<h2 id="Documentation">Documentation</h2>
+<p>
+Automatically generated documentation for the public parts of the most recent revision can be found <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.4/">here</a>.
+</p>
+<p>
+If you have doxygen and graphviz installed, you may also generate documentation from your own source tree by running
+</p>
+<pre class="wiki">scons build=DoxygenCoverage
+</pre><h2 id="Themostrecentgoodrevision">The most recent "good revision"</h2>
+<p>
+Occasionally broken code is committed to the Chaste repository, or some unexpected tests fail.  This can be frustrating if users do not know if it's something they've broken, or if the fault lies with the repository code.  We cannot yet expose the results of the automated tests, but we can show automatically which was the last revision that was given a clean bill of health by the nightly tests.  This does not necessarily mean it is release quality: some tests are only run weekly, and it may not pass on all versions of the libraries which we support.  But it is likely to be a good base to work from.
+(Note that the latest "release-candidate-quality" revision may be later than the last "good" revision, since not all revisions undergo the main continuous testing - user projects and branches are tested separately.)
+</p>
+<ul><li>Last "release-candidate-quality" revision (passed all <a href="/trac/tests.py/recent?type=continuous">continuous</a> and <a href="/trac/tests.py/recent?type=nightly">nightly</a> tests - <strong>recommended</strong>):
+<ul><li><strong><span>26036 (<a class="missing source">browse source</a>, <a class="missing changeset" title="No permission to view changeset 26036 on (default)">changes made in that commit</a>)</span></strong>
+</li></ul></li><li>Last "good" revision (passed all <a href="/trac/tests.py/recent?type=continuous">continuous</a> tests - more lightweight testing, no memory/coverage/documentation tests, but shouldn't break your build):
+<ul><li><strong><span>26043 (<a class="missing source">browse source</a>, <a class="missing changeset" title="No permission to view changeset 26043 on (default)">changes made in that commit</a>)</span></strong>
+</li></ul></li></ul><p>
+You can get these revisions by <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AccessCodeRepository.html">checking out the source code</a> and then doing
+</p>
+<pre class="wiki">svn up -r &lt;required revision number&gt;
+</pre><p>
+e.g.
+</p>
+<pre class="wiki">svn up -r 14566
+</pre><h2 id="CodingStandards">Coding Standards</h2>
+<p>
+To understand why Chaste variables, methods and classes are named like they are please see our <a class="wiki" href="/trac/wiki/CodingStandardsStrategy">C++ naming conventions</a>.
+</p>
+<p>
+We also lay out and document our code in a particular way, see <a class="wiki" href="/trac/wiki/CodeStructureStrategy">CodeStructureStrategy</a>.
+</p>
+<p>
+You may also want to read through the other 'strategies' that we use to keep things consistent and well tested at <a class="wiki" href="/trac/wiki/ChasteStrategies">ChasteStrategies</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

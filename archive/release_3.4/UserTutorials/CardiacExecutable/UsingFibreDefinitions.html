@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/UsingFibreDefinitions - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Usingfibredirectionsandpostprocessing">Using fibre directions and postprocessing</h1>
+<h2 id="Fibres">Fibres</h2>
+<p>
+Fibres directions must currently be read from a file. Hence simulations with fibres can <em>only</em> be done for meshes that are read in, not auto-generated.
+Altering the XML parameters file to tell the executable to read fibres is trivial: instead of doing
+</p>
+<div class="code"><pre><span class="nt">&lt;Mesh</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;LoadMesh</span> <span class="na">name=</span><span class="s">"sheet_800_elements"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/Mesh&gt;</span>
+</pre></div><p>
+do
+</p>
+<div class="code"><pre><span class="nt">&lt;Mesh</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;LoadMesh</span> <span class="na">name=</span><span class="s">"sheet_800_elements"</span> <span class="na">conductivity_media=</span><span class="s">"Orthotropic"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/Mesh&gt;</span>
+</pre></div><p>
+The options for the last parameters are "NoFibreOrientation", "Axisymmetric" or "Orthotropic". If "Axisymmetric", the file <tt>sheet_800_elements.axi</tt> will also be read,
+if "Orthotropic", <tt>sheet_800_elements.ortho</tt> will be read. See the file formats documentation for full descriptions of these formats, but basically .axi files provide
+the fibre direction for each element in the mesh, and .ortho files provide the fibre, sheet (and normal in 3D) directions for each element in the mesh. 
+</p>
+<p>
+In the example attached to this page, fibres have been defined for each element in the constant (1,1) direction.
+</p>
+<h2 id="Postprocessing">Postprocessing</h2>
+<p>
+Various postprocessing options are available. The following for example computes the conduction velocity between node 200 and all the other nodes in the mesh, writing
+the results to the file <tt>&lt;output_directory&gt;/output/ConductionVelocityFromNode200.dat</tt>.
+</p>
+<div class="code"><pre><span class="nt">&lt;PostProcessing&gt;</span>
+    <span class="nt">&lt;ConductionVelocityMap</span> <span class="na">origin_node=</span><span class="s">"200"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/PostProcessing&gt;</span>
+</pre></div><p>
+As well as conduction velocity, it is also possible to obtain APD at a prescribed repolarisation percent, activation times and upstroke velocities. See the "full format"
+example parameters file for usage.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

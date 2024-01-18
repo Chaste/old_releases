@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>GettingStarted - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <ol>
+      <li>
+        <a href="#UsingChaste">Using Chaste</a>
+      </li>
+      <li>
+        <a href="#SupportedOperatingSystems">Supported Operating Systems</a>
+      </li>
+      <li>
+        <a href="#GettingTheCode">Getting The Code</a>
+      </li>
+      <li>
+        <a href="#InstallingDependencies">Installing Dependencies</a>
+      </li>
+      <li>
+        <a href="#NextSteps">Next Steps</a>
+      </li>
+      <li>
+        <a href="#GettingHelp">Getting Help</a>
+      </li>
+      <li>
+        <a href="#AboutThisWebsite">About This Website</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h2 id="UsingChaste">Using Chaste</h2>
+<p>
+Chaste is a software library. To use it you need to obtain and compile the <em>source code</em>, which can then be used to build and run cardiac electro-physiological and electro-mechanical simulations, discrete tissue simulations (including intestinal crypt simulations), and more.
+</p>
+<h2 id="SupportedOperatingSystems">Supported Operating Systems</h2>
+<ul><li><strong>Linux</strong>: Chaste is primarily developed on <a class="ext-link" href="https://www.ubuntu.com/"><span class="icon">​</span>Ubuntu Linux</a> (recommended), and is regularly tested on all Long Term Support (LTS) versions of Ubuntu, but should also work on other Linux/Unix systems.
+</li><li><strong>MacOS</strong>: Chaste is supported and tested on Mac OS X.
+</li><li><strong>Windows</strong>: While there is partial/experimental support for Windows, it is not currently recommended to use Chaste on Windows.
+</li></ul><p>
+The recommended route for unsupported systems is to install Chaste on a virtual machine running Ubuntu Linux.
+</p>
+<h2 id="GettingTheCode">Getting The Code</h2>
+<p>
+If you are primarily interested in using the code as it is, and don't plan to contribute new code or changes back to the core Chaste code you can either:
+</p>
+<ol><li>Download a fixed release of Chaste, found on the <a class="ext-link" href="https://github.com/Chaste/Chaste/releases"><span class="icon">​</span>releases page</a>.
+</li><li>Clone the latest <tt>release</tt> branch (to stay up to date with 6-monthly releases) using <a class="ext-link" href="https://git-scm.com/"><span class="icon">​</span>git</a>.
+</li><li>Stay right up to date with latest developments using our other git <a class="ext-link" href="https://github.com/Chaste/Chaste/branches"><span class="icon">​</span>tested development branches</a>.
+</li></ol><p>
+and follow subsequent <strong>User's</strong> guides. The first option is most stable, and recommended for new users so the code doesn't change underneath you. The second option will let you stay up to date with the latest release, which can be a good idea so that your code will also work on the latest versions of Chaste dependencies. The third option will give you full access to the latest features, but will require changes to your code as you go along to stay up to date with changes to Chaste. Note: using this approach you can only download/get updates of the code, but can't contribute new code or changes back to the core Chaste code.
+</p>
+<p>
+Alternatively, if you are planning on contributing back to the codebase, you should check out Chaste from the developer repository and follow the <strong>Developer's</strong> guides. Reading <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a> is highly recommended, and then you can check out a copy of the development code as per <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>. 
+</p>
+<p>
+The image below shows how the Github and developer repositories are related and the methods for obtaining code as <strong>Users</strong> and <strong>Developers</strong>.
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2018.1/GettingStarted/2017_ChasteUsers.svg"><img width="800px" alt="Updated svg version of Chaste Users file" title="Updated svg version of Chaste Users file" src="/chaste/tutorials/release_2018.1/GettingStarted/2017_ChasteUsers.svg" /></a>
+</p>
+<hr />
+<p>
+Perusing the <a class="wiki" href="/chaste/tutorials/release_2018.1/ReleaseNotes.html">release notes</a> and <a class="wiki" href="/trac/wiki/LatestNews">latest news</a> can give you a good overview of what features are in each release, and what has been added since.
+</p>
+<h2 id="InstallingDependencies">Installing Dependencies</h2>
+<p>
+Chaste has several dependencies, including <tt>MPI</tt>, <tt>PETSc</tt>, <tt>HDF5</tt> and others, which should be installed prior to compilation. If you are using Ubuntu Linux it is easiest to do this using the Chaste Debian package - see <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/UbuntuPackage.html">InstallGuides/UbuntuPackage</a>.
+</p>
+<p>
+Otherwise you should use the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html">InstallGuide</a> and follow the instructions on installing dependencies (or use the installation guide supplied with the release).
+</p>
+<p>
+In addition to software dependencies, if you wish to do programming yourself, then we recommend using a C++ integrated development environment such as <a class="ext-link" href="http://www.eclipse.org/cdt/"><span class="icon">​</span>Eclipse</a> or <a class="ext-link" href="https://www.jetbrains.com/clion/"><span class="icon">​</span>Clion</a>.
+</p>
+<h2 id="NextSteps">Next Steps</h2>
+<p>
+Once you installed the dependencies, and have obtained the source code, go to <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides.html">ChasteGuides</a> and read and run the <a class="wiki" href="/chaste/tutorials/release_2018.1/UserTutorials.html">tutorials</a> on the kind of simulation you wish to run.
+</p>
+<h2 id="GettingHelp">Getting Help</h2>
+<p>
+For general discussion about Chaste, and questions regarding usage, we provide the Chaste users' mailing list.
+You can subscribe to the list by <a class="ext-link" href="https://web.maillist.ox.ac.uk/ox/subscribe/chaste-users"><span class="icon">​</span>following these instructions</a>.
+Public <a class="ext-link" href="https://web.maillist.ox.ac.uk/ox/arc/chaste-users"><span class="icon">​</span>list archives</a> are available.
+</p>
+<p>
+Bug reports and feature requests may be submitted using this website; please <a href="/trac/register">register for an account</a> in order to do so.
+</p>
+<h2 id="AboutThisWebsite">About This Website</h2>
+<p>
+This is the Chaste developers' Trac system, which provides a wiki, access to the source repository, and ticketing system.
+If you wish to submit or comment on public bug reports and feature requests, please <a href="/trac/register">register for an account</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

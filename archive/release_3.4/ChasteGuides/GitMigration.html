@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/GitMigration - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+We are planning to change a number of major Chaste infrastructure components in the next few months. These include:
+</p>
+<ul><li>Changing to a version control system based on Git rather than the current Subversion (See <a class="missing ticket">#2655</a>)
+</li><li>Implementation of a CMake build system, instead of the current Scons (See <a class="missing ticket">#2656</a>)
+</li><li>replacing the current continuous integration and testing scripts with a Buildbot system (See <a class="missing ticket">#2656</a>)
+</li></ul><p>
+This page will collate some of the information and guides related to the changes mentioned above. Please see these slides <a class="attachment" href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration/chaste_infrastructure.pdf" title="Attachment 'chaste_infrastructure.pdf' in ChasteGuides/GitMigration">attachment:chaste_infrastructure.pdf</a><a class="trac-rawlink" href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration/chaste_infrastructure.pdf" title="Download">​</a> for an overview of the migrations.
+</p>
+<p>
+CMake:
+</p>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/CmakeBuildGuide.html">CMake build guide</a>
+</li></ul><p>
+Git:
+</p>
+<ul><li>Some Git tutorial slides from a Oxford Maths InFoMM training session are available here <a class="attachment" href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration/git_slides.pdf" title="Attachment 'git_slides.pdf' in ChasteGuides/GitMigration">attachment:git_slides.pdf</a><a class="trac-rawlink" href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration/git_slides.pdf" title="Download">​</a>
+</li><li>Other resourse for learning about Git:
+<ul><li><a class="ext-link" href="http://git-scm.com/doc"><span class="icon">​</span>Official Git documentation and book</a>
+</li><li><a class="ext-link" href="https://www.atlassian.com/git/tutorials"><span class="icon">​</span>Atlassian tutorials</a>
+</li><li><a class="ext-link" href="http://swcarpentry.github.io/git-novice"><span class="icon">​</span>Software Carpentry Foundation tutorial</a>
+</li><li><a class="ext-link" href="https://www.git-tower.com/blog/git-for-subversion-users-cheat-sheet/"><span class="icon">​</span>Git For Subversion cheat sheet</a> 
+</li><li><a class="ext-link" href="https://wisevishvesh.files.wordpress.com/2010/09/git-cheat-sheet-large.png?w=1250"><span class="icon">​</span>Git cheat sheet</a>
+</li></ul></li><li>Main Chaste repositories (clone repo using <tt>git clone &lt;url&gt;</tt>)
+<ul><li><a class="ext-link" href="http://trix.cs.ox.ac.uk/git/chaste.git"><span class="icon">​</span>http://trix.cs.ox.ac.uk/git/chaste.git</a> -- New Chaste repository for development, only contains history since Version 3.0
+</li><li><a class="ext-link" href="http://trix.cs.ox.ac.uk/git/chaste_history.git"><span class="icon">​</span>http://trix.cs.ox.ac.uk/git/chaste_history.git</a> -- Full Chaste repository, contains all history
+</li><li><a class="ext-link" href="http://trix.cs.ox.ac.uk/git/project/"><span class="icon">​</span>http://trix.cs.ox.ac.uk/git/project/</a>&lt;your_project_name_here&gt;.git -- Project repositories
+</li></ul></li></ul><p>
+Buildbot:
+</p>
+<ul><li>Test results:
+<ul><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?failures_only=true&amp;reload=60"><span class="icon">​</span>Failing</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?category=continuous&amp;reload=60"><span class="icon">​</span>Continuous</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?category=nightly&amp;reload=60"><span class="icon">​</span>Nightly</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?category=lofty&amp;reload=60"><span class="icon">​</span>Lofty</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?category=weekly&amp;reload=60"><span class="icon">​</span>Weekly</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010/waterfall?reload=60"><span class="icon">​</span>Full waterfall, refresh every 60s</a>
+</li><li><a class="ext-link" href="https://trix.cs.ox.ac.uk:8010"><span class="icon">​</span>Buildbot homepage</a>
+</li></ul></li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

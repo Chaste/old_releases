@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/AccessCodeRepository - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="AccessingtheChastesourcecoderepository">Accessing the Chaste source code repository</h1>
+<p>
+Following requests from a couple of Chaste users and discussions between the developers, we have decided to offer read-only access to the Chaste repository via anonymous login. This access is provided with the caveat that the code is always in development (and the latest revision is not guaranteed to be passing all tests), and we will not be able to provide full support for between-release versions of the code. New users should therefore download one of the source releases.
+</p>
+<p>
+The repository uses <a class="ext-link" href="http://subversion.tigris.org/"><span class="icon">​</span>Subversion</a> to manage code versioning.  You can checkout from Subversion via an IDE plug-in, or by using a command-line client. To create a new directory called Chaste with an anonymous read-only checkout of Chaste do:
+</p>
+<pre class="wiki">svn --username anonymous checkout https://chaste.cs.ox.ac.uk/svn/chaste/trunk/ Chaste
+</pre><p>
+and use your email address as the password. You can also <a href="https://chaste.cs.ox.ac.uk/trac/register">register for a Chaste wiki account</a> (recommended for creating and commenting on tickets of work) and checkout the code using the username and password associated with that.
+</p>
+<p>
+If you wish to work with the latest revision, see <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a> for some helpful links and information.
+</p>
+<p>
+If you are a committed git user, you may also be interested in our (<em>very experimental</em>) github copy of the Chaste project at <a class="ext-link" href="http://www.github.com/Chaste/Chaste"><span class="icon">​</span>www.github.com/Chaste/Chaste</a>. At present this is periodically updated to match the development version of the svn repository, but we aren't making any promises to maintain it!
+</p>
+<h2 id="HowtoconnecttotheChasterepositoryusingEclipse">How to connect to the Chaste repository using Eclipse</h2>
+<ul><li>Start Eclipse.
+</li><li>Click Workbench if presented with the welcome screen.
+</li><li>From the menu choose Window-&gt;Show View-&gt;Other.
+</li><li>Click SVN-&gt;SVN Repository (if you don't see this you probably haven't <a class="wiki" href="/trac/wiki/InstallEclipsePlugins">installed the Eclipse plugins</a>).
+</li><li>Right click in the white space under SVN and choose New-&gt; Repository Location.
+</li><li>Enter your Chaste logon details and <tt>https://chaste.cs.ox.ac.uk/svn/chaste/trunk</tt> as the URL.
+</li><li>You should now see the repository in the SVN Repository window.
+</li><li>Expand the repository by clicking on the small triangle to its left.
+</li><li>Right click on the repository folder and choose Check Out As Project.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

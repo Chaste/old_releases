@@ -1,0 +1,78 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/SolvingCardiacProblems - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/SolvingCardiacProblems" href="/chaste/tutorials/release_2.1/ChasteGuides/SolvingCardiacProblems.html">SolvingCardiacProblems</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Solvingacardiacproblem">Solving a cardiac problem</h1>
+<p>
+This page gives a high-level overview of the code execution flow when solving a cardiac problem.  To run simulations, see <a class="wiki" href="/chaste/tutorials/release_2.1/UserTutorials.html">UserTutorials</a>. For an overview of the PDE solver hierarchy, see <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>. The steps that occur are as follows
+</p>
+<ul><li>The user calls <tt>AbstractCardiacProblem::Solve()</tt> on their monodomain or bidomain problem object (after calling <tt>Initialise</tt>)
+</li><li>The <tt>AbstractCardiacProblem</tt> owns a particular mono/bidomain finite element <i>solver</i> (of base-class type <tt>AbstractDynamicLinearPdeSolver</tt>; the concrete class can be matrix-based or not; see <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a> for more details); and for each printing timestep, does the following:
+<ul><li>sets the current time and end time on the solver
+</li><li>sets the latest voltage solution on the solver as the initial condition 
+</li><li>calls <tt>Solve</tt> on the solver.
+</li></ul></li></ul><hr />
+<p>
+The <tt>Solve</tt> method on <tt>AbstractDynamicLinearPdeSolver</tt> does the following, for each PDE timestep
+</p>
+<ul><li>calls <tt>PrepareForSetupLinearSystem</tt> -- <i>solves cell models, see below</i>
+</li><li>calls <tt>SetupLinearSystem</tt>  -- <i>see below</i>
+</li><li>calls <tt>FinaliseLinearSystem</tt>  -- relevant for bidomain solves, things like checking compatibility, setting up a null space
+</li><li>solves the linear system to obtain the solution (voltage, and phi_e in bidomain setting) at the next timestep
+</li></ul><hr />
+<p>
+1. <tt>PrepareForLinearSystem</tt> is where the cell models are solved. It is implemented in <tt>AbstractMonodomainSolver</tt>/<tt>AbstractBidomainSolver</tt>, where it just calls <tt>SolveCellSystems</tt> on the <tt>MonodomainTissue</tt>/<tt>BidomainTissue</tt>. This is implemented in <tt>AbstractCardiacTissue::SolveCellSystems</tt>, which essentially does the following for each cell:
+</p>
+<ol><li>Set <i>V</i> from the current PDE solution
+</li><li>Call the cell's <tt>ComputeExceptVoltage</tt> to solve for all state variables except <i>V</i> until the next PDE time step
+</li><li>Call <tt>UpdateCaches</tt>. This calls the cell's <tt>GetIIonic</tt> to compute the <i>I_ion</i> term and stores it in <tt>mIionicCacheReplicated</tt> (replicated over each process so no parallel communication is required later). It similarly also calculates and caches the intracellular stimulus at each cell.
+</li></ol><hr />
+<p>
+2. <tt>SetupLinearSystem</tt> uses any assemblers it has to set up the linear system <i>Ax=b</i> that will be solved that timestep. <i>A</i> is just assembled once the first timestep. For <i>b</i> the solver (or its assemblers) will require the ionic current and stimulus at each cell; this is obtained by calling, for example, <tt>mpMonodomainTissue-&gt;rGetIionicCacheReplicated()[index]</tt>. For more details on setting up <i>b</i> and the method <tt>SetupLinearSystem</tt> see <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

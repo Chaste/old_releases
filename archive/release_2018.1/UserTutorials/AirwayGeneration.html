@@ -1,0 +1,291 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/AirwayGeneration - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file lung/test/tutorials/TestAirwayGenerationTutorial.hpp at revision <a class="changeset" href="/trac/changeset/4f69b9f/git_repo" title="Copyright Mayhem!
+">4f69b9f/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="AnexampleshowinghowgenerateacompleteconductingairwaymodelgivensegmentationsofCTairwaysandlobes">An example showing how generate a complete conducting airway model given segmentations of CT airways and lobes</h1>
+<p>
+In this tutorial we demonstrate using Chaste's airway generation algorithm to create a complete model of
+the conducting airways (mean generation ~16) from computed tomography segmentations. Note that the execution
+time for this tutorial on a standard desktop PC is several minutes.
+</p>
+<p>
+Note that the airway generation code is dependent of having VTK installed.  However, we cannot put a guard around the
+whole file since that gives compiler errors if VTK is not installed.  Instead we guard the internals of each test, and
+any includes that will be missing if VTK is not present.
+</p>
+<div class="code"><pre><span class="cp">#ifdef CHASTE_VTK
+</span>
+</pre></div><p>
+We include some VTK classes to allow STL files to be read
+</p>
+<div class="code"><pre><span class="cp">#define _BACKWARD_BACKWARD_WARNING_H 1 </span><span class="c1">//Cut out the strstream deprecated warning for now (gcc4.3)
+</span><span class="cp">#include "vtkSmartPointer.h"
+#include "vtkPolyData.h"
+#include "vtkSTLReader.h"
+</span>
+<span class="cp">#endif </span><span class="c1">// CHASTE_VTK
+</span>
+</pre></div><p>
+The usual headers are included
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span>
+</pre></div><p>
+<tt>MultiLobeAirwayGenerator</tt> is the class that does most of the work in generating a complete airway tree
+</p>
+<div class="code"><pre><span class="cp">#include "MultiLobeAirwayGenerator.hpp"
+</span>
+</pre></div><p>
+All test suites should include either <tt>PetscSetupAndFinalize</tt> or <tt>FakePetscSetup</tt>.  This code does not
+currently use any parallel functionality so it might include either.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+Define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestAirwayGenerationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestGenerateAirways<span class="p">()</span>
+    <span class="p">{</span>
+<span class="cp">#if defined(CHASTE_VTK) &amp;&amp; ( (VTK_MAJOR_VERSION &gt;= 5 &amp;&amp; VTK_MINOR_VERSION &gt;= 6) || VTK_MAJOR_VERSION &gt;= 6)
+</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+First, we load up a mesh containing the centre lines and radii of the central airways extracted from
+a CT image. The mesh needs to be of the type <tt>SPACE_DIM=3</tt> and <tt>ELEMENT_DIM=1</tt>; that is it defines a mesh that exists
+in 3D space and is made up of 1D line elements. Each node in the mesh is expected to have two attributes
+associated with it. The first attribute specifies the radius of the airways that node. Thus the mesh defines a series
+of cylinders that represent the airways. The second attribute specifies whether the node is a terminal node or not.
+</p>
+<div class="code"><pre>        TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> airways_mesh<span class="p">;</span>
+        VtkMeshReader<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> airways_mesh_reader<span class="p">(</span><span class="s">"lung/test/data/TestSubject002MajorAirways.vtu"</span><span class="p">);</span>
+        airways_mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>airways_mesh_reader<span class="p">);</span>
+
+</pre></div><p>
+Note that the central airways mesh used here is defined in VTK unstructured grid format,
+for this format we have to manually copy over the node attribute information. This step would
+be unnecessary if using a mesh in Triangles/Tetgen format.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> node_radii<span class="p">;</span>
+        airways_mesh_reader<span class="p">.</span>GetPointData<span class="p">(</span><span class="s">"radius"</span><span class="p">,</span> node_radii<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> terminal_marker<span class="p">;</span>
+        airways_mesh_reader<span class="p">.</span>GetPointData<span class="p">(</span><span class="s">"start_id"</span><span class="p">,</span> terminal_marker<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> airways_mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> airways_mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            iter<span class="o">-&gt;</span>AddNodeAttribute<span class="p">(</span>node_radii<span class="p">[</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()]);</span>
+            iter<span class="o">-&gt;</span>AddNodeAttribute<span class="p">(</span>fmod<span class="p">(</span>terminal_marker<span class="p">[</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()],</span><span class="mi">2</span><span class="p">));</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+We now define a <tt>MultiLobeAirwayGenerator</tt> to allow us to generate the distal airways to form a complete
+conducting airway tree. <tt>MultiLobeAirwayGenerator</tt> provides an easy to use interface to <tt>AirwayGenerator</tt>
+and facilitates the generation of airways into a complete lung, rather than the user having to do
+each lobe separately.
+</p>
+<div class="code"><pre>        MultiLobeAirwayGenerator <span class="nf">generator</span><span class="p">(</span>airways_mesh<span class="p">);</span>
+
+</pre></div><p>
+We need to set a number of parameters to ensure the resulting airway tree is consistent with known
+human morphometric data. The values given here can be considered standard for human lungs.
+The most important of these is the <tt>NumberOfPointsPerLung</tt>, which (approximately)
+specifies the number of terminals in the tree. The next is the <tt>BranchingFraction</tt>, which controls how long
+the generated airways will be. The diameter ratio is used to control the rate at which airway diameters
+decrease between airway orders.
+</p>
+<div class="code"><pre>        generator<span class="p">.</span>SetNumberOfPointsPerLung<span class="p">(</span><span class="mi">15000</span><span class="p">);</span>
+        generator<span class="p">.</span>SetBranchingFraction<span class="p">(</span><span class="mf">0.4</span><span class="p">);</span>
+        generator<span class="p">.</span>SetDiameterRatio<span class="p">(</span><span class="mf">1.15</span><span class="p">);</span>
+
+</pre></div><p>
+These parameters are less important for producing a consistent airway tree, but are useful for
+debugging etc.
+</p>
+<div class="code"><pre>        generator<span class="p">.</span>SetMinimumBranchLength<span class="p">(</span><span class="mf">0.00001</span><span class="p">);</span>
+        generator<span class="p">.</span>SetPointLimit<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        generator<span class="p">.</span>SetAngleLimit<span class="p">(</span><span class="mf">180.0</span><span class="p">);</span>
+
+</pre></div><p>
+We now add lobar surface definitions for the five human lung lobes. Less 'lobes' can be
+added if full lobar segmentation data is not available. Lobes must be tagged as 'left'
+or 'right' to enable the correct number of acini to be created. Lobes are represented
+by triangle surface definitions defined in STL files.
+</p>
+<div class="code"><pre>        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> lll_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        lll_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/lll.stl"</span><span class="p">);</span>
+        lll_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>lll_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> LEFT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> lul_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        lul_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/lul.stl"</span><span class="p">);</span>
+        lul_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>lul_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> LEFT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rll_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rll_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rll.stl"</span><span class="p">);</span>
+        rll_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rll_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rml_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rml_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rml.stl"</span><span class="p">);</span>
+        rml_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rml_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rul_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rul_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rul.stl"</span><span class="p">);</span>
+        rul_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rul_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+</pre></div><p>
+We now perform two preprocessing steps prior to generation. <tt>AssignGrowthApices</tt> determine
+which lobe each of the terminal ends of the central airways segmentation are in.
+</p>
+<div class="code"><pre>        generator<span class="p">.</span>AssignGrowthApices<span class="p">();</span>
+
+</pre></div><p>
+Distribute points creates the target acinar points within the lung volume. The number
+created is as specified previously using <tt>SetNumberOfPointsPerLung</tt>.
+</p>
+<div class="code"><pre>        generator<span class="p">.</span>DistributePoints<span class="p">();</span>
+
+</pre></div><p>
+We now generate the distal airways. The output is automatically written as a mesh in
+both tetgen format and VTK unstructured grid format to
+<tt>$CHASTE_TEST_OUTPUT/TestAirwayGenerationTutorial/</tt>
+</p>
+<p>
+The resulting geometry can most easily be viewed in Paraview by loading the unstructured grid
+file. Application of a 'Extract Surface' filter followed by a 'Tube' filter allows the centreline
+and radius information to be view as a series of tubes.
+</p>
+<div class="code"><pre>        generator<span class="p">.</span>Generate<span class="p">(</span><span class="s">"TestAirwayGenerationTutorial"</span><span class="p">,</span> <span class="s">"example_complete_conducting_airway"</span><span class="p">);</span>
+
+<span class="cp">#endif </span><span class="c1">// VTK &gt;= 5.6
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestAirwayGenerationTutorial.hpp">File name <tt>TestAirwayGenerationTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#ifdef CHASTE_VTK
+</span>
+<span class="cp">#define _BACKWARD_BACKWARD_WARNING_H 1 </span><span class="c1">//Cut out the strstream deprecated warning for now (gcc4.3)
+</span><span class="cp">#include "vtkSmartPointer.h"
+#include "vtkPolyData.h"
+#include "vtkSTLReader.h"
+</span>
+<span class="cp">#endif </span><span class="c1">// CHASTE_VTK
+</span>
+<span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span>
+<span class="cp">#include "MultiLobeAirwayGenerator.hpp"
+</span>
+<span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestAirwayGenerationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestGenerateAirways<span class="p">()</span>
+    <span class="p">{</span>
+<span class="cp">#if defined(CHASTE_VTK) &amp;&amp; ( (VTK_MAJOR_VERSION &gt;= 5 &amp;&amp; VTK_MINOR_VERSION &gt;= 6) || VTK_MAJOR_VERSION &gt;= 6)
+</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> airways_mesh<span class="p">;</span>
+        VtkMeshReader<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> airways_mesh_reader<span class="p">(</span><span class="s">"lung/test/data/TestSubject002MajorAirways.vtu"</span><span class="p">);</span>
+        airways_mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>airways_mesh_reader<span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> node_radii<span class="p">;</span>
+        airways_mesh_reader<span class="p">.</span>GetPointData<span class="p">(</span><span class="s">"radius"</span><span class="p">,</span> node_radii<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> terminal_marker<span class="p">;</span>
+        airways_mesh_reader<span class="p">.</span>GetPointData<span class="p">(</span><span class="s">"start_id"</span><span class="p">,</span> terminal_marker<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> airways_mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> airways_mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            iter<span class="o">-&gt;</span>AddNodeAttribute<span class="p">(</span>node_radii<span class="p">[</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()]);</span>
+            iter<span class="o">-&gt;</span>AddNodeAttribute<span class="p">(</span>fmod<span class="p">(</span>terminal_marker<span class="p">[</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()],</span><span class="mi">2</span><span class="p">));</span>
+        <span class="p">}</span>
+
+        MultiLobeAirwayGenerator generator<span class="p">(</span>airways_mesh<span class="p">);</span>
+
+        generator<span class="p">.</span>SetNumberOfPointsPerLung<span class="p">(</span><span class="mi">15000</span><span class="p">);</span>
+        generator<span class="p">.</span>SetBranchingFraction<span class="p">(</span><span class="mf">0.4</span><span class="p">);</span>
+        generator<span class="p">.</span>SetDiameterRatio<span class="p">(</span><span class="mf">1.15</span><span class="p">);</span>
+
+        generator<span class="p">.</span>SetMinimumBranchLength<span class="p">(</span><span class="mf">0.00001</span><span class="p">);</span>
+        generator<span class="p">.</span>SetPointLimit<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        generator<span class="p">.</span>SetAngleLimit<span class="p">(</span><span class="mf">180.0</span><span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> lll_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        lll_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/lll.stl"</span><span class="p">);</span>
+        lll_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>lll_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> LEFT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> lul_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        lul_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/lul.stl"</span><span class="p">);</span>
+        lul_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>lul_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> LEFT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rll_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rll_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rll.stl"</span><span class="p">);</span>
+        rll_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rll_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rml_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rml_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rml.stl"</span><span class="p">);</span>
+        rml_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rml_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+        vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;</span> rul_reader <span class="o">=</span> vtkSmartPointer<span class="o">&lt;</span>vtkSTLReader<span class="o">&gt;::</span>New<span class="p">();</span>
+        rul_reader<span class="o">-&gt;</span>SetFileName<span class="p">(</span><span class="s">"lung/test/data/rul.stl"</span><span class="p">);</span>
+        rul_reader<span class="o">-&gt;</span>Update<span class="p">();</span>
+        generator<span class="p">.</span>AddLobe<span class="p">(</span>rul_reader<span class="o">-&gt;</span>GetOutput<span class="p">(),</span> RIGHT<span class="p">);</span>
+
+        generator<span class="p">.</span>AssignGrowthApices<span class="p">();</span>
+
+        generator<span class="p">.</span>DistributePoints<span class="p">();</span>
+
+        generator<span class="p">.</span>Generate<span class="p">(</span><span class="s">"TestAirwayGenerationTutorial"</span><span class="p">,</span> <span class="s">"example_complete_conducting_airway"</span><span class="p">);</span>
+
+<span class="cp">#endif </span><span class="c1">// VTK &gt;= 5.6
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

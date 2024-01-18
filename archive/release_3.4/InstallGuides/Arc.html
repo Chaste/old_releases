@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Arc - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="OnARCAdvancedResearchComputingmachinesARCUSandARCUS-B">On ARC (Advanced Research Computing) machines ARCUS and ARCUS-B</h1>
+<h2 id="Gettingontothemachine">Getting onto the machine</h2>
+<p>
+For access to any of the ARC machines, you will need to register with <a class="ext-link" href="http://www.arc.ox.ac.uk/content/home"><span class="icon">​</span>Advanced Research Computing</a> (ARC, formerly the Oxford Supercomputing Centre).
+The easiest way to join is to register for a user account with an existing project - take a look at the list of projects on the <a class="ext-link" href="http://www.arc.ox.ac.uk/content/registration"><span class="icon">​</span>registration page</a> and talk to the person responsible for the one you would like to join.
+</p>
+<p>
+ARC runs a few training courses each year for new users. The notes for these courses are available <a class="ext-link" href="http://www.arc.ox.ac.uk/content/training-courses-0"><span class="icon">​</span>online</a>, and might be worth a look.
+</p>
+<p>
+These instructions were last checked by Jochen in Spring 2015 (using cell-based Chaste on ARCUS and ARCUS-B). Changes may be required to get Chaste running on other machines.
+</p>
+<h2 id="Settingtheenvironment">Setting the environment</h2>
+<p>
+You will need <tt>SCons</tt> and the Intel compiler to compile code and RNV for compiling CellML files into Chaste compatible cell models.
+</p>
+<p>
+In order to compile and run Chaste tests and executables you will need to set up the Chaste dependencies in your user profile. This is done by adding the following lines to your <tt>$HOME/.bash_profile</tt> file
+</p>
+<pre class="wiki">if [[ `hostname -f` = *arcus.osc.local ]]
+then
+    # this section contains all the commands to be run on arcus
+    module load scons/2.3.4
+    module load PETSc/openmpi-1.6.5/3.5_icc-2013 
+    module load python/2.7
+    module load vtk/5.8.0
+    ### These should match with python/hostconfig/machines/arcus.py
+    # Xerces
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/system/software/linux-x86_64/xerces-c/3.3.1/lib
+    # Szip
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/system/software/linux-x86_64/lib/szip/2.1/lib
+    # Boost
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/system/software/linux-x86_64/lib/boost/1_56_0/lib
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/include
+    export CPATH=${LD_LIBRARY_PATH}:/usr/include
+else
+    # this section contains all the commands to be run on arcusb
+    module load scons/2.3.4
+    module load python/2.7
+    module load vtk/5.10.1
+    module unload intel-compilers/2013 intel-mkl/2013
+    module load PETSc/mvapich2-2.0.1/3.5_icc-2015
+    module load intel-mkl/2015
+    module load hdf5-parallel/1.8.14_mvapich2_intel
+    # All of these are defined in arcus_b.py already for the linker to find them but the 
+    # environemt variables still seem to be necessary to run the executables
+    export LD_LIBRARY_PATH=/system/software/linux-x86_64/xerces-c/3.3.1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/linux-x86_64/lib/boost/1_56_0/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/linux-x86_64/lib/xsd/3.3.0-1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/linux-x86_64/lib/szip/2.1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/linux-x86_64/lib/vtk/5.10.1/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/arcus-b/lib/parmetis/4.0.3/mvapich2-2.0.1__intel-2015/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/system/software/arcus-b/lib/sundials/mvapich2-2.0.1/2.5.0/double/lib:$LD_LIBRARY_PATH
+fi
+
+# Add chaste libraries - you may need to change this depending on where you installed (or plan to install) Chaste
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${DATA}/Chaste/lib
+</pre><p>
+Note that the exact configuration depends on the cluster and hence we introduced the if statement above. You should check that the modules have been loaded correctly by using the <tt>module list</tt> command. The if statement may need to be extended when we start using other ARC clusters. Even though this configuration sets up the chaste dependencies on both of the clusters (ARCUS and ARCUS-B) it is advisable to not mix the binaries that are generated by them, i.e. either use a different chaste folder on each of the clusters or only compile and run chaste code on one of them. At the current stage the configuration file does not set up RNV, which is required to run PyCML, and CVODE. CVODE is discussed later on this page.
+</p>
+<h2 id="GettingChaste">Getting Chaste</h2>
+<p>
+It makes sense to download Chaste in your $DATA area where there is ample space to store code, meshes and output.
+</p>
+<pre class="wiki">cd $DATA
+# Check out code base (takes a few minutes)
+svn co https://chaste.cs.ox.ac.uk/svn/chaste/trunk Chaste --username jmpf@comlab.ox.ac.uk
+#                                                         (the last bit will, of course, be your Chaste login)
+# Check out a user project
+svn co https://chaste.cs.ox.ac.uk/svn/chaste/projects/jmpf Chaste/projects/jmpf
+#                                                    (the last parts will, of course, be your Chaste project name)
+</pre><h2 id="Compilingatest">Compiling a test</h2>
+<p>
+It's important to <em>compile only</em> and not to attempt to run programs on the head-node.  As of <a class="missing changeset" title="No permission to view changeset 15416 on (default)">r15416</a> the SCons build system should automatically pick up a configuration file based on previous configurations. Be careful to not compile the same binaries on different clusters, i.e. either use only ARCUS or ARCUS-B to compile and run Chaste. If you would like to compile optimised builds (faster) replace <tt>build=Intel</tt> with <tt>build=IntelProduction_hpc</tt>.
+</p>
+<pre class="wiki">cd $DATA/Chaste
+
+# Compiling a simple parallel test
+scons build=Intel compile_only=1 test_suite=global/test/TestPetscTools.hpp
+# Compiling PyCml test
+scons b=Intel co=1 ts=heart/test/ionicmodels/TestPyCml.hpp
+# Compiling a user project test
+scons b=Intel co=1 ts=projects/jmpf/test/TestVtk.hpp
+
+#Compiling the main Chaste executable
+scons b=Intel co=1 exe=1 chaste_libs=1 apps
+</pre><h2 id="RunningcodeonARCUS">Running code on ARCUS</h2>
+<p>
+Here is an example script which runs the above test and the Chaste executable on ARCUS.  Save as, for example, <tt>run_Chaste</tt>.
+</p>
+<pre class="wiki">#!/bin/bash --login
+
+# Name of the job 
+#PBS -N TestChaste
+
+# Use 1 node with 32 cores = 32 MPI legs 
+#PBS -l nodes=1:ppn=32
+
+# Kill after one hour 
+#PBS -l walltime=01:00:00
+
+# Send me email at the beginning and the end of the run
+#PBS -m be
+#PBS -M your_address_not_jmpf@cs.ox.ac.uk 
+
+# Join output and error files
+#PBS -j oe
+
+# Copy all environmental variables
+#PBS -V 
+
+# Set up MPI
+cd $PBS_O_WORKDIR
+##### The appropriate include for the machine:
+# . enable_hal_mpi.sh
+. enable_arcus_mpi.sh
+#Switch to Chaste directory
+cd ${DATA}/Chaste
+
+# A parallel test
+mpirun $MPI_HOSTS ./global/build/intel/TestPetscToolsRunner
+# A PyCML test
+mpirun $MPI_HOSTS ./heart/build/intel/ionicmodels/TestPyCmlRunner
+# A user project test
+mpirun $MPI_HOSTS ./projects/jmpf/build/intel/TestVtkRunner
+
+# A test of the executable
+mpirun $MPI_HOSTS apps/src/Chaste apps/texttest/weekly/Propagation1d/ChasteParameters.xml
+</pre><p>
+Submit script and see state of the queue
+</p>
+<pre class="wiki">qsub run_Chaste.sh
+qstat
+</pre><p>
+More information on the Torque job scheduler is available <a class="ext-link" href="http://www.arc.ox.ac.uk/content/torque-job-scheduler"><span class="icon">​</span>here</a>.
+</p>
+<h2 id="RunningcodeonARCUS-B">Running code on ARCUS-B</h2>
+<p>
+ARCUS-B uses a different job scheduler called SLURM. Information about using the SLURM scheduler can be found here <a class="ext-link" href="http://www.arc.ox.ac.uk/content/arcus-phase-b"><span class="icon">​</span>http://www.arc.ox.ac.uk/content/arcus-phase-b</a>, and here <a class="ext-link" href="http://www.arc.ox.ac.uk/content/slurm-job-scheduler"><span class="icon">​</span>http://www.arc.ox.ac.uk/content/slurm-job-scheduler</a>. 
+</p>
+<p>
+A sample SLURM script would be
+</p>
+<pre class="wiki">#!/bin/bash --login
+
+# Name of the job 
+#SBATCH --job-name=TestChaste
+
+# Use 1 node with 32 cores = 32 MPI legs 
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+
+# Kill after one hour 
+#SBATCH --time=01:00:00
+
+# Send me email at the beginning and the end, and abortion of the run
+# (I prefer the FAIL option - only send emails when the process gets aborted)
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=your_address_not_jmpf@cs.ox.ac.uk 
+
+# Joining output and error files is done automatically by SLURM, as well as copying the environment variables,
+# and the change of working directory
+
+# Set up MPI using the appropriate include for the machine:
+. enable_arcus_b_mpi.sh
+
+#Switch to Chaste directory
+cd ${DATA}/Chaste
+
+# A parallel test
+mpirun $MPI_HOSTS ./global/build/intel/TestPetscToolsRunner
+# A PyCML test
+mpirun $MPI_HOSTS ./heart/build/intel/ionicmodels/TestPyCmlRunner
+# A user project test
+mpirun $MPI_HOSTS ./projects/jmpf/build/intel/TestVtkRunner
+
+# A test of the executable
+mpirun $MPI_HOSTS apps/src/Chaste apps/texttest/weekly/Propagation1d/ChasteParameters.xml
+
+</pre><p>
+You can submit the script and see the state of the queue using
+</p>
+<pre class="wiki">sbatch SCRIPT_NAME.sh
+squeue
+</pre><h2 id="UsingCVODE">Using CVODE</h2>
+<p>
+There are some problems with using the default config file found in python/hostconfig/machines if you want to use CVODE. To get around these problems, copy the machine configuration file to python/hostconfig/local.py and replace the CVODE section at the end with the following. Note: This has not been tested on ARCUS or ARCUS-B, and the exact paths probably need to be changed.
+</p>
+<pre class="wiki">    # Chaste may also optionally link against CVODE.
+    # CVODE is not installed - line below is now set to "True"
+    use_cvode = int(prefs.get('use-cvode', True))
+    if use_cvode:
+        # Look for the version of CVODE in the folder where it is located (part of PETSc)
+        DetermineCvodeVersion('/system/software/hal/lib/PETSc/petsc-3.0.0-p12/icc-2011/include')
+        # Now add the CVODE libraries to the list
+        other_libraries.extend(['sundials_cvode', 'sundials_nvecserial'])
+</pre><h2 id="Troubleshooting">Troubleshooting</h2>
+<p>
+If you receive a python error of the kind
+</p>
+<pre class="wiki">python: error while loading shared libraries: libpython2.7.so.1.0: cannot open shared object file: No such file or directory
+</pre><p>
+just go into your chaste directory and copy libpython2.7.so.1.0 into the ./lib directory
+</p>
+<pre class="wiki">cp /system/software/linux-x86_64/python/2.7.8/lib/libpython2.7.so.1.0 ./lib
+</pre><p>
+This may not be the cleanest way of fixing this issue, other suggestions are welcome!
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

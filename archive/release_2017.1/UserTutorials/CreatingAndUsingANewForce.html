@@ -1,0 +1,472 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewForce - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestCreatingAndUsingANewForceTutorial.hpp at revision <a class="changeset" href="/trac/changeset/8af276d/git_repo" title="#2933 #2935 Remove dynamic exception specifications [ throw(Exception) ...">8af276d/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanduseanewforce">An example showing how to create and use a new force</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In previous cell-based Chaste tutorials, we used existing force classes to define
+how cells interact mechanically. In this tutorial we show
+how to create a new force class, and how this can be used in a cell-based
+simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The next header defines a base class for forces, from which the new class will inherit.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractForce.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombMeshGenerator.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "CellsGenerator.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "SmartPointers.hpp"
+</span>
+</pre></div><p>
+This header ensures that this test is only run on one process, since it doesn't support parallel execution.
+</p>
+<div class="code"><pre><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><h2 id="Definingtheforceclass">Defining the force class</h2>
+<p>
+As an example, let us consider a force for a two-dimensional cell-based
+simulation, that mimics gravity. To implement this we define a force
+boundary condition class, <tt>MyForce</tt>, which inherits from
+<tt>AbstractForce</tt> and overrides the methods <tt>AddForceContribution()</tt> and
+<tt>OutputForceParameters()</tt>.
+</p>
+<p>
+Note that usually this code would be separated out into a separate declaration
+in a .hpp file and definition in a .cpp file.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">MyForce</span> <span class="o">:</span> <span class="k">public</span> AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+</pre></div><p>
+This force class includes a member variable, <tt>mStrength</tt>, which
+defines the strength of the force. This member variable will be set
+in the constructor.
+</p>
+<div class="code"><pre>    <span class="kt">double</span> mStrength<span class="p">;</span>
+
+</pre></div><p>
+We only need to include the next block of code if we wish to be able
+to archive (save or load) the force model object in a cell-based simulation.
+The code consists of a serialize method, in which we first archive the force
+using the serialization code defined in the base class <tt>AbstractForce</tt>,
+then archive the member variable.
+</p>
+<div class="code"><pre>    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        archive <span class="o">&amp;</span> mStrength<span class="p">;</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+</pre></div><p>
+The first public method is a default constructor, which calls the base
+constructor. There is a single input argument, which defines the strength
+of the force. We provide a default value of 1.0 for this argument. Inside
+the method, we add an assertion to make sure that the strength is strictly
+positive.
+</p>
+<div class="code"><pre>    MyForce<span class="p">(</span><span class="kt">double</span> strength<span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="o">:</span> AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mStrength<span class="p">(</span>strength<span class="p">)</span>
+    <span class="p">{</span>
+        assert<span class="p">(</span>mStrength <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The second public method overrides <tt>AddForceContribution()</tt>.
+This method takes in one arguments, a reference to the cell population itself.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">AddForceContribution</span><span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Inside the method, we loop over nodes, and add a constant vector to
+each node, in the negative <em>y</em>-direction and of magnitude <tt>mStrength</tt>.
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> force <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span>mStrength<span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> node_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> node_index<span class="o">&lt;</span>rCellPopulation<span class="p">.</span>GetNumNodes<span class="p">();</span> node_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            rCellPopulation<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>AddAppliedForceContribution<span class="p">(</span>force<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+We also add a get method for <tt>mStrength</tt>, to allow for testing.
+</p>
+<div class="code"><pre>    <span class="kt">double</span> <span class="nf">GetStrength</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> mStrength<span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Just as we encountered in <a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
+a method that outputs any member variables to a specified results file <tt>rParamsFile</tt>.
+In our case, we output the member variable <tt>mStrength</tt>, then call the method on the base class.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">OutputForceParameters</span><span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span>rParamsFile <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\t\t\t</span><span class="s">&lt;Strength&gt;"</span> <span class="o">&lt;&lt;</span> mStrength <span class="o">&lt;&lt;</span> <span class="s">"&lt;/Strength&gt;</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputForceParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+As mentioned in previous cell-based Chaste tutorials, we need to include the next block
+of code to be able to archive the force object in a cell-based
+simulation, and to obtain a unique identifier for our new force for writing
+results to file.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyForce<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyForce<span class="p">)</span>
+
+</pre></div><p>
+This completes the code for <tt>MyForce</tt>. Note that usually this code
+would be separated out into a separate declaration in a .hpp file and definition
+in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewForceTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Testingtheforce">Testing the force</h2>
+<p>
+We now test that our new force is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestMyForce</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We first create a <tt>MeshBasedCellPopulation</tt> using the helper
+classes <tt>HoneycombMeshGenerator</tt> and <tt>CellsGenerator</tt>,
+as in previous cell-based Chaste tutorials.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+Initialise all node forces to zero
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>cell_population<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+             cell_population<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>ClearAppliedForce<span class="p">();</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+We now create a force object of strength 5.0.
+</p>
+<div class="code"><pre>        MyForce <span class="nf">force</span><span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+</pre></div><p>
+We test that the force calculation is correct.
+</p>
+<div class="code"><pre>        force<span class="p">.</span>AddForceContribution<span class="p">(</span>cell_population<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> node_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> node_index<span class="o">&lt;</span>cell_population<span class="p">.</span>GetNumNodes<span class="p">();</span> node_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_DELTA<span class="p">(</span>cell_population<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetAppliedForce<span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>cell_population<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetAppliedForce<span class="p">()[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+The last block of code provides an archiving test for the force class,
+in a similar way to previous cell-based Chaste tutorials:
+</p>
+<p>
+Note that it is important to test archiving by using an abstract
+pointer, so that you check that boost can identify and record which
+concrete class it should be dealing with.
+This tests the CHASTE_CLASS_EXPORT(<a class="missing wiki">MyForce?</a>) lines are implemented correctly.
+</p>
+<div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_force.arch"</span><span class="p">;</span>
+        <span class="p">{</span>
+            AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_force <span class="o">=</span> <span class="k">new</span> MyForce<span class="p">(</span><span class="mf">2.6</span><span class="p">);</span>
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            output_arch <span class="o">&lt;&lt;</span> p_force<span class="p">;</span>
+            <span class="k">delete</span> p_force<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_force<span class="p">;</span>
+            input_arch <span class="o">&gt;&gt;</span> p_force<span class="p">;</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span><span class="k">dynamic_cast</span><span class="o">&lt;</span>MyForce<span class="o">*&gt;</span><span class="p">(</span>p_force<span class="p">)</span><span class="o">-&gt;</span>GetStrength<span class="p">(),</span> <span class="mf">2.6</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+            <span class="k">delete</span> p_force<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="Usingtheforceinacell-basedsimulation">Using the force in a cell-based simulation</h2>
+<p>
+We now provide a test demonstrating how <tt>MyForce</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOffLatticeSimulationWithMyForce</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+Once again we create a <tt>MeshBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple, and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyForce"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+</pre></div><p>
+We create our force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR_ARGS<span class="p">(</span>MyForce<span class="p">,</span> p_force<span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">));</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+We also create a force law to say how the cells interact and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+When you visualize the results with
+</p>
+<p>
+<tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestOffLatticeSimulationWithMyForce/results_from_time_0</tt>
+</p>
+<p>
+you should see a collection of cells moving downwards and proliferating.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewForceTutorial.hpp">File name <tt>TestCreatingAndUsingANewForceTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "AbstractForce.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "CellsGenerator.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "SmartPointers.hpp"
+</span>
+<span class="cp">#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MyForce</span> <span class="o">:</span> <span class="k">public</span> AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+    <span class="kt">double</span> mStrength<span class="p">;</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        archive <span class="o">&amp;</span> mStrength<span class="p">;</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+    MyForce<span class="p">(</span><span class="kt">double</span> strength<span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="o">:</span> AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mStrength<span class="p">(</span>strength<span class="p">)</span>
+    <span class="p">{</span>
+        assert<span class="p">(</span>mStrength <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> AddForceContribution<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> force <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span>mStrength<span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> node_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> node_index<span class="o">&lt;</span>rCellPopulation<span class="p">.</span>GetNumNodes<span class="p">();</span> node_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            rCellPopulation<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>AddAppliedForceContribution<span class="p">(</span>force<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">double</span> GetStrength<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> mStrength<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> OutputForceParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span>rParamsFile <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\t\t\t</span><span class="s">&lt;Strength&gt;"</span> <span class="o">&lt;&lt;</span> mStrength <span class="o">&lt;&lt;</span> <span class="s">"&lt;/Strength&gt;</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputForceParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyForce<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyForce<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewForceTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestMyForce<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>cell_population<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+             cell_population<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>ClearAppliedForce<span class="p">();</span>
+        <span class="p">}</span>
+
+        MyForce force<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+        force<span class="p">.</span>AddForceContribution<span class="p">(</span>cell_population<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> node_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> node_index<span class="o">&lt;</span>cell_population<span class="p">.</span>GetNumNodes<span class="p">();</span> node_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            TS_ASSERT_DELTA<span class="p">(</span>cell_population<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetAppliedForce<span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>cell_population<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetAppliedForce<span class="p">()[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_force.arch"</span><span class="p">;</span>
+        <span class="p">{</span>
+            AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_force <span class="o">=</span> <span class="k">new</span> MyForce<span class="p">(</span><span class="mf">2.6</span><span class="p">);</span>
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            output_arch <span class="o">&lt;&lt;</span> p_force<span class="p">;</span>
+            <span class="k">delete</span> p_force<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            AbstractForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_force<span class="p">;</span>
+            input_arch <span class="o">&gt;&gt;</span> p_force<span class="p">;</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span><span class="k">dynamic_cast</span><span class="o">&lt;</span>MyForce<span class="o">*&gt;</span><span class="p">(</span>p_force<span class="p">)</span><span class="o">-&gt;</span>GetStrength<span class="p">(),</span> <span class="mf">2.6</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+            <span class="k">delete</span> p_force<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMyForce<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyForce"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+        MAKE_PTR_ARGS<span class="p">(</span>MyForce<span class="p">,</span> p_force<span class="p">,</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">));</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

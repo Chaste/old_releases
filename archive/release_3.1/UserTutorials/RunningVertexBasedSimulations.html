@@ -1,0 +1,360 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningVertexBasedSimulations - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningVertexBasedSimulations" href="/chaste/tutorials/release_3.1/UserTutorials/RunningVertexBasedSimulations.html">RunningVertexBasedSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningVertexBasedSimulationsTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/14997" title="#1831 - apply BSD licence notice.">r14997</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Examplesshowinghowtocreaterunandvisualizevertex-basedsimulations">Examples showing how to create, run and visualize vertex-based simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to create, run and visualize vertex-based simulations.
+Full details of the mechanical model proposed by T. Nagai and H. Honda ("A dynamic cell model for
+the formation of epithelial tissues", Philosophical Magazine Part B 81:699-719).
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation. We have encountered some of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "CellsGenerator.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+</span></pre></div><p>
+The next header file defines the cell cycle model.
+</p>
+<div class="code"><pre><span class="cp">#include "StochasticDurationCellCycleModel.hpp"
+</span></pre></div><p>
+The next two header files define a helper class for generating suitable meshes: one planar and one periodic.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombVertexMeshGenerator.hpp"
+#include "CylindricalHoneycombVertexMeshGenerator.hpp"
+</span></pre></div><p>
+The next header file defines a vertex-based <tt>CellPopulation</tt> class.
+</p>
+<div class="code"><pre><span class="cp">#include "VertexBasedCellPopulation.hpp"
+</span></pre></div><p>
+The next header file defines a force law for describing the mechanical interactions
+between neighbouring cells in the cell population, subject to each vertex.
+</p>
+<div class="code"><pre><span class="cp">#include "NagaiHondaForce.hpp"
+</span></pre></div><p>
+The next header file defines a boundary condition for the cells.
+</p>
+<div class="code"><pre><span class="cp">#include "PlaneBoundaryCondition.hpp"
+</span></pre></div><p>
+The next header file defines a cell killer, which specifies how cells are removed from the simulation.
+</p>
+<div class="code"><pre><span class="cp">#include "PlaneBasedCellKiller.hpp"
+</span></pre></div><p>
+Next, we define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>
+and defines some test methods.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningVertexBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><h2 id="Test1-abasicvertex-basedsimulation">Test 1 - a basic vertex-based simulation</h2>
+<p>
+In the first test, we run a simple vertex-based simulation, in which we create a monolayer
+of cells, using a mutable vertex mesh. Each cell is assigned a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+First, we generate a vertex mesh. To create a <tt>MutableVertexMesh</tt>, we can use
+the <tt>HoneycombVertexMeshGenerator</tt>. This generates a honeycomb-shaped mesh,
+in which all nodes are equidistant. Here the first and second arguments
+define the size of the mesh - we have chosen a mesh that is 2 elements (i.e.
+cells) wide, and 2 elements high.
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we use the <tt>CellsGenerator</tt> helper class, which is templated over the type
+of cell model required (here <tt>StochasticDurationCellCycleModel</tt>)
+and the dimension. We create an empty vector of cells and pass this into the
+method along with the mesh. The second argument represents the size of that the vector
+<tt>cells</tt> should become - one cell for each element, the third argument specifies
+the proliferative type of the cell STEM, TRANSIT or DIFFERENTIATED.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span>TRANSIT<span class="p">);</span>
+</pre></div><p>
+Now we have a mesh and a set of cells to go with it, we can create a <tt>CellPopulation</tt>.
+In general, this class associates a collection of cells with a mesh.
+For this test, because we have a <tt>MutableVertexMesh</tt>, we use a particular type of
+cell population called a <tt>VertexBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We then pass the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+For longer simulations, we may not want to output the results
+every time step. In this case we can use the following method,
+to print results every 50 time steps instead. As the default time step
+used by the simulator (for vertex based simulations), is 0.02 hours, this method will cause the
+simulator to print results every 6 minutes (i.e. 0.1 hours).
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of the vertices
+of each cell in a cell population. For this test, we use one force law, based on the
+Nagai-Honda mechanics, and pass it to the <tt>OffLatticeSimulation</tt>.
+For a list of possible forces see subclasses of <tt>AbstractForce</tt>.
+These can be found in the inheritance diagram, here, <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.1/classAbstractForce.html" title="Documentation for the AbstractForce class"><span class="icon">&nbsp;</span>AbstractForce</a>.
+Note that some of these forces are not compatible with vertex-based simulations see the specific class documentation for details,
+if you try to use an incompatible class then you will receive a warning.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dVertexCells /tmp/$USER/testoutput/VertexBasedMonolayer/results_from_time_0</tt>.
+We may have to do: <tt>javac Visualize2dVertexCells.java</tt> beforehand to create the
+java executable.
+</p>
+<h2 id="Test2-introducingperiodicityboundariesandcellkillers">Test 2 - introducing periodicity, boundaries and cell killers</h2>
+<p>
+In the second test, we run a simple vertex-based simulation, in which we create a monolayer
+of cells in a periodic geometry, using a cylindrical vertex mesh. We also include a fixed
+boundary which cells can't pass through and a cell killer which removes cells once they leave
+a region. As before each cell is assigned a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestPeriodicMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+First, we generate a periodic vertex mesh. To create a <tt>Cylindrical2dVertexMesh</tt>, we can use
+the <tt>CylindricalHoneycombVertexMeshGenerator</tt>. This generates a honeycomb-shaped mesh,
+in which all nodes are equidistant and the right hand side is associated with the left hand side.
+Here the first and second arguments define the size of the mesh - we have chosen a mesh that
+is 4 elements (i.e. cells) wide, and 4 elements high.
+</p>
+<div class="code"><pre>        CylindricalHoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+This is exactly the same as the above test.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span>TRANSIT<span class="p">);</span>
+</pre></div><p>
+Now we have a mesh and a set of cells to go with it, we can create a <tt>CellPopulation</tt>.
+This is also the same as in the above test.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+As always we then pass the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexBasedPeriodicMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+We now make a pointer to an appropriate force and pass it to the
+<tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+We now create one or more <tt>CellPopulationBoundaryCondition</tt>s, which determine
+any conditions which each cell in a cell population must satisfy. For this test,
+we use a <tt>PlaneBoundaryCondition</tt>, and pass it to the <tt>OffLatticeSimulation</tt>.
+For a list of possible boundary condition see subclasses of <tt>AbstractCellPopulationBoundaryCondition</tt>.
+These can be found in the inheritance diagram, here,
+<a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.1/classAbstractCellPopulationBoundaryCondition.html" title="Documentation for the AbstractCellPopulationBoundaryCondition class"><span class="icon">&nbsp;</span>AbstractCellPopulationBoundaryCondition</a>.
+Note that some of these boundary conditions are not compatible with vertex-based
+simulations see the specific class documentation for details, if you try to use an
+incompatible class then you will receive a warning.
+</p>
+<p>
+The first step is to define a point on the plane boundary and a normal to the plane.
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+</pre></div><p>
+We can now make a pointer to a <tt>PlaneBoundaryCondition</tt> (passing the point
+and normal to the plane) and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc<span class="p">);</span>
+</pre></div><p>
+We now create one or more <tt>CellKiller</tt>s, which determine how cells are removed
+from the simulation. For this test, we use a <tt>PlaneBasedCellKiller</tt>, and pass
+it to the <tt>OffLatticeSimulation</tt>. For a list of possible cell killers see subclasses
+of <tt>AbstractCellKiller</tt>. These can be found in the inheritance diagram, here,
+<a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.1/classAbstractCellKiller.html" title="Documentation for the AbstractCellKiller class"><span class="icon">&nbsp;</span>AbstractCellKiller</a>.
+</p>
+<p>
+The first step is to define a point on the plane boundary and a normal to the plane.
+We reuse the point and normal from the <tt>PlaneBoundaryCondition</tt>.
+</p>
+<div class="code"><pre>        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+</pre></div><p>
+Finally we now make a pointer to a <tt>PlaneBasedCellKiller</tt> (passing the point
+and normal to the plane) and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR_ARGS<span class="p">(</span>PlaneBasedCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dVertexCells /tmp/$USER/testoutput/VertexBasedPeriodicMonolayer/results_from_time_0</tt>.
+</p>
+<p>
+You should see that the edges of the mesh are identical on both sides; cells no
+longer pass through the line y=0; and cells are removed at y=3.
+</p>
+<div class="code"><pre><span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningVertexBasedSimulationsTutorial.hpp">File name <tt>TestRunningVertexBasedSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+
+#include "CellsGenerator.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "StochasticDurationCellCycleModel.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CylindricalHoneycombVertexMeshGenerator.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "NagaiHondaForce.hpp"
+#include "PlaneBoundaryCondition.hpp"
+#include "PlaneBasedCellKiller.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningVertexBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span>TRANSIT<span class="p">);</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestPeriodicMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        CylindricalHoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        Cylindrical2dVertexMesh<span class="o">*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCylindricalMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span>TRANSIT<span class="p">);</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"VertexBasedPeriodicMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBasedCellKiller<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_killer<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellKiller<span class="p">(</span>p_killer<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

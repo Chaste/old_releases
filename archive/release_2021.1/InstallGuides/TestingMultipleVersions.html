@@ -1,0 +1,958 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/TestingMultipleVersions - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#CurrentDependencyConfigurationsinPortabilityBuilds">Current Dependency Configurations in Portability Builds</a>
+  </li>
+  <li>
+    <a href="#InstallingmultipleversionsofChastesdependenciesfortestingcompatibility">Installing multiple versions of Chaste's dependencies for testing &hellip;</a>
+    <ol>
+      <li>
+        <a href="#BundlingPETScandHDF5">Bundling PETSc and HDF5</a>
+      </li>
+      <li>
+        <a href="#Maininstallationscript">Main installation script</a>
+      </li>
+      <li>
+        <a href="#InstallingbundledcombinationsofPETScandHDF5">Installing "bundled" combinations of PETSc and HDF5</a>
+      </li>
+      <li>
+        <a href="#Hostconfigconfiguration">Hostconfig configuration</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="CurrentDependencyConfigurationsinPortabilityBuilds">Current Dependency Configurations in Portability Builds</h1>
+<p>
+See also <a class="forbidden wiki" title="no permission to view this wiki page">MachineNames#DependencyVersions</a> for the defaults on the different build machines.
+</p>
+<table class="wiki">
+<tr><td style="text-align: center">             </td><th> <strong>Mon</strong> </th><th> <strong>Tue</strong> </th><th> <strong>Wed</strong> </th><th> <strong>Thu</strong> </th><th> <strong>Fri</strong> </th><th> <strong>Sat</strong> </th><th> <strong>Sun</strong> 
+</th></tr><tr><td> <strong>Boost</strong> </td><td> 1.61        </td><td> 1.69        </td><td> 1.58        </td><td> 1.60        </td><td> 1.66        </td><td> 1.62        </td><td> 1.67        
+</td></tr><tr><td> <strong>cvode</strong> </td><td> 2.7.0       </td><td> 2.8.0       </td><td> none        </td><td> 3.1.0       </td><td> 4.1.0       </td><td> 2.7.0       </td><td> 2.9.0       
+</td></tr><tr><td> <strong>HDF5</strong>  </td><td> 1.8.11      </td><td> 1.8.13      </td><td> 1.8.15      </td><td> 1.8.17      </td><td> 1.8.16      </td><td> 1.8.20      </td><td> 1.10.2      
+</td></tr><tr><td> <strong>PETSc</strong> </td><td> 3.5.4       </td><td> 3.5.4       </td><td> 3.6.4       </td><td> 3.6.4       </td><td> 3.7.6       </td><td> 3.8.4       </td><td> 3.9.2       
+</td></tr><tr><td> <strong>VTK</strong>   </td><td> 5.10        </td><td> none        </td><td> 6.1         </td><td> 6.2         </td><td> 6.3         </td><td> 7.1         </td><td> 8.1         
+</td></tr><tr><td style="text-align: right"> <strong>Xerces</strong></td><td> 3.1.1       </td><td> 3.1.2       </td><td> 3.1.3       </td><td> 3.1.4       </td><td> 3.2.0       </td><td> 3.2.1       </td><td> 3.2.1       
+</td></tr><tr><td> <strong>XSD</strong>   </td><td> 3.3         </td><td> 3.3         </td><td> 3.3         </td><td> 4.0.0       </td><td> 4.0.0       </td><td> 4.0.0       </td><td> 4.0.0       
+</td></tr><tr><td> <strong>Notes</strong> </td><td> Oldest<sup>1    </td><td style="text-align: center">             </td><td style="text-align: center">             </td><td style="text-align: center">             </td><td style="text-align: center">             </td><td style="text-align: center">             </td><td> Newest      
+</td></tr></table>
+</sup><blockquote>
+<p>
+<sup>1 Oldest versions tested in the portability rotation.  Some yet-older versions may be tested in continuous and nightly builds.
+</sup></p>
+</blockquote>
+<h1 id="InstallingmultipleversionsofChastesdependenciesfortestingcompatibility">Installing multiple versions of Chaste's dependencies for testing compatibility</h1>
+<p>
+As part of Chaste's automated testing, we build and run our main test packs with a range of different library versions, to ensure we do not inadvertently break support - see <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a>.  This page describes the steps used to set up the machine that runs these tests and hence needs many different versions of the dependencies installed.  Note that using different dependency versions also requires support in the <a class="wiki" href="/trac/wiki/SconsArchive/HostconfigSystem">hostconfig configuration</a>, a snippet of which is included below (the definitive version is at <a class="missing source">source:trunk/python/hostconfig/machines/dizzy.py</a>, and is not publicly accessible).
+</p>
+<p>
+A pre-requisite to the instructions below is that a 'bob' account has been set up as a normal automated build account, and the <tt>.bashrc</tt> file of the account running the instructions contains the following (at the top):
+</p>
+<pre class="wiki">export PATH=$HOME/mpi/bin:$HOME/hdf5/bin:$HOME/bin:$PATH
+source /opt/intel/bin/compilervars.sh intel64
+export INTEL_LICENSE_FILE="28519@flexlm.nsms.ox.ac.uk"
+</pre><h2 id="BundlingPETScandHDF5">Bundling PETSc and HDF5</h2>
+<p>
+Note that in June 2017, we decided to "bundle" PETSc and HDF5 on Lofty such that there is an installation for each pairwise combination we want to test against.
+This is made straightforward because PETSc allows an HDF5 version to be specified during configuration.
+The benefit of this is much-increased compatibility, particularly with MPI, while the downside is an inability to specify arbitrary combinations.
+See later for the script to install the combinations.
+</p>
+<h2 id="Maininstallationscript">Main installation script</h2>
+<p>
+The following bash script was used to install the dependencies.
+</p>
+<div class="code"><pre>
+<span class="c"># Link to the existing bob account for some dependencies
+</span>
+<span class="c"># Either link to bob for MPICH / ParMetis or see below
+#ln -s ~bob/mpi
+#ln -s /home/bob/ParMetis-3.1
+</span>ln -s /home/bob/petsc-3.1-p8
+
+mkdir -p ~/bin
+<span class="c"># The folder where automated builds will take place
+</span>mkdir -p ~/eclipse/workspace
+
+<span class="c"># Dependency sources go in ~/src
+</span>mkdir -p ~/src
+<span class="nb">cd</span> ~/src
+
+wget https://chaste.cs.ox.ac.uk/trac/raw-attachment/wiki/InstallGuides/NonRootDeveloper/mpich-1.2.7p1.tar.gz
+wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/OLD/ParMetis-3.1.tar.gz
+
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-2.3.2-p4.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-2.3.3-p15.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.0.0-p12.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.1-p8.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.2-p7.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.3-p5.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.4.2.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.5.2.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.6.1.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.7.2.tar.gz
+
+wget http://downloads.sourceforge.net/project/boost/boost/1.37.0/boost_1_37_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.40.0/boost_1_40_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.42.0/boost_1_42_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.46.1/boost_1_46_1.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.48.0/boost_1_48_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.49.0/boost_1_49_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.51.0/boost_1_51_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.56.0/boost_1_56_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.57.0/boost_1_57_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.61.0/boost_1_61_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.62.0/boost_1_62_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.64.0/boost_1_64_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.65.1/boost_1_65_1.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.68.0/boost_1_68_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.69.0/boost_1_69_0.tar.bz2
+wget http://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.bz2
+wget https://dl.bintray.com/boostorg/release/1.71.0/source/boost_1_71_0.tar.bz2
+wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.bz2
+wget https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.bz2
+wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.bz2
+
+wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6.10/src/hdf5-1.6.10.tar.bz2
+wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.9/src/hdf5-1.8.9.tar.bz2
+wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.13/src/hdf5-1.8.13.tar.bz2
+wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/hdf5-1.8.14.tar.bz2
+wget http://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+wget http://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.17/src/hdf5-1.8.17.tar.bz2
+wget http://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.0-patch1/src/hdf5-1.10.0-patch1.tar.bz2
+
+<span class="c"># The mirror site only seems to retain the most recent release, but the archive.apache.org seems to have the lot
+# wget http://mirror.ox.ac.uk/sites/rsync.apache.org/xerces/c/2/sources/xerces-c-src_2_8_0.tar.gz
+# wget http://mirror.ox.ac.uk/sites/rsync.apache.org/xerces/c/3/sources/xerces-c-3.1.1.tar.gz
+</span>wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.2.tar.bz2
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.3.tar.bz2
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.4.tar.bz2
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.0.tar.bz2
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.1.tar.bz2
+wget http://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.2.tar.bz2
+
+wget http://www.codesynthesis.com/download/xsd/2.3/linux-gnu/x86_64/xsd-2.3.1-x86_64-linux-gnu.tar.bz2
+wget http://www.codesynthesis.com/download/xsd/3.1/linux-gnu/x86_64/xsd-3.1.0-x86_64-linux-gnu.tar.bz2
+wget http://www.codesynthesis.com/download/xsd/3.2/linux-gnu/x86_64/xsd-3.2.0-x86_64-linux-gnu.tar.bz2
+wget http://www.codesynthesis.com/download/xsd/3.3/linux-gnu/x86_64/xsd-3.3.0-x86_64-linux-gnu.tar.bz2
+wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+wget https://chaste.cs.ox.ac.uk/public/deps/xsd-setg.patch
+
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-2.5.0.tar.gz
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-2.6.0.tar.gz
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-2.7.0.tar.gz
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-2.8.1.tar.gz
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-2.9.0.tar.gz
+wget https://chaste.cs.ox.ac.uk/public/deps/cvode-3.1.0.tar.gz
+wget https://computing.llnl.gov/projects/sundials/download/cvode-4.1.0.tar.gz
+wget https://computing.llnl.gov/projects/sundials/download/cvode-5.0.0-dev.1.tar.gz
+
+wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz
+wget http://www.vtk.org/files/release/5.10/vtk-5.10.1.tar.gz
+wget http://www.vtk.org/files/release/6.0/vtk-6.0.0.tar.gz
+wget http://www.vtk.org/files/release/6.1/VTK-6.1.0.tar.gz
+wget http://www.vtk.org/files/release/6.2/VTK-6.2.0.tar.gz
+wget https://github.com/Kitware/VTK/archive/v6.3.0.tar.gz
+wget https://github.com/Kitware/VTK/archive/v7.0.0.tar.gz
+wget https://github.com/Kitware/VTK/archive/v7.1.1.tar.gz
+wget https://github.com/Kitware/VTK/archive/v8.0.1.tar.gz
+wget https://github.com/Kitware/VTK/archive/v8.1.1.tar.gz
+wget https://github.com/Kitware/VTK/archive/v8.2.0.tar.gz
+wget https://cmake.org/files/v3.9/cmake-3.9.1.tar.gz
+
+wget http://prdownloads.sourceforge.net/scons/scons-2.4.0.tar.gz
+
+<span class="k">for </span>f in *gz; <span class="k">do </span>tar -zxf <span class="nv">$f</span>; <span class="k">done
+for </span>f in *bz2; <span class="k">do </span>tar -jxf <span class="nv">$f</span>; <span class="k">done</span>
+
+
+<span class="c"># Texttest, for acceptance testing
+</span><span class="nb">cd
+</span>wget http://downloads.sourceforge.net/project/texttest/texttest/3.19/texttest-3.19.zip
+unzip texttest-3.19.zip
+mv texttest-3.19.zip src/
+
+
+<span class="c"># CodeSynthesis XSD
+</span><span class="nb">cd</span> ~/src
+mv xsd-*-linux-gnu ..
+<span class="k">for </span>ver in ~/xsd-3*; <span class="k">do
+    </span><span class="nb">cd</span> <span class="nv">$ver</span>
+    patch -p0 &lt;~/src/xsd-setg.patch
+<span class="k">done</span>
+
+<span class="c"># CMake: cmake &gt; 3.3 was needed to build VTK 8.0, and you can use an older Cmake to build a new one
+</span><span class="nb">cd</span> ~/src/cmake-3.9.1
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/cmake-3.9 . <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+
+
+<span class="c"># CVODE
+</span><span class="nb">cd</span> ~/src
+wget --no-check-certificate https://chaste.cs.ox.ac.uk/cgi-bin/trac.cgi/raw-attachment/wiki/InstallCvode/cvode.patch
+<span class="nb">cd</span> ~/src/cvode-2.5.0/
+patch -p0 &lt; ../cvode.patch 
+./configure --prefix<span class="o">=</span><span class="nv">$HOME</span>/cvode --with-cflags<span class="o">=</span>-O3 --with-fflags<span class="o">=</span>-O3 --disable-mpi --enable-shared <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-2.6.0/
+patch -p0 &lt; ../cvode.patch 
+./configure --prefix<span class="o">=</span><span class="nv">$HOME</span>/cvode_2_6 --with-cflags<span class="o">=</span>-O3 --with-fflags<span class="o">=</span>-O3 --disable-mpi --enable-shared <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-2.7.0/
+patch -p0 &lt; ../cvode.patch 
+./configure --prefix<span class="o">=</span><span class="nv">$HOME</span>/cvode_2_7 --with-cflags<span class="o">=</span>-O3 --with-fflags<span class="o">=</span>-O3 --disable-mpi --enable-shared <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="c"># Note that CVODE 2.8 moved to a CMake build
+</span><span class="nb">cd</span> ~/src/cvode-2.8.1/
+mkdir build
+<span class="nb">cd </span>build
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/home/robert/cvode_2_8 -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DEXAMPLES_ENABLE<span class="o">=</span>OFF ..
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-2.9.0/
+mkdir build
+<span class="nb">cd </span>build
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/home/robert/cvode_2_9 -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DEXAMPLES_ENABLE<span class="o">=</span>OFF ..
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-3.1.0/
+mkdir build
+<span class="nb">cd </span>build
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/home/robert/cvode_3_1 -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DEXAMPLES_ENABLE<span class="o">=</span>OFF ..
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-4.1.0/
+mkdir build
+<span class="nb">cd </span>build
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/home/robert/cvode_4_1 -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DEXAMPLES_ENABLE<span class="o">=</span>OFF ..
+make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/cvode-5.0.0-dev.1/
+mkdir build
+<span class="nb">cd </span>build
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span>/home/robert/cvode_5_0 -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DEXAMPLES_ENABLE<span class="o">=</span>OFF ..
+make <span class="o">&amp;&amp;</span> make install
+
+<span class="c"># MPI - option
+# Note that on userpc58 this is a symbolic link to the bob MPI - see top of script
+</span><span class="nb">cd</span> ~/src/mpich-1.2.7p1
+<span class="nv">CCFLAGS</span><span class="o">=</span>-fPIC <span class="nv">CFLAGS</span><span class="o">=</span>-fPIC  ./configure --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-comm<span class="o">=</span>shared --with-device<span class="o">=</span>ch_shmem --enable-sharedlib --disable-f77
+make
+<span class="nb">cd </span>examples/test/
+make testing
+<span class="nb">cd</span> ../..
+make install
+
+
+<span class="c"># ParMETIS - option
+# Note that on userpc59 this is a symbolic link to the bob ParMETIS - see top of script
+</span><span class="nb">cd</span> ~/src/ParMetis-3.1/
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>
+cp Makefile.in Makefile.in.orig
+sed <span class="s1">'s/mpicc/\/home\/robert\/mpi\/bin\/mpicc/'</span> Makefile.in.orig &gt; Makefile.in 
+make
+<span class="nb">cd
+</span>mv src/ParMetis-3.1 .
+chmod -R a+rX ParMetis-3.1
+
+
+<span class="c"># Boost  : Note that all versions of Boost should be compiled with (at least) C++11.
+# This can be done explicitly (e.g. ./b2 -j 10 cxxflags="-std=c++11" install), but 
+# is now unnecessary as newer GCC use -std=gnu++14 by default
+</span><span class="nb">cd</span> ~/src/boost_1_37_0/
+./configure --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_37 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/boost_1_40_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_40 <span class="o">&amp;&amp;</span> ./bjam -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_42_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_42 <span class="o">&amp;&amp;</span> ./bjam -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_46_1/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_46_1 <span class="o">&amp;&amp;</span> ./bjam -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_48_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_48 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_49_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_49 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_51_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_51 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_53_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_53 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_54_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_54 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_55_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_55 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_56_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_56 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_57_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_57 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_58_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_58 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_59_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_59 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_60_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_60 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_61_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_61 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_62_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_62 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_63_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_63 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+
+<span class="nb">cd</span> ~/src/boost_1_64_0/
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_64 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="c"># Post-installation fix of this Boost (https://github.com/boostorg/serialization/commit/1d86261581230e2dc5d617a9b16287d326f3e229)
+</span>sed -i.bak <span class="s1">'25i\#include &lt;boost/serialization/array_wrapper.hpp&gt;'</span> <span class="nv">$HOME</span>/boost_1_64/include/boost/serialization/array.hpp
+
+<span class="nb">cd</span> ~/src/boost_1_65_1/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_65 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_66_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_66 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_67_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_67 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_68_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_68 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_69_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_69 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_70_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_70 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_71_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_71 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_72_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_72 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_73_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_73 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+<span class="nb">cd</span> ~/src/boost_1_74_0/ <span class="o">&amp;&amp;</span> ./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$HOME</span>/boost_1_74 <span class="o">&amp;&amp;</span> ./b2 -j 10 install
+
+<span class="c"># HDF5
+</span><span class="nb">export </span><span class="nv">OLD_PATH</span><span class="o">=</span><span class="nv">$PATH</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>
+<span class="nb">cd</span> ~/src/hdf5-1.6.10/
+<span class="nb">export </span><span class="nv">CC</span><span class="o">=</span>mpicc 
+./configure --enable-shared --enable-parallel --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/hdf5 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/hdf5-1.8.9/
+./configure --enable-shared --enable-parallel --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/hdf5_1_8_9 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># Note: HDF5 1.8.13 doesn't like the MPICH which is on Ubuntu 14.04 by default.  Installed inside PETSc (see below), and later versions installed after PETSc.
+</span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$OLD_PATH</span>
+<span class="nb">unset </span>CC
+
+
+<span class="c"># Xerces
+</span><span class="nb">cd</span> ~/src/xerces-c-src_2_8_0
+<span class="nb">export </span><span class="nv">XERCESCROOT</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">cd</span> <span class="nv">$XERCESCROOT</span>/src/xercesc
+./runConfigure -plinux -cgcc -xg++ -P<span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_2_8 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+
+<span class="nb">cd</span> ~/src/xerces-c-3.1.1
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_1 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+
+<span class="nb">cd</span> ~/src/xerces-c-3.1.2
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_1_2 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/xerces-c-3.1.3
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_1_3 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/xerces-c-3.1.4
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_1_4 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/xerces-c-3.2.0
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_2_0 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/xerces-c-3.2.1
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_2_1 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/xerces-c-3.2.2
+./configure --enable-netaccessor-socket --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/xercesc_3_2_2 <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> make install
+
+
+<span class="c"># PETSc
+</span><span class="nb">cd</span> ~/src
+mv petsc-<span class="o">[</span>0-9<span class="o">]</span>* ../
+
+<span class="nb">cd</span> ~/petsc-2.3.2-p4/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">unset </span>PETSC_ARCH <span class="c"># Just in case!
+</span>./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> -PETSC_ARCH<span class="o">=</span>linux-gnu --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> -PETSC_ARCH<span class="o">=</span>linux-gnu-opt --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> -PETSC_ARCH<span class="o">=</span>linux-gnu-profile --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span>-pg -CXXFLAGS<span class="o">=</span>-pg -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+./config/configure.py --with-cxx<span class="o">=</span>icpc --with-cc<span class="o">=</span>icc --with-vendor-compiler<span class="o">=</span>intel --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span>  --with-debugging<span class="o">=</span>0 -PETSC_ARCH<span class="o">=</span>linux-intel-opt-mkl --with-clanguage<span class="o">=</span>cxx --with-blas-lapack-dir<span class="o">=</span>/opt/intel/composerxe/mkl/lib/intel64/ --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+
+<span class="nb">cd</span> ~/petsc-2.3.3-p15/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">unset </span>PETSC_ARCH <span class="c"># Just in case!
+</span>./config/configure.py --with-make-np<span class="o">=</span>10 --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> -PETSC_ARCH<span class="o">=</span>linux-gnu --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-debugging<span class="o">=</span>0 -PETSC_ARCH<span class="o">=</span>linux-gnu-opt --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> -PETSC_ARCH<span class="o">=</span>linux-gnu-profile --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span>-pg -CXXFLAGS<span class="o">=</span>-pg -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+
+<span class="nb">cd</span> ~/petsc-3.0.0-p12/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-debugging<span class="o">=</span>0 --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span>-pg -CXXFLAGS<span class="o">=</span>-pg -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+
+<span class="nb">cd</span> ~/petsc-3.1-p8/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-debugging<span class="o">=</span>0 --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --download-c-blas-lapack<span class="o">=</span>1 --with-mpi-dir<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/mpi --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span>-pg -CXXFLAGS<span class="o">=</span>-pg -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+
+<span class="c"># Note: this is dangerous!  Since PETSc has its own MPICH it needs its own HDF5, which will be used in preference to any lofty/_hostconfig specification
+# See e.g. https://chaste.cs.ox.ac.uk/tests.py/testsuite?buildType=_hostconfig,petsc=3-2,hdf5=1-8,boost=1-40,xsd=4-0,cvode=2-7&amp;machine=userpc59.cs.ox.ac.uk&amp;revision=23319&amp;runtime=0&amp;status=OK&amp;testsuite=global-test-TestChasteBuildInfo&amp;timestamp=1420204242.7705&amp;type=nightly which reports using HDF5 1.8.6 (despite 1.8.9 being installed above),
+# and https://chaste.cs.ox.ac.uk/tests.py/testsuite?buildType=_hostconfig,petsc=3-3,hdf5=1-6,boost=1-54,xsd=3-1,cvode=2-7,parmetis=4&amp;machine=userpc59.cs.ox.ac.uk&amp;revision=23315&amp;runtime=0&amp;status=OK&amp;testsuite=global-test-TestChasteBuildInfo&amp;timestamp=1419722101.4278&amp;type=nightly which reports using HDF5 1.8.8.
+</span><span class="nb">cd</span> ~/petsc-3.2-p7/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> ./config/builder.py
+
+<span class="c"># Build HDF5 1.8.13 as a replacement for the HDF5 1.8.6 that PETSc 3.2 would install itself
+</span><span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="nv">$HOME</span>/petsc-3.2-p7
+<span class="nb">cd</span> ~/src/hdf5-1.8.13
+<span class="nv">OLD_PATH</span><span class="o">=</span><span class="nv">$PATH</span>
+<span class="k">for </span>build in linux-gnu linux-gnu-opt linux-gnu-profile ; <span class="k">do
+    </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PETSC_DIR</span>/<span class="nv">$build</span>/bin:<span class="nv">$OLD_PATH</span>
+    <span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$PETSC_DIR</span>/<span class="nv">$build</span>/bin/mpicc
+    <span class="k">if</span> <span class="o">[</span> <span class="nv">$build</span> <span class="o">==</span> <span class="s2">"linux-gnu-profile"</span> <span class="o">]</span> ; <span class="k">then
+        </span><span class="nb">export </span><span class="nv">CFLAGS</span><span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span>
+    <span class="k">else
+        </span><span class="nb">unset </span>CFLAGS
+    <span class="k">fi
+    </span>make clean <span class="o">&amp;&amp;</span> ./configure --enable-parallel --prefix<span class="o">=</span><span class="nv">$PETSC_DIR</span>/<span class="nv">$build</span> <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="k">done
+</span><span class="nb">unset </span>CFLAGS
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$OLD_PATH</span>
+
+<span class="c"># "ParMetis updated to 4.0.2 and split from Metis 5.0.2 which is now separate." on http://www.mcs.anl.gov/petsc/documentation/changes/33.html
+# ParMETIS now requires METIS --download-parmetis=1
+# METIS requires cmake
+</span>
+<span class="c"># As previous (3.2): this is dangerous!
+</span><span class="nb">cd</span> ~/petsc-3.3-p5/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>0 --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> ./config/builder.py
+
+<span class="c">## PETSc 3.4 is used in multiple versions of Ubuntu including 14.04 LTS.  We therefore use this version for optional compilation with HYPRE.
+## NOTE: Compilation with Hypre requires a Fortran compiler.  For Intel compilation it also specifically requires {{{ifort}}} since {{{icpc/gfortran}}} compilation of HDF5 dependency is buggy.
+# As previous (3.2): this is dangerous!
+</span><span class="nb">cd</span> ~/petsc-3.4.2/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>1 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>1 --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-fortran<span class="o">=</span>1 --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> -LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> ./config/builder.py
+<span class="c"># (See above) Remember that Intel compilers require 
+# source /opt/intel/bin/compilervars.sh intel64 ; export INTEL_LICENSE_FILE="28519@flexlm.nsms.ox.ac.uk"
+</span><span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-intel
+./config/configure.py --with-cxx<span class="o">=</span>icpc --with-cc<span class="o">=</span>icc --with-fc<span class="o">=</span>ifort --with-vendor-compiler<span class="o">=</span>intel --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-fortran<span class="o">=</span>1 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-intel-opt-mkl
+./config/configure.py --with-cxx<span class="o">=</span>icpc --with-cc<span class="o">=</span>icc --with-fc<span class="o">=</span>ifort --with-vendor-compiler<span class="o">=</span>intel --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1  --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span>  --with-debugging<span class="o">=</span>0 -PETSC_ARCH<span class="o">=</span>linux-intel-opt-mkl --with-clanguage<span class="o">=</span>cxx --with-blas-lapack-dir<span class="o">=</span>/opt/intel/composerxe/mkl/lib/intel64/ --with-fortran<span class="o">=</span>1 <span class="o">&amp;&amp;</span> ./config/builder.py
+
+
+<span class="nb">cd</span> ~/petsc-3.5.2/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./config/configure.py --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --CXX_CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+
+
+<span class="nb">cd</span> ~/petsc-3.6.1/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-clanguage<span class="o">=</span>cxx --with-shared-libraries --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --CXX_CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+
+
+<span class="nb">cd</span> ~/petsc-3.7.2/
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-shared-libraries <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-shared-libraries --with-debugging<span class="o">=</span>0 <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-profile
+./configure --with-make-np<span class="o">=</span>10 --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-shared-libraries --CFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --CXX_CXXFLAGS<span class="o">=</span><span class="s2">"-fno-omit-frame-pointer -pg"</span> --LDFLAGS<span class="o">=</span>-pg <span class="o">&amp;&amp;</span> make all
+<span class="c"># (See above) Remember that Intel compilers require 
+# source /opt/intel/bin/compilervars.sh intel64 ; export INTEL_LICENSE_FILE="28519@flexlm.nsms.ox.ac.uk"
+</span><span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-intel
+./configure --with-make-np<span class="o">=</span>5 --with-cxx<span class="o">=</span>icpc --with-cc<span class="o">=</span>icc --with-fc<span class="o">=</span>ifort --with-vendor-compilers<span class="o">=</span>intel --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> <span class="o">&amp;&amp;</span> make all
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-intel-opt-mkl
+./configure --with-make-np<span class="o">=</span>5 --with-cxx<span class="o">=</span>icpc --with-cc<span class="o">=</span>icc --with-fc<span class="o">=</span>ifort --with-vendor-compilers<span class="o">=</span>intel --download-mpich<span class="o">=</span>1 --download-hdf5<span class="o">=</span>1 --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1  --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span><span class="nb">false</span> --with-debugging<span class="o">=</span>0 --with-blas-lapack-dir<span class="o">=</span>/opt/intel/composerxe/mkl/lib/intel64/ <span class="o">&amp;&amp;</span> make all
+
+
+<span class="c"># Notes for future PETSc: check the names of options rather than assuming they're the same!
+# Consider setting COPTFLAGS and CXXOPTFLAGS
+</span>
+
+
+<span class="c"># Build HDF5 1.8.16+ using the MPICH from petsc-3.7.2 (above).  This gets around the incompatible default MPICH on Ubuntu 14.04, but is unnecessary on Ubuntu 16.04.
+</span>
+<span class="nb">export </span><span class="nv">OLD_PATH</span><span class="o">=</span><span class="nv">$PATH</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$HOME</span>/petsc-3.7.2/linux-gnu-opt/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>
+<span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$HOME</span>/petsc-3.7.2/linux-gnu-opt/bin/mpicc
+
+<span class="nb">cd</span> ~/src/hdf5-1.8.16
+./configure --enable-shared --enable-parallel --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/hdf5_1_8_16 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/hdf5-1.8.17
+./configure --enable-shared --enable-parallel --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/hdf5_1_8_17 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/src/hdf5-1.10.0-patch1
+./configure --enable-shared --enable-parallel --prefix<span class="o">=</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/hdf5_1_10_0-p1 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$OLD_PATH</span>
+<span class="nb">unset </span>CC
+
+
+<span class="c"># VTK; needs recent CMake to build!
+</span><span class="nb">cd</span> ~/src/cmake-2.8.12.2/
+./bootstrap --prefix<span class="o">=</span><span class="nv">$HOME</span>/cmake --parallel<span class="o">=</span>4 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ~/bin
+<span class="k">for </span>f in ~/cmake/bin/*; <span class="k">do </span>ln -s <span class="nv">$f</span>; <span class="k">done</span>
+
+<span class="c"># Note cmake calls below rely on defaults VTK_BUILD_ALL_MODULES=OFF, BUILD_SHARED_LIBS=ON
+# 5.10: note BUILD_SHARED_LIBS seems to default to OFF for this build, so flag is explicitly added
+# From 6.2 it seems to be necessary to specify CMAKE_INSTALL_RPATH, or certain .so files will not be found.  See #2892.
+</span>
+mkdir ~/src/vtk-build-5.10
+<span class="nb">cd</span> ~/src/vtk-build-5.10
+cmake -DBUILD_SHARED_LIBS<span class="o">=</span>ON -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-5.10 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-5.10/lib/vtk-5.10 ../VTK5.10.1 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 6.0
+</span>mkdir ~/src/vtk-build-6.0
+<span class="nb">cd</span> ~/src/vtk-build-6.0
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.0 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.1/lib ../VTK6.0.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 6.1
+</span>mkdir ~/src/vtk-build-6.1
+<span class="nb">cd</span> ~/src/vtk-build-6.1
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.1 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.1/lib ../VTK-6.1.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 6.2
+</span>mkdir ~/src/vtk-build-6.2
+<span class="nb">cd</span> ~/src/vtk-build-6.2
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.2 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.2/lib ../VTK-6.2.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 6.3
+</span>mkdir ~/src/vtk-build-6.3
+<span class="nb">cd</span> ~/src/vtk-build-6.3
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.3 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-6.3/lib ../VTK-6.3.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 7.0
+</span>mkdir ~/src/vtk-build-7.0
+<span class="nb">cd</span> ~/src/vtk-build-7.0
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-7.0 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-7.0/lib ../VTK-7.0.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 7.1
+</span>mkdir ~/src/vtk-build-7.1
+<span class="nb">cd</span> ~/src/vtk-build-7.1
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-7.1 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-7.1/lib ../VTK-7.1.1 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 8.0 (note - this requires a newer CMake than the system (2.8.12)
+</span>mkdir ~/src/vtk-build-8.0
+<span class="nb">cd</span> ~/src/vtk-build-8.0
+<span class="nv">$HOME</span>/cmake-3.9/bin/cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.0 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.0/lib ../VTK-8.0.1 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+<span class="c"># 8.1 (note - this requires a newer CMake than the system (2.8.12)
+</span>mkdir ~/src/vtk-build-8.1
+<span class="nb">cd</span> ~/src/vtk-build-8.1
+<span class="nv">$HOME</span>/cmake-3.9/bin/cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.1 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.1/lib ../VTK-8.1.1 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+
+<span class="c">###### 8.2 and newer installed since lofty upgrade to Ubuntu 18.04
+# 8.2
+</span>mkdir ~/src/vtk-build-8.2 <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/src/vtk-build-8.2
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.2 -DCMAKE_INSTALL_RPATH<span class="o">=</span><span class="nv">$HOME</span>/vtk-8.2/lib ../VTK-8.2.0 <span class="o">&amp;&amp;</span> make -j10 <span class="o">&amp;&amp;</span> make install
+
+
+<span class="c"># SCons
+</span><span class="nb">cd</span> ~/src/scons-2.4.0
+python setup.py install --prefix<span class="o">=</span><span class="nv">$HOME</span> --no-scons-script
+<span class="c"># Run it with scons-2.4.0, not scons
+</span>
+</pre></div><h2 id="InstallingbundledcombinationsofPETScandHDF5">Installing "bundled" combinations of PETSc and HDF5</h2>
+<pre class="wiki"># Get the PETSc versions
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.6.4.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.7.7.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.8.4.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.9.4.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.10.5.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.11.3.tar.gz
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.12.4.tar.gz
+
+
+# Define variables for downloading dependencies
+MPICH_3_3=https://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz
+MPICH_3_4=https://www.mpich.org/static/downloads/3.4a3/mpich-3.4a3.tar.gz
+HDF5_8_16=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+HDF5_8_21=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.21/src/hdf5-1.8.21.tar.bz2
+HDF5_10_0=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.0-patch1/src/hdf5-1.10.0-patch1.tar.bz2
+HDF5_10_1=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.1/src/hdf5-1.10.1.tar.bz2
+HDF5_10_2=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.2/src/hdf5-1.10.2.tar.bz2
+HDF5_10_3=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.bz2
+HDF5_10_4=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/hdf5-1.10.4.tar.bz2
+HDF5_10_5=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/hdf5-1.10.5.tar.bz2
+
+# Extract PETSc and move to desired directories
+
+# Ubuntu 16.04 default versions
+tar -zxf petsc-lite-3.6.4.tar.gz
+mv petsc-3.6.4 ~/petsc-3.6.4_h5-1_8_16
+
+# Ubuntu 18.04 default versions
+tar -zxf petsc-lite-3.7.7.tar.gz
+mv petsc-3.7.7 ~/petsc-3.7.7_h5-1_10_0
+
+tar -zxf petsc-lite-3.8.4.tar.gz
+mv petsc-3.8.4 ~/petsc-3.8.4_h5-1_8_21
+
+tar -zxf petsc-lite-3.9.4.tar.gz
+mv petsc-3.9.4 ~/petsc-3.9.4_h5-1_10_3
+
+tar -zxf petsc-lite-3.10.5.tar.gz
+mv petsc-3.10.5 ~/petsc-3.10.5_h5-1_10_4
+
+tar -zxf petsc-lite-3.11.3.tar.gz
+mv petsc-3.11.3 ~/petsc-3.11.3_h5-1_10_5
+
+tar -zxf petsc-lite-3.12.4.tar.gz
+mv petsc-3.12.4 ~/petsc-3.12.4_h5-1_10_4
+
+
+cd ~/petsc-3.6.4_h5-1_8_16 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_8_16 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_8_16 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.7.7_h5-1_10_0 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_0 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_0 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.8.4_h5-1_8_21 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_8_21 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_8_21 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.9.4_h5-1_10_3 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_3 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_3 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.10.5_h5-1_10_4 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_4 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_4 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.11.3_h5-1_10_5 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_5 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_3 --download-hdf5=$HDF5_10_5 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+cd ~/petsc-3.12.4_h5-1_10_4 &amp;&amp; export PETSC_DIR=`pwd`
+export PETSC_ARCH=linux-gnu &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-Og --CXXOPTFLAGS=-Og --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_4 --download-hdf5=$HDF5_10_4 --download-parmetis=1 --download-metis=1 --with-shared-libraries &amp;&amp; make all test
+export PETSC_ARCH=linux-gnu-opt &amp;&amp; ./configure --with-make-np=10 --with-cc=gcc --with-cxx=g++ --with-fc=0 --COPTFLAGS=-O3 --CXXOPTFLAGS=-O3 --with-x=false --with-ssl=false --download-f2cblaslapack=1 --download-mpich=$MPICH_3_4 --download-hdf5=$HDF5_10_4 --download-parmetis=1 --download-metis=1 --with-shared-libraries --with-debugging=0 &amp;&amp; make all test
+
+</pre><h2 id="Hostconfigconfiguration">Hostconfig configuration</h2>
+<div class="code"><pre>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="c"># Check which version of Ubuntu this is</span>
+fp <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'/etc/issue'</span><span class="p">)</span>
+ubuntu_ver <span class="o">=</span> fp<span class="o">.</span>read<span class="p">()</span><span class="o">.</span>split<span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+fp<span class="o">.</span>close<span class="p">()</span>
+ubuntu_ver <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> ubuntu_ver<span class="o">.</span>split<span class="p">(</span><span class="s">'.'</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span> 
+
+<span class="c"># We've installed PETSc ourselves, and got it to install OpenMPI, ParMETIS, and HDF5</span>
+petsc_ver <span class="o">=</span> <span class="mf">3.1</span>
+petsc_path <span class="o">=</span> <span class="s">'/home/bob/petsc-3.1-p8/'</span>
+petsc_build_name <span class="o">=</span> <span class="s">'linux-gnu'</span>
+petsc_build_name_profile <span class="o">=</span> <span class="s">'linux-gnu-profile'</span>
+petsc_build_name_optimized <span class="o">=</span> <span class="s">'linux-gnu-opt'</span>
+
+<span class="c"># Intel paths etc.</span>
+petsc_build_name_production <span class="o">=</span> <span class="s">'linux-intel-opt-mkl'</span>
+intel_path <span class="o">=</span> <span class="s">'/opt/intel'</span>
+blas_lapack_production <span class="o">=</span> <span class="p">[</span><span class="s">'mkl_intel_lp64'</span><span class="p">,</span> <span class="s">'mkl_core'</span><span class="p">,</span> <span class="s">'mkl_sequential'</span><span class="p">]</span>
+other_libpaths <span class="o">=</span> <span class="p">[</span>os<span class="o">.</span>path<span class="o">.</span>join<span class="p">(</span>petsc_path<span class="p">,</span> <span class="s">'external_packages'</span><span class="p">,</span> <span class="s">'f2cblaslapack'</span><span class="p">,</span> petsc_build_name<span class="p">),</span> <span class="s">'/opt/intel/composerxe/mkl/lib/intel64'</span><span class="p">]</span>
+
+<span class="c"># Includes should all be under /usr/include or PETSc</span>
+other_includepaths <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># Default extra compiler &amp; linker flags</span>
+ccflags <span class="o">=</span> <span class="s">''</span>
+ldflags <span class="o">=</span> <span class="s">''</span>
+
+<span class="c"># Basic boost libraries we use</span>
+boost_libs <span class="o">=</span> <span class="p">[</span><span class="s">'boost_serialization'</span><span class="p">,</span> <span class="s">'boost_filesystem'</span><span class="p">]</span>
+
+<span class="c"># Add this to enable compression of boost archives</span>
+<span class="c">#boost_libs.append('boost_iostreams')</span>
+<span class="c"># Add an extra flag to tell project that boost_iostreams is available.</span>
+<span class="c"># ccflags+=' -DCHASTE_BOOST_IOSTREAMS '</span>
+
+<span class="k">if</span> ubuntu_ver <span class="o">&gt;=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">]:</span>
+    boost_libs<span class="o">.</span>append<span class="p">(</span><span class="s">'boost_system'</span><span class="p">)</span>
+<span class="k">if</span> ubuntu_ver <span class="o">&gt;=</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span> <span class="ow">and</span> ubuntu_ver <span class="o">&lt;=</span> <span class="p">[</span><span class="mi">12</span><span class="p">,</span><span class="mi">10</span><span class="p">]:</span>
+    boost_libs <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> l<span class="p">:</span> l<span class="o">+</span><span class="s">'-mt'</span><span class="p">,</span> boost_libs<span class="p">)</span>
+
+<span class="c"># Determine installed version of Xerces</span>
+<span class="k">try</span><span class="p">:</span>
+    xerces3 <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>subprocess<span class="o">.</span>check_output<span class="p">([</span><span class="s">'dpkg-query'</span><span class="p">,</span> <span class="s">'-W'</span><span class="p">,</span> <span class="s">'-f'</span><span class="p">,</span> <span class="s">'${version}'</span><span class="p">,</span> <span class="s">'libxerces-c-dev'</span><span class="p">],</span> stderr<span class="o">=</span>subprocess<span class="o">.</span>STDOUT<span class="p">))</span>
+<span class="k">except</span><span class="p">:</span>
+    xerces3 <span class="o">=</span> <span class="bp">False</span>
+<span class="k">if</span> xerces3<span class="p">:</span>
+    <span class="c"># Xerces 3.1</span>
+    xerces_lib <span class="o">=</span> <span class="s">'xerces-c-3.1'</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c"># Xerces 2.8</span>
+    xerces_lib <span class="o">=</span> <span class="s">'xerces-c'</span>
+
+other_libraries <span class="o">=</span> boost_libs <span class="o">+</span> <span class="p">[</span>xerces_lib<span class="p">,</span>
+                                <span class="s">'hdf5'</span><span class="p">,</span> <span class="s">'z'</span><span class="p">,</span>
+                                <span class="s">'parmetis'</span><span class="p">,</span> <span class="s">'metis'</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">MaybeAdd</span><span class="p">(</span>libname<span class="p">,</span> libpath<span class="p">,</span> incpath<span class="p">):</span>
+    found <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> os<span class="o">.</span>path<span class="o">.</span>isdir<span class="p">(</span>libpath<span class="p">)</span> <span class="ow">and</span> os<span class="o">.</span>path<span class="o">.</span>isdir<span class="p">(</span>incpath<span class="p">):</span>
+        other_libraries<span class="o">.</span>append<span class="p">(</span>libname<span class="p">)</span>
+        other_libpaths<span class="o">.</span>append<span class="p">(</span>libpath<span class="p">)</span>
+        other_includepaths<span class="o">.</span>append<span class="p">(</span>incpath<span class="p">)</span>
+        found <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">return</span> found
+
+<span class="c"># Use R if it's available</span>
+<span class="k">if</span> <span class="p">(</span>MaybeAdd<span class="p">(</span><span class="s">'R'</span><span class="p">,</span> <span class="s">'/usr/lib/R'</span><span class="p">,</span> <span class="s">'/usr/share/R/include/'</span><span class="p">)</span> <span class="ow">and</span>
+    MaybeAdd<span class="p">(</span><span class="s">'Rcpp'</span><span class="p">,</span> <span class="s">'/usr/local/lib/R/site-library/Rcpp/lib'</span><span class="p">,</span> <span class="s">'/usr/local/lib/R/site-library/Rcpp/include/'</span><span class="p">)</span> <span class="ow">and</span>
+    MaybeAdd<span class="p">(</span><span class="s">'RInside'</span><span class="p">,</span> <span class="s">'/usr/local/lib/R/site-library/RInside/lib'</span><span class="p">,</span> <span class="s">'/usr/local/lib/R/site-library/RInside/include/'</span><span class="p">)):</span>
+    <span class="c"># Add an extra flag to tell Gary's project that R is available.</span>
+    ccflags<span class="o">+=</span><span class="s">' -DCHASTE_R '</span>
+
+<span class="c"># Figure out which lapack/blas packages are actually installed!</span>
+<span class="k">if</span> os<span class="o">.</span>path<span class="o">.</span>exists<span class="p">(</span><span class="s">'/usr/lib/liblapack-3.so'</span><span class="p">):</span>
+    blas_lapack <span class="o">=</span> <span class="p">[</span><span class="s">'lapack-3'</span><span class="p">,</span> <span class="s">'blas-3'</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    blas_lapack <span class="o">=</span> <span class="p">[</span><span class="s">'lapack'</span><span class="p">,</span> <span class="s">'blas'</span><span class="p">]</span>
+
+tools <span class="o">=</span> <span class="p">{</span><span class="s">'texttest'</span><span class="p">:</span> <span class="s">'../../../texttest-3.19/source/bin/texttest.py'</span><span class="p">,</span>
+         <span class="s">'xsd'</span><span class="p">:</span> <span class="s">'/usr/bin/xsdcxx'</span><span class="p">}</span>
+
+<span class="k">if</span> os<span class="o">.</span>path<span class="o">.</span>exists<span class="p">(</span><span class="s">'/usr/bin/google-pprof'</span><span class="p">):</span>
+    tools<span class="p">[</span><span class="s">'pprof'</span><span class="p">]</span> <span class="o">=</span> <span class="s">'/usr/bin/google-pprof'</span>
+
+do_inf_tests <span class="o">=</span> <span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">Configure</span><span class="p">(</span>prefs<span class="p">,</span> build<span class="p">):</span>
+    <span class="sd">"""Allow the user to specify which version of various libraries we're using."""</span>
+    <span class="kn">import</span> <span class="nn">socket</span>
+    <span class="k">if</span> socket<span class="o">.</span>getfqdn<span class="p">()</span><span class="o">.</span>startswith<span class="p">(</span><span class="s">'scoop'</span><span class="p">):</span>
+        BASE <span class="o">=</span> <span class="s">'/home/lofty/'</span>
+    <span class="k">else</span><span class="p">:</span>
+        BASE <span class="o">=</span> <span class="s">'/home/robert/'</span>
+
+    <span class="k">if</span> build<span class="o">.</span>CompilerType<span class="p">()</span> <span class="o">==</span> <span class="s">'intel'</span><span class="p">:</span>
+        <span class="c"># Might need a different PETSc build name!</span>
+        <span class="k">global</span> petsc_build_name<span class="p">,</span> petsc_build_name_optimized
+        petsc_build_name <span class="o">=</span> <span class="s">'linux-intel'</span>
+        petsc_build_name_optimized <span class="o">=</span> <span class="s">'linux-intel'</span>
+
+    <span class="c"># PETSc</span>
+    <span class="k">global</span> petsc_path
+    <span class="k">global</span> petsc_3_0_path
+    <span class="k">global</span> petsc_2_3_path
+    external_packages <span class="o">=</span> <span class="s">'externalpackages'</span>
+    <span class="c"># We default to PETSc 3.1 as above (see hostconfig.py) if present for this user</span>
+    prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">=</span> prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'petsc'</span><span class="p">,</span> <span class="s">'3.1'</span><span class="p">)</span>
+    petsc_ver <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span><span class="o">.</span>split<span class="p">(</span><span class="s">'.'</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="c"># Note: these paths assume that PETSc 3.2 and above have their own MPI, 3.1 was built with the system MPI, and earlier versions used BASE/mpi</span>
+    <span class="k">if</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.6'</span><span class="p">:</span>
+        petsc_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.6.1'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.5'</span><span class="p">:</span>
+        petsc_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.5.2'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.4'</span><span class="p">:</span>
+        petsc_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.4.2'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.3'</span><span class="p">:</span>
+        petsc_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.3-p5'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.2'</span><span class="p">:</span>
+        petsc_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.2-p7'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.1'</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span>petsc_path <span class="o">==</span> <span class="s">'/home/bob/petsc-3.1-p8/'</span><span class="p">)</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.0'</span><span class="p">:</span>
+        petsc_3_0_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-3.0.0-p12'</span>
+        petsc_path <span class="o">=</span> petsc_3_0_path
+        tools<span class="p">[</span><span class="s">'mpicxx'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpicxx'</span>
+        tools<span class="p">[</span><span class="s">'mpirun'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpirun'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.3.3'</span><span class="p">:</span>
+        petsc_2_3_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-2.3.3-p15'</span> <span class="c">#For testing SUBMINOR=3</span>
+        petsc_path <span class="o">=</span> petsc_2_3_path
+        tools<span class="p">[</span><span class="s">'mpicxx'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpicxx'</span>
+        tools<span class="p">[</span><span class="s">'mpirun'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpirun'</span>
+    <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.3'</span><span class="p">:</span>
+        petsc_2_3_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'petsc-2.3.2-p4'</span>
+        petsc_path <span class="o">=</span> petsc_2_3_path
+        tools<span class="p">[</span><span class="s">'mpicxx'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpicxx'</span>
+        tools<span class="p">[</span><span class="s">'mpirun'</span><span class="p">]</span> <span class="o">=</span> BASE<span class="o">+</span><span class="s">'mpi/bin/mpirun'</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'Unsupported PETSc version "</span><span class="si">%s</span><span class="s">" requested'</span> <span class="o">%</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">])</span>
+
+    <span class="k">if</span> petsc_ver <span class="o">&gt;=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]:</span>
+        <span class="c"># Add a path to the local version of h5dump for acceptance testing</span>
+        <span class="c"># h5dump should have the correct indentation (currently 1.8.10 or above) and the binary should match with any LD_LIBRARY_PATH .so files</span>
+        binpath <span class="o">=</span> os<span class="o">.</span>path<span class="o">.</span>join<span class="p">(</span>petsc_path<span class="p">,</span> petsc_build_name<span class="p">,</span> <span class="s">'bin'</span><span class="p">)</span>
+        <span class="k">assert</span> os<span class="o">.</span>path<span class="o">.</span>isdir<span class="p">(</span>binpath<span class="p">)</span>
+        os<span class="o">.</span>environ<span class="p">[</span><span class="s">'PATH'</span><span class="p">]</span> <span class="o">=</span> binpath <span class="o">+</span> <span class="s">':'</span> <span class="o">+</span> os<span class="o">.</span>environ<span class="p">[</span><span class="s">'PATH'</span><span class="p">]</span>
+
+    <span class="k">if</span> build<span class="o">.</span>is_optimised<span class="p">:</span>
+        build_name <span class="o">=</span> petsc_build_name_optimized
+    <span class="k">else</span><span class="p">:</span>
+        build_name <span class="o">=</span> petsc_build_name
+    <span class="c"># This assumes that other_libpaths starts with a location (might be fake) to a PETSc external packages location</span>
+    <span class="k">assert</span> <span class="s">'f2cblaslapack'</span> <span class="ow">in</span> other_libpaths<span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    other_libpaths<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> os<span class="o">.</span>path<span class="o">.</span>join<span class="p">(</span>petsc_path<span class="p">,</span> external_packages<span class="p">,</span> <span class="s">'f2cblaslapack'</span><span class="p">,</span> build_name<span class="p">)</span>
+
+    <span class="c"># Boost library version</span>
+    installed_boost <span class="o">=</span> subprocess<span class="o">.</span>check_output<span class="p">([</span><span class="s">'dpkg-query'</span><span class="p">,</span> <span class="s">'-W'</span><span class="p">,</span> <span class="s">'-f'</span><span class="p">,</span> <span class="s">'${version}'</span><span class="p">,</span> <span class="s">'libboost-serialization-dev'</span><span class="p">],</span> stderr<span class="o">=</span>subprocess<span class="o">.</span>STDOUT<span class="p">)[:</span><span class="mi">4</span><span class="p">]</span>
+    prefs<span class="p">[</span><span class="s">'boost'</span><span class="p">]</span> <span class="o">=</span> prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'boost'</span><span class="p">,</span> installed_boost<span class="p">)</span>
+    <span class="k">if</span> prefs<span class="p">[</span><span class="s">'boost'</span><span class="p">]</span> <span class="o">!=</span> installed_boost<span class="p">:</span>
+        boost_dir <span class="o">=</span> BASE<span class="o">+</span><span class="s">'boost_'</span> <span class="o">+</span> prefs<span class="p">[</span><span class="s">'boost'</span><span class="p">]</span><span class="o">.</span>replace<span class="p">(</span><span class="s">'.'</span><span class="p">,</span> <span class="s">'_'</span><span class="p">)</span>
+        <span class="k">if</span> os<span class="o">.</span>path<span class="o">.</span>isdir<span class="p">(</span>boost_dir<span class="p">):</span>
+            AddBoost<span class="p">(</span>boost_dir<span class="p">,</span> prefs<span class="p">[</span><span class="s">'boost'</span><span class="p">],</span> forceUseSystem<span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'Unsupported Boost version "</span><span class="si">%s</span><span class="s">" requested'</span> <span class="o">%</span> prefs<span class="p">[</span><span class="s">'boost'</span><span class="p">])</span>
+
+    <span class="c"># HDF5.  Note that sometimes this is installed by PETSc, and so this setting will be ignored!</span>
+    <span class="k">if</span> <span class="s">'hdf5'</span> <span class="ow">in</span> prefs<span class="p">:</span>
+        <span class="k">if</span> prefs<span class="p">[</span><span class="s">'hdf5'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'1.8'</span><span class="p">:</span>
+            AddHdf5<span class="p">(</span>BASE<span class="o">+</span><span class="s">'hdf5_1_8_9/'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'hdf5'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'1.8.13'</span><span class="p">:</span>
+            <span class="k">assert</span> prefs<span class="p">[</span><span class="s">'petsc'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.2'</span><span class="p">,</span> <span class="s">'HDF5 1.8.13 is only available with PETSc 3.2'</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'hdf5'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'1.6'</span><span class="p">:</span>
+            AddHdf5<span class="p">(</span>BASE<span class="o">+</span><span class="s">'hdf5/'</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'Unsupported HDF5 version "</span><span class="si">%s</span><span class="s">" requested'</span> <span class="o">%</span> prefs<span class="p">[</span><span class="s">'hdf5'</span><span class="p">])</span>
+
+    <span class="c"># Xerces</span>
+    <span class="k">if</span> <span class="s">'xerces'</span> <span class="ow">in</span> prefs<span class="p">:</span>
+        <span class="k">if</span> prefs<span class="p">[</span><span class="s">'xerces'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.8'</span> <span class="ow">and</span> xerces3<span class="p">:</span>
+            AddXerces<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xercesc_2_8'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'xerces'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.1'</span> <span class="ow">and</span> <span class="ow">not</span> xerces3<span class="p">:</span>
+            AddXerces<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xercesc_3_1'</span><span class="p">)</span>
+
+    <span class="c"># XSD</span>
+    <span class="c">#installed_xsd = subprocess.check_output(['dpkg-query', '-W', '-f', '${version}', 'xsdcxx'], stderr=subprocess.STDOUT)[:3]</span>
+    <span class="k">if</span> <span class="s">'xsd'</span> <span class="ow">in</span> prefs<span class="p">:</span>
+        <span class="k">if</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'4.0'</span><span class="p">:</span>
+            AddXsd<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xsd-4.0.0-x86_64-linux-gnu'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.3'</span><span class="p">:</span>
+            AddXsd<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xsd-3.3.0-x86_64-linux-gnu'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.2'</span><span class="p">:</span>
+            AddXsd<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xsd-3.2.0-x86_64-linux-gnu'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'3.1'</span><span class="p">:</span>
+            AddXsd<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xsd-3.1.0-x86_64-linux-gnu'</span><span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.3'</span><span class="p">:</span>
+            AddXsd<span class="p">(</span>BASE<span class="o">+</span><span class="s">'xsd-2.3.1-x86_64-linux-gnu'</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'Unsupported XSD version "</span><span class="si">%s</span><span class="s">" requested'</span> <span class="o">%</span> prefs<span class="p">[</span><span class="s">'xsd'</span><span class="p">])</span>
+
+    <span class="c"># Parmetis.  We often don't switch the libraries explicitly for this, since Parmetis 4 is obtained via PETSc 3.3, and Parmetis 3 by PETSc 3.1 &amp; 3.2.</span>
+    <span class="c"># Instead we check that the requested PETSc version is suitable.</span>
+    <span class="k">if</span> petsc_ver <span class="o">&lt;=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+        prefs<span class="p">[</span><span class="s">'parmetis'</span><span class="p">]</span> <span class="o">=</span> prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'parmetis'</span><span class="p">,</span> <span class="s">'3'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">'parmetis'</span> <span class="ow">in</span> prefs<span class="p">:</span>
+        <span class="k">global</span> ccflags
+        parmetis <span class="o">=</span> prefs<span class="p">[</span><span class="s">'parmetis'</span><span class="p">]</span>
+        ccflags <span class="o">+=</span> <span class="s">' -DCHASTE_PARMETIS_REQUIRED='</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>parmetis<span class="p">)</span>
+        <span class="k">if</span> parmetis <span class="o">==</span> <span class="s">'3'</span> <span class="ow">and</span> petsc_ver <span class="o">&gt;=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'To use ParMETIS 2 you must install it using an older PETSc (&lt;= 3.2)'</span><span class="p">)</span>
+        <span class="k">if</span> parmetis <span class="o">==</span> <span class="s">'4'</span> <span class="ow">and</span> petsc_ver <span class="o">&lt;</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'To use ParMETIS 4 you must install it using a recent PETSc (&gt;= 3.3)'</span><span class="p">)</span>
+        <span class="k">if</span> parmetis <span class="o">==</span> <span class="s">'3'</span> <span class="ow">and</span> petsc_ver <span class="o">&lt;=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+            other_includepaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'ParMetis-3.1'</span><span class="p">)</span>
+            other_libpaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'ParMetis-3.1'</span><span class="p">)</span>
+
+    <span class="c"># Determine the version of CVODE to be used</span>
+    <span class="k">global</span> use_cvode
+    use_cvode <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'use-cvode'</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> use_cvode<span class="p">:</span>
+        <span class="k">if</span> <span class="s">'cvode'</span> <span class="ow">not</span> <span class="ow">in</span> prefs<span class="p">:</span>
+            cvode_path <span class="o">=</span> <span class="s">'/usr/'</span> <span class="c"># Use the system installation</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'cvode'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.5'</span><span class="p">:</span>
+            cvode_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'cvode'</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'cvode'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.6'</span><span class="p">:</span>
+            cvode_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'cvode_2_6'</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'cvode'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.7'</span><span class="p">:</span>
+                cvode_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'cvode_2_7'</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'cvode'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'2.8'</span><span class="p">:</span>
+            <span class="k">if</span> os<span class="o">.</span>path<span class="o">.</span>exists<span class="p">(</span><span class="s">'/opt/cvode-libs'</span><span class="p">)</span> <span class="ow">and</span> build<span class="o">.</span>CompilerType<span class="p">()</span> <span class="o">==</span> <span class="s">'intel'</span><span class="p">:</span>
+                <span class="c"># CVODE 2.8.1 (Sundials 2.6.1) specially downloaded and compiled with intel optimisations on this machine,</span>
+                <span class="c"># these shared libraries link to intel libraries, so need to have intel paths set up to work...</span>
+                <span class="c"># N.B. we needed to hack the CMakeLists.txt slightly to get the version reported correctly - see #2479 for a copy.</span>
+                cvode_path <span class="o">=</span> <span class="s">'/opt/cvode-libs'</span>
+            <span class="k">else</span><span class="p">:</span>
+                cvode_path <span class="o">=</span> BASE<span class="o">+</span><span class="s">'cvode_2_8'</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'Unsupported CVODE version "</span><span class="si">%s</span><span class="s">" requested'</span> <span class="o">%</span> prefs<span class="p">[</span><span class="s">'cvode'</span><span class="p">])</span>
+        cvode_inc <span class="o">=</span> os<span class="o">.</span>path<span class="o">.</span>join<span class="p">(</span>cvode_path<span class="p">,</span> <span class="s">'include'</span><span class="p">)</span>
+        DetermineCvodeVersion<span class="p">(</span>cvode_inc<span class="p">)</span>
+        <span class="k">if</span> cvode_path <span class="o">!=</span> <span class="s">'/usr/'</span><span class="p">:</span>
+            other_includepaths<span class="o">.</span>append<span class="p">(</span>cvode_inc<span class="p">)</span>
+            other_libpaths<span class="o">.</span>append<span class="p">(</span>os<span class="o">.</span>path<span class="o">.</span>join<span class="p">(</span>cvode_path<span class="p">,</span> <span class="s">'lib'</span><span class="p">))</span>
+        other_libraries<span class="o">.</span>extend<span class="p">([</span><span class="s">'sundials_cvode'</span><span class="p">,</span> <span class="s">'sundials_nvecserial'</span><span class="p">])</span>
+
+    <span class="c"># Extra libraries for VTK output</span>
+    <span class="k">global</span> use_vtk
+    use_vtk <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'use-vtk'</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> use_vtk<span class="p">:</span>
+        prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">]</span> <span class="o">=</span> prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'vtk'</span><span class="p">,</span> <span class="s">'5'</span><span class="p">)</span>
+        <span class="k">if</span> prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">'6'</span><span class="p">:</span>
+            vtk_ver <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">]</span><span class="o">.</span>split<span class="p">(</span><span class="s">'.'</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+            subst <span class="o">=</span> <span class="p">{</span><span class="s">'v'</span><span class="p">:</span> prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">]}</span>
+            other_includepaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'vtk-</span><span class="si">%(v)s</span><span class="s">/include/vtk-</span><span class="si">%(v)s</span><span class="s">'</span> <span class="o">%</span> subst<span class="p">)</span>
+            other_libpaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'vtk-</span><span class="si">%(v)s</span><span class="s">/lib'</span> <span class="o">%</span> subst<span class="p">)</span>
+            vtk_libs <span class="o">=</span> <span class="p">[</span><span class="s">'CommonCore'</span><span class="p">,</span><span class="s">'CommonDataModel'</span><span class="p">,</span><span class="s">'IOXML'</span><span class="p">,</span><span class="s">'IOGeometry'</span><span class="p">,</span><span class="s">'CommonExecutionModel'</span><span class="p">,</span><span class="s">'FiltersCore'</span><span class="p">,</span><span class="s">'FiltersGeometry'</span><span class="p">,</span><span class="s">'FiltersModeling'</span><span class="p">,</span><span class="s">'FiltersSources'</span><span class="p">]</span>
+            <span class="k">if</span> vtk_ver <span class="o">&gt;=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">]:</span>
+                vtk_libs<span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">'IOParallelXML'</span><span class="p">]</span>
+            vtk_libs <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> l<span class="p">:</span> <span class="s">'vtk'</span> <span class="o">+</span> l <span class="o">+</span> <span class="s">'-'</span> <span class="o">+</span> prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">],</span> vtk_libs<span class="p">)</span>
+            other_libraries<span class="o">.</span>extend<span class="p">(</span>vtk_libs<span class="p">)</span>
+        <span class="k">elif</span> prefs<span class="p">[</span><span class="s">'vtk'</span><span class="p">]</span> <span class="o">==</span> <span class="s">'5.10'</span><span class="p">:</span>
+            other_includepaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'vtk-5.10/include/vtk-5.10'</span><span class="p">)</span>
+            other_libpaths<span class="o">.</span>append<span class="p">(</span>BASE<span class="o">+</span><span class="s">'vtk-5.10/lib/vtk-5.10'</span><span class="p">)</span>
+            other_libraries<span class="o">.</span>extend<span class="p">([</span><span class="s">'vtkGraphics'</span><span class="p">,</span><span class="s">'vtkFiltering'</span><span class="p">,</span><span class="s">'vtkIO'</span><span class="p">,</span><span class="s">'vtkCommon'</span><span class="p">,</span> <span class="s">'vtksys'</span><span class="p">,</span> <span class="s">'vtkexpat'</span><span class="p">,</span> <span class="s">'vtkzlib'</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            vtk_include_path <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span>os<span class="o">.</span>path<span class="o">.</span>isdir<span class="p">,</span> glob<span class="o">.</span>glob<span class="p">(</span><span class="s">'/usr/include/vtk-5*'</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>vtk_include_path<span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">"No or multiple system headers for VTK 5 found"</span><span class="p">)</span>
+            vtk_version <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>vtk_include_path<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span>split<span class="p">(</span><span class="s">'-'</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            other_includepaths<span class="o">.</span>append<span class="p">(</span>vtk_include_path<span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            other_libraries<span class="o">.</span>extend<span class="p">([</span><span class="s">'vtkIO'</span><span class="p">,</span><span class="s">'vtkGraphics'</span><span class="p">,</span><span class="s">'vtkCommon'</span><span class="p">,</span> <span class="s">'z'</span><span class="p">])</span>
+            <span class="k">if</span> vtk_version <span class="o">&gt;=</span> <span class="mf">5.6</span><span class="p">:</span>
+                other_libraries<span class="o">.</span>append<span class="p">(</span><span class="s">'vtkFiltering'</span><span class="p">)</span>
+
+    <span class="c"># Check that adaptivity is NOT requested, as it is no longer supported (#2367)</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span>prefs<span class="o">.</span>get<span class="p">(</span><span class="s">'use-adaptivity'</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">'The adaptivity library is no longer supported (see ticket:2367)'</span><span class="p">)</span>
+
+    <span class="c"># Support for GoogleProfile build</span>
+    <span class="k">if</span> build<span class="o">.</span>build_dir <span class="o">==</span> <span class="s">'google_profile'</span><span class="p">:</span>
+        other_libraries<span class="o">.</span>extend<span class="p">([</span><span class="s">'profiler'</span><span class="p">])</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

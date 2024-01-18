@@ -1,0 +1,292 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/EclipsePlugins - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingEclipsePlugins">Installing Eclipse Plugins</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#InstallingEclipsePlugins">Installing Eclipse Plugins</a>
+    <ol>
+      <li>
+        <a href="#GitVersionControlPlugin">Git Version Control Plugin</a>
+        <ol>
+          <li>
+            <a href="#GitpluginEGitonUbuntu">Git plugin (EGit) on Ubuntu</a>
+          </li>
+          <li>
+            <a href="#OnothersystemsorifyouwantnewerversiononUbuntu">On other systems (or if you want newer version on Ubuntu)</a>
+          </li>
+          <li>
+            <a href="#UsingEGit">Using EGit</a>
+            <ol>
+              <li>
+                <a href="#Changingcredentials">Changing credentials</a>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#OptionalPlugins">Optional Plugins</a>
+        <ol>
+          <li>
+            <a href="#MakeEclipserunthecurrentlyopentest">Make Eclipse run the currently open test</a>
+          </li>
+          <li>
+            <a href="#PyDev">PyDev</a>
+          </li>
+          <li>
+            <a href="#oXygenXMLeditor">oXygen XML editor</a>
+          </li>
+          <li>
+            <a href="#CMakeLists.txteditor">CMakeLists.txt editor</a>
+          </li>
+          <li>
+            <a href="#CellMLmetadataediting">CellML metadata editing</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#OldSVNInstructionsforEclipseGanymedeonwardsandsomeuserprojects">Old SVN Instructions (for Eclipse Ganymede onwards, and some user projects)</a>
+        <ol>
+          <li>
+            <a href="#Subversionsupport:subclipse">Subversion support: subclipse</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#InstallingpluginsinCLPCmachinesOxfordDept.ofComputerScienceonly">Installing plugins in CLPC machines (Oxford Dept. of Computer Science only)</a>
+      </li>
+      <li>
+        <a href="#EvenOlderInstructions">Even Older Instructions</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+See also <a class="wiki" href="/trac/wiki/SetupEclipse">SetupEclipse</a> (for user settings once plugins are installed).
+</p>
+<h2 id="GitVersionControlPlugin">Git Version Control Plugin</h2>
+<p>
+EGit is the official Eclipse Git plugin: <a class="ext-link" href="http://www.eclipse.org/egit"><span class="icon">​</span>http://www.eclipse.org/egit</a>
+</p>
+<h3 id="GitpluginEGitonUbuntu">Git plugin (EGit) on Ubuntu</h3>
+<ol><li>Installation <tt>sudo apt-get install eclipse-egit</tt>
+</li></ol><h3 id="OnothersystemsorifyouwantnewerversiononUbuntu">On other systems (or if you want newer version on Ubuntu)</h3>
+<ol><li>Use the <tt>Install New Software</tt> menu option inside Eclipse, and add
+<pre class="wiki">http://download.eclipse.org/egit/updates
+</pre></li></ol><p>
+as a remote update site. 
+</p>
+<p>
+<strong>N.B. this only works</strong> if you have a relatively up to date version of eclipse, you might need to use <a class="ext-link" href="http://wiki.eclipse.org/EGit/FAQ#Where_can_I_find_older_releases_of_EGit.3F"><span class="icon">​</span>older update sites for of EGit</a> to work with <a class="ext-link" href="https://wiki.eclipse.org/EGit/FAQ#What_versions_of_Eclipse_does_EGit_target.3F"><span class="icon">​</span>older versions of eclipse</a>.
+</p>
+<h3 id="UsingEGit">Using EGit</h3>
+<ol><li>Re-start eclipse
+</li><li>Open perspective: <tt> Window -&gt; Open Perspective -&gt; Other -&gt; Git Repository Exploring </tt>
+</li><li>Clone: select "Clone a Git Repository and add the clone to this view" with <tt>https://chaste.cs.ox.ac.uk/git/chaste.git</tt>
+</li><li>You might want to store your Chaste username/password at this point (if you are on your own private machine)
+</li><li>You might want to only toggle the <tt>develop</tt> branch
+</li><li>Select destination directory within the eclipse workspace: $HOME/eclipse/workspace/Chaste or similar.  (If you want to reuse the old location for the Chaste code then make sure that you move/erase it from Eclipse.)
+</li><li>(Back in the Git repository explorer) Select "Import Projects -&gt; Import as existing projects"<del>
+</del></li><li>Switch to C/C++ perspective
+</li></ol><p>
+Notes:
+</p>
+<ul><li><tt>git commit</tt> is on Team -&gt; Commit (or CTRL-#)
+</li><li><tt>git push</tt> is on Team -&gt; Push to Upstream.
+<ul><li>If you don't have username set or you are attempting to push into the wrong place (MASTER) then you don't get a helpful message and it's not easy to reconfigure.  If this is the case, then drop to the command line.
+</li></ul></li><li>There's problem with the symlinks in app/texttest/weekly.  This is a known bug which has <a class="ext-link" href="https://bugs.eclipse.org/bugs/show_bug.cgi?id=334137#c2"><span class="icon">​</span>workaround</a>.
+</li></ul><h4 id="Changingcredentials">Changing credentials</h4>
+<p>
+EGit seems to be incapable of prompting for username/password when it doesn't have it. <strong>I've no idea how we can manage this is we're to use it for paired-programming.</strong>
+Store your credentials:
+</p>
+<ol><li>In the Git repository explorer open "Remotes -&gt; origin -&gt; red arrowed url -&gt; Change credentials"
+</li><li>Enter new username/password
+</li><li>You need to store this permanently with a master password.  If you get <tt>No secure storage modules found.</tt> then go "Window -&gt; Preferences -&gt; General -&gt; Security -&gt; Secure storage" and in "Password" tab ensure that "UI Prompt" is toggled. 
+</li></ol><h2 id="OptionalPlugins">Optional Plugins</h2>
+<p>
+These aren't essential for Chaste development, but are very useful for editing some of the non-C++ files.
+</p>
+<h3 id="MakeEclipserunthecurrentlyopentest">Make Eclipse run the currently open test</h3>
+<p>
+You may also want to set this up <a class="wiki" href="/trac/wiki/MakeEclipseBuildTheTestThatIsOpen">MakeEclipseBuildTheTestThatIsOpen</a>.
+</p>
+<h3 id="PyDev">PyDev</h3>
+<p>
+There is a plugin for python development, called PyDev.  The remote site is at <a class="ext-link" href="http://pydev.org/updates"><span class="icon">​</span>http://pydev.org/updates</a>
+</p>
+<p>
+To use it you need to go to Window-&gt;Preferences and expand the Pydev section.
+</p>
+<ul><li>You'll want to change at least the 'Interpreter - Python' subsection to add a new interpreter /usr/bin/python.
+</li><li>Check the 'Pydev-&gt;Editor' settings to make sure you're using spaces not tabs.
+</li><li>It's also worth going to 'General-&gt;Editors-&gt;File Associations', adding File types 'SConscript' and 'SConstruct', and associating the Python Editor with them.
+</li></ul><p>
+Also go to Project-&gt;Properties, select the "PyDev - PYTHONPATH" section, and Add source folder "Chaste/python". This will enable more static checking of Python code.
+</p>
+<h3 id="oXygenXMLeditor">oXygen XML editor</h3>
+<p>
+This is very helpful for editing XML schemas and parameters files.  It can be downloaded as a separate Java program from <a class="ext-link" href="http://www.oxygenxml.com"><span class="icon">​</span>http://www.oxygenxml.com</a>, and an eclipse plugin is available for newer eclipse versions (follow instructions as for subclipse above, but use the remote site <a class="ext-link" href="http://www.oxygenxml.com/InstData/Author/Eclipse/site.xml"><span class="icon">​</span>http://www.oxygenxml.com/InstData/Author/Eclipse/site.xml</a>) <a class="ext-link" href="http://www.oxygenxml.com/doc/ug-authorEclipse/#tasks/installation-instructions-eclipse-update-site.html"><span class="icon">​</span>some more instructions here</a>.  Oxford has a site licence, available from <a class="ext-link" href="https://register.oucs.ox.ac.uk/self/software"><span class="icon">​</span>https://register.oucs.ox.ac.uk/self/software</a>, which should cover the latest version.
+</p>
+<h3 id="CMakeLists.txteditor">CMakeLists.txt editor</h3>
+<p>
+Install <a class="ext-link" href="http://cmakeed.sourceforge.net/"><span class="icon">​</span>CMakeEd</a> to get syntax highlighting and context-sensitive help for editing CMakeLists.txt files.  The update site is <tt>http://master.dl.sourceforge.net/project/cmakeed/eclipse/site.xml</tt>
+</p>
+<h3 id="CellMLmetadataediting">CellML metadata editing</h3>
+<p>
+These plugins are useful for editing <a class="ext-link" href="https://github.com/ModellingWebLab/ontologies/blob/master/oxford-metadata.rdf"><span class="icon">​</span>oxford-metadata.ttl</a>.
+</p>
+<p>
+See <a class="ext-link" href="https://github.com/AKSW/Xturtle/wiki/Installation"><span class="icon">​</span>Xturtle installation instructions</a>. You may need to use the update site <tt>https://cdn.rawgit.com/AKSW/Xturtle/gh-pages/site.xml</tt> for Xturtle itself - their non-oomph instructions look a little out of date! You also need <tt>http://download.eclipse.org/modeling/tmf/xtext/updates/composite/releases/</tt> for Xtext Redistributable.
+</p>
+<p>
+You may need to update preferences General -&gt; Editors -&gt; File Associations to associate .ttl files with the Xturtle Editor by default.
+</p>
+<h2 id="OldSVNInstructionsforEclipseGanymedeonwardsandsomeuserprojects">Old SVN Instructions (for Eclipse Ganymede onwards, and some user projects)</h2>
+<p>
+You can also download eclipse with support for C++ already set up. To check if your Eclipse has C++ support look for "<tt>Window-&gt;Open Perspective-&gt;C/C++</tt>". If this menu option is missing (it might be just hiding in the "<tt>Window-&gt;Open Perspective-&gt;Other...</tt>" section, this is fine) then follow the instructions for installing the CDT plugin at the bottom of this page first. If you do have a C++ perspective you don't need 'CDT' and you can continue with this section.
+</p>
+<p>
+If your Eclipse is new enough to have the Eclipse Marketplace feature, then that provides an easier installation route for many plugins (including subclipse, subversive &amp; pydev). Go to Help -&gt; Eclipse Marketplace...
+</p>
+<h3 id="Subversionsupport:subclipse">Subversion support: subclipse</h3>
+<p>
+<strong>Edit Nov 2012:</strong> It appears that Eclipse's official SVN plugin (<a class="ext-link" href="http://www.eclipse.org/subversive/documentation/gettingStarted/aboutSubversive/install.php"><span class="icon">​</span>subversive</a>) works fine too, and may be supported better in the future. Below are instructions for the old plugin, subclipse.
+</p>
+<p>
+Note that official instructions for this can be found at <a class="ext-link" href="http://subclipse.tigris.org/servlets/ProjectProcess?pageID=p4wYuA"><span class="icon">​</span>http://subclipse.tigris.org/servlets/ProjectProcess?pageID=p4wYuA</a>
+</p>
+<p>
+Before you start go to the terminal and type in "<tt>svn --version</tt>", make a note of the version number!
+</p>
+<p>
+On Ubuntu (14.04) before installing the subclipse plugins it's worth first installing.
+</p>
+<pre class="wiki">sudo apt-get install libsvn-java
+</pre><p>
+If you  don't install this and then attempt to connect to an SVN repository, you will get errors about libsvnjavahl not being in the Java search path.
+<strong>Do not be tempted</strong> to install the Ubuntu eclipse-subclipse package because it has a history of requiring an older version of Subversion than the one provided in the distribution.
+</p>
+<p>
+From the menu: "<tt>Help-&gt;Install New Software</tt>". Next to the "<tt>Work With</tt>" box press "<tt>Add</tt>".
+</p>
+<p>
+Type in:
+</p>
+<ul><li>Name=subclipse
+</li><li>URL=<a class="ext-link" href="http://subclipse.tigris.org/update_1.0.x"><span class="icon">​</span>http://subclipse.tigris.org/update_1.0.x</a> (if your command line <tt>svn --version</tt> is 1.4.whatever or lower)
+</li><li>OR URL=<a class="ext-link" href="http://subclipse.tigris.org/update_1.4.x"><span class="icon">​</span>http://subclipse.tigris.org/update_1.4.x</a> (if your command line <tt>svn --version</tt> is 1.5.whatever)
+</li><li>OR URL=<a class="ext-link" href="http://subclipse.tigris.org/update_1.6.x"><span class="icon">​</span>http://subclipse.tigris.org/update_1.6.x</a> (if your command line <tt>svn --version</tt> is 1.6.whatever)
+</li><li>OR URL=<a class="ext-link" href="http://subclipse.tigris.org/update_1.8.x"><span class="icon">​</span>http://subclipse.tigris.org/update_1.8.x</a> (if your command line <tt>svn --version</tt> is 1.7.whatever)
+</li><li>OR URL=<a class="ext-link" href="http://subclipse.tigris.org/update_1.10.x"><span class="icon">​</span>http://subclipse.tigris.org/update_1.10.x</a> (if your command line <tt>svn --version</tt> is 1.8.whatever)
+</li></ul><p>
+NB - you do put "<tt>.x</tt>" at the end and don't match it to your svn version! All of the above seem to work with eclipse 3.2 onwards.
+</p>
+<p>
+Click on the small triangles to the left of the sites to expand the lists and Tick:
+</p>
+<ul><li>Subclipse 
+</li></ul><p>
+Click "<tt>Next</tt>" and accept the license agreements and click "<tt>Next</tt>" and then "<tt>Finish</tt>". Next click "<tt>Install</tt>". Restart your Workbench.
+</p>
+<p>
+(If you get errors, the Nov 15th 2011 reply on <a class="ext-link" href="http://ubuntuforums.org/showthread.php?t=1765338"><span class="icon">​</span>this page</a> may be useful). 
+</p>
+<p>
+You should now have an extra menu "Team" when right clicking files in the <a class="missing wiki">Navigator/Project?</a> Explorer that lets you do SVN operations, like update, commit etc. 
+</p>
+<p>
+Follow <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a> (and <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/CheckoutUserProject.html">InstallGuides/CheckoutUserProject</a> if needed).
+</p>
+<h2 id="InstallingpluginsinCLPCmachinesOxfordDept.ofComputerScienceonly">Installing plugins in CLPC machines (Oxford Dept. of Computer Science only)</h2>
+<p>
+The version of Eclipse installed in CLPC machines (Fedora Eclipse) doesn't seem to like the previous way of installing plugins.
+</p>
+<p>
+An alternative is to use yum:
+</p>
+<pre class="wiki">sudo yum install eclipse-subclipse
+sudo yum install eclipse-cdt-sdk
+</pre><h2 id="EvenOlderInstructions">Even Older Instructions</h2>
+<p>
+Historial note: for older installations you had to be root the first time you installed Eclipse plugins:
+</p>
+<pre class="wiki">su -
+eclipse
+</pre><p>
+or
+</p>
+<pre class="wiki">sudo eclipse
+</pre><p>
+Nowadays Eclipse can install plugins happily in your HOME folder.
+</p>
+<p>
+Install the following plugins by following the directions below:
+</p>
+<ul><li>CDT 3.1.1
+</li><li>Subclipse 1.0.3
+</li></ul><p>
+From the menu: Help-&gt;Software Updates-&gt;Find and Install
+</p>
+<p>
+Click Search for new features to install
+</p>
+<p>
+Click New Remote Site and Enter:
+</p>
+<ul><li>Name=CDT
+</li><li>URL=download.eclipse.org/tools/cdt/releases/callisto
+</li></ul><p>
+Repeat the above 3 steps with:
+</p>
+<ul><li>Name=subclipse
+</li><li>URL=subclipse.tigris.org/update_1.0.x (if your command line <tt>svn --version</tt> is 1.4.whatever or lower)
+</li><li>OR URL=subclipse.tigris.org/update_1.4.x (if your command line <tt>svn --version</tt> is 1.5.whatever)
+</li><li>OR URL=subclipse.tigris.org/update_1.6.x (if your command line <tt>svn --version</tt> is 1.6.whatever)
+</li></ul><p>
+NB - you do put "<tt>.x</tt>" at the end and don't match it to your svn version!. All of the above seem to work with eclipse 3.2 onwards.
+</p>
+<p>
+Click on the small triangles to the left of the sites to expand the lists and Tick:
+</p>
+<ul><li>CDT Main (or CDT Tool-Chain in some versions)
+</li><li>Subclipse 
+</li></ul><p>
+Click Next and accept the license agreements and click Next and then Finish.
+</p>
+<p>
+Next click Install 
+</p>
+<p>
+Restart your Workbench (or logout if you're installing as root).
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

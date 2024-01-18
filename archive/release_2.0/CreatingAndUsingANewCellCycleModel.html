@@ -1,0 +1,656 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> CreatingAndUsingANewCellCycleModel tutorial file </h1>      </div>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/cgi-bin/trac.cgi/wiki/UserTutorials">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CreatingAndUsingANewCellCycleModel" href="/cgi-bin/trac.cgi/wiki/UserTutorials/CreatingAndUsingANewCellCycleModel">CreatingAndUsingANewCellCycleModel</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingAndUsingANewCellCycleModelTutorial.hpp at revision <a class="missing changeset">r8343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcellcyclemodelanduseitinatissuesimulation">An example showing how to create a new cell cycle model and use it in a tissue simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how to create a new cell cycle model class and how this
+can be used in a tissue simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+The first thing to do is include the following header, which allows us
+to use certain methods in our test (this header file should be included
+in any Chaste test):
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+</pre></div><p>
+The next two headers are used in archiving, and only need to be included
+if you want to be able to archive (save or load) the new cell killer object
+in a tissue simulation (in this case, these headers must be included before
+any other serialisation headers). 
+</p>
+<div class="code"><pre>#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+</pre></div><p>
+The next header defines a base class for simple generation-based cell
+cycle models.
+A cell cycle model is 'simple' if the duration of each phase of the cell
+cycle is determined when the cell cycle model is created, rather than
+evaluated 'on the fly' (e.g. by solving a system of ordinary differential
+equations for the concentrations of key cell cycle proteins), and may
+depend on the cell type.
+A simple cell cycle model is generation-based if it keeps track of the
+generation of the corresponding cell, and sets the cell type according
+to this.
+Our new cell cycle model will inherit from this abstract class. 
+</p>
+<div class="code"><pre>#include "AbstractSimpleGenerationBasedCellCycleModel.hpp"
+</pre></div><p>
+The remaining header files define classes that will be used in the tissue
+simulation test: <tt>CheckReadyToDivideAndPhaseIsUpdated</tt> defines a helper
+class for testing a cell cycle model; <tt>HoneycombMeshGenerator</tt> defines
+a helper class for generating a suitable mesh; <tt>WildTypeCellMutationState</tt>
+defines a wild-type or 'healthy' cell mutation state; <tt>GeneralisedLinearSpringForce</tt>
+defines a force law for describing the mechanical interactions between neighbouring
+cells in the tissue; and <tt>TissueSimulation</tt> defines the class that
+simulates the evolution of the tissue. 
+</p>
+<div class="code"><pre>#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "TissueSimulation.hpp"
+</pre></div><h2 id="Definingthecellcyclemodelclass">Defining the cell cycle model class</h2>
+<p>
+As an example, let us consider a cell cycle model in which the durations
+of S, G2 and M phases are fixed, but the duration of G1 phase is an exponential
+random variable with rate parameter lambda.
+The rate parameter is a constant, dependent on cell type, whose value is
+chosen such that the mean of the distribution, 1/lambda, equals the mean
+G1 duration as defined in the <tt>TissueConfig</tt> singleton class.
+To implement this model we define a new cell cycle model, <tt>MyCellCycleModel</tt>,
+which inherits from <tt>AbstractSimpleGenerationBasedCellCycleModel</tt> and
+overrides the <tt>SetG1Duration()</tt> method.
+</p>
+<div class="code"><pre>class MyCellCycleModel : public AbstractSimpleGenerationBasedCellCycleModel
+{
+private:
+</pre></div><p>
+You only need to include the next block of code if you want to be able
+to archive (save or load) the cell cycle model object in a tissue simulation.
+The code consists of a serialize method, in which we first archive the cell
+cycle model using the serialization code defined in the base class
+<tt>AbstractSimpleGenerationBasedCellCycleModel</tt>. We then archive an instance
+of the <tt>RandomNumberGenerator</tt> singleton class, which is used in the
+<tt>SetG1Duration()</tt> method. Note that serialization of singleton objects
+must be done with care. Before the object is serialized via a pointer, it must
+be serialized directly, or an assertion will trip when a second instance of the
+class is created on de-serialization. 
+</p>
+<div class="code"><pre>    friend class boost::serialization::access;
+    template&lt;class Archive&gt;
+    void serialize(Archive &amp; archive, const unsigned int version)
+    {
+        archive &amp; boost::serialization::base_object&lt;AbstractSimpleGenerationBasedCellCycleModel&gt;(*this);
+        RandomNumberGenerator* p_gen = RandomNumberGenerator::Instance();
+        archive &amp; *p_gen;
+        archive &amp; p_gen;
+    }
+</pre></div><p>
+We override the <tt>SetG1Duration()</tt> method as follows. 
+</p>
+<div class="code"><pre>    void SetG1Duration()
+    {
+</pre></div><p>
+As we will access the cell type of the cell associated with this cell
+cycle model, we should assert that this cell exists. 
+</p>
+<div class="code"><pre>        assert(mpCell != NULL);
+</pre></div><p>
+We now set the G1 duration based on cell type.
+For stem and transit cells, we use the <tt>RandomNumberGenerator</tt>
+singleton class to generate a random number U drawn from U<a class="missing source">[0,1]</a>, and
+transform this into a random number T drawn from Exp(lambda) using
+the transformation T = -log(U)/lambda.
+For differentiated cells, which do not progress through the
+cell cycle, we set the G1 duration to <tt>DBL_MAX</tt>. 
+</p>
+<div class="code"><pre>        double uniform_random_number = RandomNumberGenerator::Instance()-&gt;ranf();
+        switch (mpCell-&gt;GetCellProliferativeType())
+        {
+            case STEM:
+                mG1Duration = -log(uniform_random_number)*TissueConfig::Instance()-&gt;GetStemCellG1Duration();
+                break;
+            case TRANSIT:
+                mG1Duration = -log(uniform_random_number)*TissueConfig::Instance()-&gt;GetTransitCellG1Duration();
+                break;
+            case DIFFERENTIATED:
+                mG1Duration = DBL_MAX;
+                break;
+            default:
+                NEVER_REACHED;
+        }
+    }
+</pre></div><p>
+The first public method is a default constructor, which just calls the base
+constructor. 
+</p>
+<div class="code"><pre>public:
+    MyCellCycleModel()
+    {}
+</pre></div><p>
+The second public method overrides <tt>CreateCellCycleModel()</tt>. This is a
+builder method to create new copies of the cell cycle model. 
+</p>
+<div class="code"><pre>    AbstractCellCycleModel* CreateCellCycleModel()
+    {
+        return new MyCellCycleModel(*this);
+    }
+};
+</pre></div><p>
+You only need to include the next block of code if you want to be able to
+archive (save or load) the cell cycle model object in a tissue simulation. 
+</p>
+<div class="code"><pre>#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyCellCycleModel)
+</pre></div><p>
+This completes the code for <tt>MyCellCycleModel</tt>. Note that usually this code would
+be separated out into a separate declaration in a .hpp file and definition in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre>class TestCreatingAndUsingANewCellCycleModelTutorial : public CxxTest::TestSuite
+{
+public:
+</pre></div><h2 id="Testingthecellcyclemodel">Testing the cell cycle model</h2>
+<p>
+We begin by testing that our new cell cycle model is implemented correctly.
+</p>
+<div class="code"><pre>    void TestMyCellCycleModel() throw(Exception)
+    {
+</pre></div><p>
+We must first set the start time. In addition, it is advisable to reset
+the values of all model parameters. Recall that <tt>SimulationTime</tt> and
+<tt>TissueConfig</tt> are <i>singleton</i> classes; this means one and only
+one of each of these objects is instantiated at any time, and that single
+object is accessible from anywhere in the code. As a result, we do not need
+to keep passing round the current time or model parameter values. 
+</p>
+<div class="code"><pre>        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+</pre></div><p>
+Test that we can construct a <tt>MyCellCycleModel</tt> object: 
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING(MyCellCycleModel cell_model3);
+</pre></div><p>
+Now construct and initialise a large number of <tt>MyCellCycleModel</tt>s and
+associated cells: 
+</p>
+<div class="code"><pre>        unsigned num_cells = 1e5;
+        std::vector&lt;TissueCell&gt; cells;
+        boost::shared_ptr&lt;AbstractCellMutationState&gt; p_state(new WildTypeCellMutationState);
+        for (unsigned i=0; i&lt;num_cells; i++)
+        {
+            MyCellCycleModel* p_cell_cycle_model = new MyCellCycleModel;
+            TissueCell cell(STEM, p_state, p_cell_cycle_model);
+            cell.InitialiseCellCycleModel();
+            cells.push_back(cell);
+        }
+</pre></div><p>
+Find the mean G1 duration and test that it is within some tolerance of
+the expected value: 
+</p>
+<div class="code"><pre>        double expected_mean_g1_duration = TissueConfig::Instance()-&gt;GetStemCellG1Duration();
+        double sample_mean_g1_duration = 0.0;
+        for (unsigned i=0; i&lt;num_cells; i++)
+        {
+            sample_mean_g1_duration += cells[i].GetCellCycleModel()-&gt;GetG1Duration()/ (double) num_cells;
+        }
+        TS_ASSERT_DELTA(sample_mean_g1_duration, expected_mean_g1_duration, 0.1);
+</pre></div><p>
+Now construct another <tt>MyCellCycleModel</tt> and associated cell. 
+</p>
+<div class="code"><pre>        MyCellCycleModel* p_my_model = new MyCellCycleModel;
+        TissueCell my_cell(TRANSIT, p_state, p_my_model);
+        my_cell.InitialiseCellCycleModel();
+</pre></div><p>
+Use the helper method <tt>CheckReadyToDivideAndPhaseIsUpdated()</tt> to
+test that this cell progresses correctly through the cell cycle. 
+</p>
+<div class="code"><pre>        unsigned num_steps = 100;
+        double mean_cell_cycle_time = TissueConfig::Instance()-&gt;GetStemCellG1Duration()
+                                        + TissueConfig::Instance()-&gt;GetSG2MDuration();
+        SimulationTime::Instance()-&gt;SetEndTimeAndNumberOfTimeSteps(mean_cell_cycle_time, num_steps);
+        for (unsigned i=0; i&lt;num_steps; i++)
+        {
+            SimulationTime::Instance()-&gt;IncrementTimeOneStep();
+</pre></div><p>
+The numbers for the G1 duration below is taken from the first
+random number generated: 
+</p>
+<div class="code"><pre>            CheckReadyToDivideAndPhaseIsUpdated(p_my_model, 1.18892);
+        }
+</pre></div><p>
+Lastly, we briefly test that archiving of <tt>MyCellCycleModel</tt> has
+been implemented correctly. Create an <tt>OutputFileHandler</tt> and use
+this to define a filename for the archive. 
+</p>
+<div class="code"><pre>        OutputFileHandler handler("archive", false);
+        std::string archive_filename = handler.GetOutputDirectoryFullPath() + "my_cell_cycle_model.arch";
+</pre></div><p>
+Create an output archive. 
+</p>
+<div class="code"><pre>        {
+</pre></div><p>
+Destroy the current instance of <tt>SimulationTime</tt> and create another instance.
+Set the start time, end time and number of time steps. 
+</p>
+<div class="code"><pre>            SimulationTime::Destroy();
+            SimulationTime::Instance()-&gt;SetStartTime(0.0);
+            SimulationTime* p_simulation_time = SimulationTime::Instance();
+            p_simulation_time-&gt;SetEndTimeAndNumberOfTimeSteps(3.0, 4);
+</pre></div><p>
+Create a cell with associated cell cycle model. 
+</p>
+<div class="code"><pre>            MyCellCycleModel* p_model = new MyCellCycleModel;
+            TissueCell cell(TRANSIT, p_state, p_model);
+            cell.InitialiseCellCycleModel();
+</pre></div><p>
+Move forward two time steps. 
+</p>
+<div class="code"><pre>            p_simulation_time-&gt;IncrementTimeOneStep();
+            p_simulation_time-&gt;IncrementTimeOneStep();
+</pre></div><p>
+Set the birth time of the cell and update the cell cycle phase. 
+</p>
+<div class="code"><pre>            p_model-&gt;SetBirthTime(-1.0);
+            p_model-&gt;ReadyToDivide();
+            TS_ASSERT_EQUALS(p_model-&gt;GetCurrentCellCyclePhase(), S_PHASE);
+</pre></div><p>
+Now archive the cell cycle model through its cell. 
+</p>
+<div class="code"><pre>            TissueCell* const p_cell = &amp;cell;
+            std::ofstream ofs(archive_filename.c_str());
+            boost::archive::text_oarchive output_arch(ofs);
+            output_arch &lt;&lt; p_cell;
+        }
+</pre></div><p>
+Now create an input archive. Begin by again destroying the current
+instance of <tt>SimulationTime</tt> and creating another instance. Set
+the start time, end time and number of time steps. 
+</p>
+<div class="code"><pre>        {
+            SimulationTime::Destroy();
+            SimulationTime* p_simulation_time = SimulationTime::Instance();
+            p_simulation_time-&gt;SetStartTime(0.0);
+            p_simulation_time-&gt;SetEndTimeAndNumberOfTimeSteps(1.0, 1);
+</pre></div><p>
+Create a pointer to a cell. 
+</p>
+<div class="code"><pre>            TissueCell* p_cell;
+</pre></div><p>
+Create an input archive and restore the cell from the archive. 
+</p>
+<div class="code"><pre>            std::ifstream ifs(archive_filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive input_arch(ifs);
+            input_arch &gt;&gt; p_cell;
+</pre></div><p>
+Test that the private data has been restored correctly. 
+</p>
+<div class="code"><pre>            AbstractCellCycleModel* p_model = p_cell-&gt;GetCellCycleModel();
+            TS_ASSERT_DELTA(p_model-&gt;GetBirthTime(), -1.0, 1e-12);
+            TS_ASSERT_DELTA(p_model-&gt;GetAge(), 2.5, 1e-12);
+            TS_ASSERT_EQUALS(p_model-&gt;GetCurrentCellCyclePhase(), S_PHASE);
+</pre></div><p>
+To avoid memory leaks, destroy the pointer to the cell. 
+</p>
+<div class="code"><pre>            delete p_cell;
+        }
+</pre></div><p>
+<tt>SimulationTime::Destroy()</tt> <strong>must</strong> be called at the end of the test.
+If not, when <tt>SimulationTime::Instance()-&gt;SetStartTime(0.0);</tt> is called
+at the beginning of the next test in this file, an assertion will be triggered. 
+</p>
+<div class="code"><pre>        SimulationTime::Destroy();
+</pre></div><p>
+Also call <tt>Destroy()</tt> on the <tt>RandomNumberGenerator</tt> singleton class. 
+</p>
+<div class="code"><pre>        RandomNumberGenerator::Destroy();
+    }
+</pre></div><h2 id="Usingthecellcyclemodelinatissuesimulation">Using the cell cycle model in a tissue simulation</h2>
+<p>
+We conclude with a brief test demonstrating how <tt>MyCellCycleModel</tt> can be used
+in a tissue simulation.
+</p>
+<div class="code"><pre>    void TestTissueSimulationWithMyCellCycleModel() throw(Exception)
+    {
+</pre></div><p>
+The first thing to do, as before, is to set up the start time and
+reset the parameters. 
+</p>
+<div class="code"><pre>        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh covering a
+circular domain of given radius.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator(10, 10, 0, false);
+</pre></div><p>
+Get the mesh using the <tt>GetCircularMesh()</tt> method. 
+</p>
+<div class="code"><pre>        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetCircularMesh(5);
+</pre></div><p>
+Next, we create some cells. First, define the cells vector. 
+</p>
+<div class="code"><pre>        std::vector&lt;TissueCell&gt; cells;
+</pre></div><p>
+Then we loop over the nodes. 
+</p>
+<div class="code"><pre>        boost::shared_ptr&lt;AbstractCellMutationState&gt; p_state(new WildTypeCellMutationState);
+        for (unsigned i=0; i&lt;p_mesh-&gt;GetNumNodes(); i++)
+        {
+</pre></div><p>
+For each node we create a cell with our cell cycle model. 
+</p>
+<div class="code"><pre>            TissueCell cell(STEM, p_state, new MyCellCycleModel);
+</pre></div><p>
+Now, we define a random birth time, chosen from [-T,0], where
+T = t<sub>1</sub> + t<sub>2</sub>, where t<sub>1</sub> is a parameter representing the G<sub>1</sub> duration
+of a stem cell, and t<sub>2</sub> is the basic S+G<sub>2</sub>+M phases duration.
+</p>
+<div class="code"><pre>            double birth_time = - RandomNumberGenerator::Instance()-&gt;ranf() *
+                                    (TissueConfig::Instance()-&gt;GetStemCellG1Duration()
+                                        + TissueConfig::Instance()-&gt;GetSG2MDuration());
+</pre></div><p>
+We then set the birth time and push the cell back into the vector of cells. 
+</p>
+<div class="code"><pre>            cell.SetBirthTime(birth_time);
+            cells.push_back(cell);
+        }
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the tissue. The constructor
+takes in the mesh and the cells vector. 
+</p>
+<div class="code"><pre>        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of
+the tissue. For this test, we assume that a cell experiences a force from each
+neighbour that can be represented as a linear overdamped spring, and so use
+a <tt>GeneralisedLinearSpringForce</tt> object. We pass a pointer to this force
+into a vector. Note that we have called the method <tt>UseCutoffPoint</tt> on the
+<tt>GeneralisedLinearSpringForce</tt> before passing it into the collection of force
+laws - this modifies the force law so that two neighbouring cells do not impose
+a force on each other if they are located more than 3 units (=3 cell widths)
+away from each other. This modification is necessary when no ghost nodes are used,
+for example to avoid artificially large forces between cells that lie close together
+on the tissue boundary.
+</p>
+<div class="code"><pre>        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+</pre></div><p>
+We pass in the tissue and the mechanics system into a <tt>TissueSimulation</tt>.
+</p>
+<div class="code"><pre>        TissueSimulation&lt;2&gt; simulator(tissue, force_collection);
+</pre></div><p>
+We set the output directory and end time. 
+</p>
+<div class="code"><pre>        simulator.SetOutputDirectory("TestTissueSimulationWithMyCellCycleModel");
+        simulator.SetEndTime(10.0);
+</pre></div><p>
+Test that the Solve() method does not throw any exceptions. 
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+</pre></div><p>
+Finally, call <tt>Destroy()</tt> on the singleton classes. 
+</p>
+<div class="code"><pre>        SimulationTime::Destroy();
+        RandomNumberGenerator::Destroy();
+    }
+};
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+
+#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+
+#include "AbstractSimpleGenerationBasedCellCycleModel.hpp"
+#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "TissueSimulation.hpp"
+
+class MyCellCycleModel : public AbstractSimpleGenerationBasedCellCycleModel
+{
+private:
+
+    friend class boost::serialization::access;
+    template&lt;class Archive&gt;
+    void serialize(Archive &amp; archive, const unsigned int version)
+    {
+        archive &amp; boost::serialization::base_object&lt;AbstractSimpleGenerationBasedCellCycleModel&gt;(*this);
+        RandomNumberGenerator* p_gen = RandomNumberGenerator::Instance();
+        archive &amp; *p_gen;
+        archive &amp; p_gen;
+    }
+
+    void SetG1Duration()
+    {
+        assert(mpCell != NULL);
+
+        double uniform_random_number = RandomNumberGenerator::Instance()-&gt;ranf();
+
+        switch (mpCell-&gt;GetCellProliferativeType())
+        {
+            case STEM:
+                mG1Duration = -log(uniform_random_number)*TissueConfig::Instance()-&gt;GetStemCellG1Duration();
+                break;
+            case TRANSIT:
+                mG1Duration = -log(uniform_random_number)*TissueConfig::Instance()-&gt;GetTransitCellG1Duration();
+                break;
+            case DIFFERENTIATED:
+                mG1Duration = DBL_MAX;
+                break;
+            default:
+                NEVER_REACHED;
+        }
+    }
+
+public:
+
+    MyCellCycleModel()
+    {}
+
+    AbstractCellCycleModel* CreateCellCycleModel()
+    {
+        return new MyCellCycleModel(*this);
+    }
+};
+
+#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyCellCycleModel)
+
+class TestCreatingAndUsingANewCellCycleModelTutorial : public CxxTest::TestSuite
+{
+public:
+
+    void TestMyCellCycleModel() throw(Exception)
+    {
+        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+
+        TS_ASSERT_THROWS_NOTHING(MyCellCycleModel cell_model3);
+
+        unsigned num_cells = 1e5;
+        std::vector&lt;TissueCell&gt; cells;
+        boost::shared_ptr&lt;AbstractCellMutationState&gt; p_state(new WildTypeCellMutationState);
+        for (unsigned i=0; i&lt;num_cells; i++)
+        {
+            MyCellCycleModel* p_cell_cycle_model = new MyCellCycleModel;
+            TissueCell cell(STEM, p_state, p_cell_cycle_model);
+            cell.InitialiseCellCycleModel();
+            cells.push_back(cell);
+        }
+
+        double expected_mean_g1_duration = TissueConfig::Instance()-&gt;GetStemCellG1Duration();
+        double sample_mean_g1_duration = 0.0;
+
+        for (unsigned i=0; i&lt;num_cells; i++)
+        {
+            sample_mean_g1_duration += cells[i].GetCellCycleModel()-&gt;GetG1Duration()/ (double) num_cells;
+        }
+
+        TS_ASSERT_DELTA(sample_mean_g1_duration, expected_mean_g1_duration, 0.1);
+
+        MyCellCycleModel* p_my_model = new MyCellCycleModel;
+        TissueCell my_cell(TRANSIT, p_state, p_my_model);
+        my_cell.InitialiseCellCycleModel();
+
+        unsigned num_steps = 100;
+        double mean_cell_cycle_time = TissueConfig::Instance()-&gt;GetStemCellG1Duration()
+                                        + TissueConfig::Instance()-&gt;GetSG2MDuration();
+
+        SimulationTime::Instance()-&gt;SetEndTimeAndNumberOfTimeSteps(mean_cell_cycle_time, num_steps);
+
+        for (unsigned i=0; i&lt;num_steps; i++)
+        {
+            SimulationTime::Instance()-&gt;IncrementTimeOneStep();
+
+            CheckReadyToDivideAndPhaseIsUpdated(p_my_model, 1.18892);
+        }
+
+        OutputFileHandler handler("archive", false);
+        std::string archive_filename = handler.GetOutputDirectoryFullPath() + "my_cell_cycle_model.arch";
+
+        {
+            SimulationTime::Destroy();
+            SimulationTime::Instance()-&gt;SetStartTime(0.0);
+            SimulationTime* p_simulation_time = SimulationTime::Instance();
+            p_simulation_time-&gt;SetEndTimeAndNumberOfTimeSteps(3.0, 4);
+
+            MyCellCycleModel* p_model = new MyCellCycleModel;
+            TissueCell cell(TRANSIT, p_state, p_model);
+            cell.InitialiseCellCycleModel();
+
+            p_simulation_time-&gt;IncrementTimeOneStep();
+            p_simulation_time-&gt;IncrementTimeOneStep();
+
+            p_model-&gt;SetBirthTime(-1.0);
+            p_model-&gt;ReadyToDivide();
+
+            TS_ASSERT_EQUALS(p_model-&gt;GetCurrentCellCyclePhase(), S_PHASE);
+
+            TissueCell* const p_cell = &amp;cell;
+
+            std::ofstream ofs(archive_filename.c_str());
+            boost::archive::text_oarchive output_arch(ofs);
+            output_arch &lt;&lt; p_cell;
+        }
+
+        {
+            SimulationTime::Destroy();
+            SimulationTime* p_simulation_time = SimulationTime::Instance();
+            p_simulation_time-&gt;SetStartTime(0.0);
+            p_simulation_time-&gt;SetEndTimeAndNumberOfTimeSteps(1.0, 1);
+
+            TissueCell* p_cell;
+
+            std::ifstream ifs(archive_filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive input_arch(ifs);
+
+            input_arch &gt;&gt; p_cell;
+
+            AbstractCellCycleModel* p_model = p_cell-&gt;GetCellCycleModel();
+
+            TS_ASSERT_DELTA(p_model-&gt;GetBirthTime(), -1.0, 1e-12);
+            TS_ASSERT_DELTA(p_model-&gt;GetAge(), 2.5, 1e-12);
+            TS_ASSERT_EQUALS(p_model-&gt;GetCurrentCellCyclePhase(), S_PHASE);
+
+            delete p_cell;
+        }
+
+        SimulationTime::Destroy();
+        RandomNumberGenerator::Destroy();
+    }
+
+    void TestTissueSimulationWithMyCellCycleModel() throw(Exception)
+    {
+        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+
+        HoneycombMeshGenerator generator(10, 10, 0, false);
+        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetCircularMesh(5);
+
+        std::vector&lt;TissueCell&gt; cells;
+        boost::shared_ptr&lt;AbstractCellMutationState&gt; p_state(new WildTypeCellMutationState);
+        for (unsigned i=0; i&lt;p_mesh-&gt;GetNumNodes(); i++)
+        {
+            TissueCell cell(STEM, p_state, new MyCellCycleModel);
+
+            double birth_time = - RandomNumberGenerator::Instance()-&gt;ranf() *
+                                    (TissueConfig::Instance()-&gt;GetStemCellG1Duration()
+                                        + TissueConfig::Instance()-&gt;GetSG2MDuration());
+            cell.SetBirthTime(birth_time);
+            cells.push_back(cell);
+        }
+
+        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+
+        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+
+        TissueSimulation&lt;2&gt; simulator(tissue, force_collection);
+
+        simulator.SetOutputDirectory("TestTissueSimulationWithMyCellCycleModel");
+        simulator.SetEndTime(10.0);
+
+        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+        SimulationTime::Destroy();
+        RandomNumberGenerator::Destroy();
+    }
+};
+
+</pre></div>
+        
+        
+      </div>

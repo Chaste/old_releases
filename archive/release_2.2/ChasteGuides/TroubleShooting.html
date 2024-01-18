@@ -1,0 +1,353 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/TroubleShooting - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.2/">Release 2.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/TroubleShooting" href="/chaste/tutorials/release_2.2/ChasteGuides/TroubleShooting.html">TroubleShooting</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Troubleshooting">Troubleshooting</h1>
+<p>
+This pages stores a list of common problem and issues that occasionally crop up, together with their solutions. Please update problems and solutions if needed, and add new problems as they crop up.
+</p>
+<p>
+<h4>Table of Contents</h4><ol><li><a href="#Troubleshooting">Troubleshooting</a></li><li>
+<a href="#ChasteRunningTests">Chaste (Running Tests)</a><ol><li><a href="#Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</a></li><li>
+<a href="#Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</a></li><li>
+<a href="#Strangeerroraboutsemgetandsetnum">Strange error about semget and setnum</a></li><li>
+<a href="#Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling &hellip;</a></li><li>
+<a href="#AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</a></li></ol></li><li>
+<a href="#Sconserrors">Scons errors</a><ol><li><a href="#NoSConstructfilefound">No SConstruct file found</a></li><li>
+<a href="#IndexError:stringindexoutofrange">IndexError: string index out of range</a></li><li>
+<a href="#Founddependencycycles">"Found dependency cycle(s)"</a></li></ol></li><li>
+<a href="#PyCmlerrors">PyCml errors</a><ol><li><a href="#ConfigurationError:Notransmembranepotentialfoundcheckyourconfiguration">ConfigurationError: No transmembrane potential found; check your &hellip;</a></li><li>
+<a href="#ConfigurationError:NostimuluscurrentfoundyoullhavetroublegeneratingChastecode">ConfigurationError: No stimulus current found; you'll have trouble &hellip;</a></li><li>
+<a href="#TranslationError:CannotconvertioniccurrentfromampstouAcm2withoutknowingwhichvariableinthecellmodelrepresentsthemembranecapacitance">TranslationError: Cannot convert ionic current from amps to uA/cm<sup>2</sup> &hellip;</a></li></ol></li><li>
+<a href="#Compilationandlinkingerrors">Compilation and linking errors</a><ol><li><a href="#Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it &hellip;</a></li><li>
+<a href="#GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be &hellip;</a></li><li>
+<a href="#Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</a></li><li>
+<a href="#AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error &hellip;</a></li><li>
+<a href="#Error:voidYOUR_TEST_CLASS::YOUR_TEST_METHODisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</a></li><li>
+<a href="#Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingboostnumericublasmatrix.hpp">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if &hellip;</a></li><li>
+<a href="#GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</a></li><li>
+<a href="#Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  &hellip;</a></li><li>
+<a href="#Boostserializationvector.hpp">Boost/serialization/vector.hpp</a></li><li>
+<a href="#glibcdetectedfree:invalidpointer">glibc detected free(): invalid pointer</a></li><li>
+<a href="#Invalidapplicationofsizeoftoincompletetypeboost::STATIC_ASSERTION_FAILUREfalse">Invalid application of 'sizeof' to incomplete type &hellip;</a></li><li>
+<a href="#functiondefinitiondoesnotdeclareparameters">"function definition does not declare parameters"</a></li><li>
+<a href="#error:expectedprimary-expressionbeforetoken">"error: expected primary-expression before '&gt;' token"</a></li></ol></li></ol>
+</p>
+<h1 id="ChasteRunningTests">Chaste (Running Tests)</h1>
+<h2 id="Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</h2>
+<p>
+Add <tt>throw (Exception)</tt> after the method declaration in the failing test, i.e.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestSomething<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// test
+</span>    <span class="p">}</span>
+</pre></div><h2 id="Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</h2>
+<p>
+If, in a terminal, you are in an output directory, and rerun a test that involves that directory being wiped and recreated, the terminal might act as if there's nothing in the directory, i.e. an <tt>ls</tt> displays no files. Just <tt>cd</tt> out and back into the directory again.
+</p>
+<h2 id="Strangeerroraboutsemgetandsetnum">Strange error about semget and setnum</h2>
+<p>
+<strong>Problem</strong>: <i>The following error message occurs when running a test</i>
+</p>
+<pre class="wiki">Running 9 testssemget failed for setnum =  0
+</pre><p>
+This happens occasionally due to shortcomings in MPICH. Rerun the test. If that fails run the MPICH <tt>cleanipcs</tt> script, e.g. by doing:
+</p>
+<div class="code"><pre>~/mpi/sbin/cleanipcs
+</pre></div><h2 id="Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling and running with scons) fails</h2>
+<p>
+Some environment variables are setup by the SCons scripts, you need to export them yourself.
+</p>
+<div class="code"><pre>cdchaste
+<span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$LD_LIBRARY_PATH</span>:<span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/lib
+./component/build/whatever/TestXRunner
+</pre></div><p>
+Also, if files are output to the current directory rather than <tt>/tmp/chaste/testoutput/</tt>, also do 
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">CHASTE_TEST_OUTPUT</span><span class="o">=</span>/tmp/chaste/testoutput/
+</pre></div><p>
+(or <tt>/tmp/whatever/testoutput</tt>).
+</p>
+<h2 id="AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</h2>
+<p>
+If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <i>outward</i> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="/chaste/tutorials/release_2.2/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
+</p>
+<h1 id="Sconserrors">Scons errors</h1>
+<h2 id="NoSConstructfilefound">No SConstruct file found</h2>
+<p>
+The following error
+</p>
+<pre class="wiki">scons: *** No SConstruct file found.
+File "/usr/lib/scons/SCons/Script/Main.py", line 825, in _main
+</pre><p>
+is, as it says, due to no <tt>SConstruct</tt> file found and probably because you are in the wrong directory - you should run scons from the main Chaste directory.
+</p>
+<h2 id="IndexError:stringindexoutofrange">IndexError: string index out of range</h2>
+<p>
+If you get the following error
+</p>
+<pre class="wiki">scons  test_suite=heart/test/bidomain/TestBidomainProblem.hpp 
+IndexError: string index out of range:
+  File "/usr/lib/scons/SCons/Script/Main.py", line 1171:
+    _exec_main(parser, values)
+  File "/usr/lib/scons/SCons/Script/Main.py", line 1144:
+    _main(parser)
+  File "/usr/lib/scons/SCons/Script/Main.py", line 880:
+    if a[0] == '-':
+</pre><p>
+it could be because of the two spaces (!!!) between "<tt>scons</tt>" and "<tt>test_suite=</tt>" in "<tt>scons  test_suite=heart/test/bidomain/TestBidomainProblem.hpp</tt>" (only an issue if running scons through eclipse).
+</p>
+<h2 id="Founddependencycycles">"Found dependency cycle(s)"</h2>
+<pre class="wiki">scons: done building targets.
+
+scons: *** Found dependency cycle(s):
+  Internal Error: no cycle found for node global/build/debug/src/Version.o (&lt;SCons.Node.FS.File instance at 0xdacc20&gt;) in state executed
+
+File "/usr/lib64/python2.5/site-packages/SCons/Taskmaster.py", line 797, in cleanup
+</pre><p>
+If <tt>scons</tt> throws an error saying it has found a <i>dependency cycle</i> it probably has conflicting versions of things lying around and a clean build (<strong><tt>scons -c</tt></strong>) seems to sort it out.
+</p>
+<h1 id="PyCmlerrors">PyCml errors</h1>
+<h2 id="ConfigurationError:Notransmembranepotentialfoundcheckyourconfiguration">ConfigurationError: No transmembrane potential found; check your configuration</h2>
+<p>
+This occurs when PyCml cannot determine which variable in the model represents the transmembrane potential.  You can either add a <tt>for_model</tt> stanza to the PyCml config file or, better, annotate the CellML file to specify the variable.  See <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on how to do this, in particular the section on <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">Model annotation with RDF</a>.
+</p>
+<h2 id="ConfigurationError:NostimuluscurrentfoundyoullhavetroublegeneratingChastecode">ConfigurationError: No stimulus current found; you'll have trouble generating Chaste code</h2>
+<p>
+PyCml needs to know which variable in the model represents the stimulus current in order to replace the model's stimulus with the one defined by Chaste.  You should <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.  If the model doesn't have a stimulus (e.g. a sino-atrial node model) then <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides/CodeGenerationFromCellML.html#Self-excitatorymodels">annotate the model itself</a> accordingly.
+</p>
+<h2 id="TranslationError:CannotconvertioniccurrentfromampstouAcm2withoutknowingwhichvariableinthecellmodelrepresentsthemembranecapacitance">TranslationError: Cannot convert ionic current from amps to uA/cm<sup>2</sup> without knowing which variable in the cell model represents the membrane capacitance</h2>
+<p>
+Some cell models give ionic currents in units of amps (or microamps etc.) whereas Chaste expects amps normalised by area (microamps per centimetre squared).  In order to convert between the two, PyCml needs to use the membrane capacitance from the model, and hence needs to know which variable represents this.  You should <a class="wiki" href="/chaste/tutorials/release_2.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.
+</p>
+<h1 id="Compilationandlinkingerrors">Compilation and linking errors</h1>
+<h2 id="Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it clearly has been, in a base class</h2>
+<p>
+If class <tt>A</tt> and class <tt>B</tt> are both templated, and <tt>B&lt;DIM&gt;</tt> inherits from <tt>A&lt;DIM&gt;</tt>, then the compiler won't be able to locate variables defined in the base class if used in the child unless the base is specified. The solution is to write <tt>this-&gt;</tt> before the variable in question. i.e.
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">A</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+  <span class="kt">double</span> x<span class="p">;</span>
+<span class="p">};</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">B</span> <span class="o">:</span> <span class="k">public</span> A<span class="o">&lt;</span>DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+  <span class="kt">void</span> run<span class="p">()</span>
+  <span class="p">{</span>
+    std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> x<span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+won't compile, whereas
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">A</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+  <span class="kt">double</span> x<span class="p">;</span>
+<span class="p">};</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">B</span> <span class="o">:</span> <span class="k">public</span> A<span class="o">&lt;</span>DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+  <span class="kt">void</span> run<span class="p">()</span>
+  <span class="p">{</span>
+    std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="k">this</span><span class="o">-&gt;</span>x<span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+will do.  See <a class="wiki" href="/cgi-bin/trac.cgi/wiki/AccessingMemberVariablesInTemplatedSuperclasses">AccessingMemberVariablesInTemplatedSuperclasses</a>.
+</p>
+<h2 id="GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be something to do with Boost (mpl or ublas)</h2>
+<p>
+Try putting
+</p>
+<div class="code"><pre><span class="cp">#include "UblasIncludes.hpp"
+</span></pre></div><p>
+as the <strong>first</strong> include in the source file being compiled (generally either a cpp file or the test being run).
+</p>
+<p>
+It may be that the ublas include needs to come after any serialization include; I'm not sure.
+</p>
+<h2 id="Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</h2>
+<p>
+<strong>Problem</strong>: <i>Undefined reference errors on linking, such as:</i>
+</p>
+<pre class="wiki">undefined reference to `Node&lt;1u&gt;::AddElement(unsigned int)'
+</pre><p>
+This may mean that you are using a templated class which has been written using <i>Explicit Instantiation</i>, and you are using a value for one of the template parameters for which there isn't an instantiation.  Not all classes are instantiated for all dimensions in order to reduce compilation time.  Look at the bottom of the cpp file for the class in question (e.g. Node.cpp in the example above) and check if there is a line like
+</p>
+<pre class="wiki">template class Node&lt;1&gt;;
+</pre><p>
+at the bottom of the file.  Add the missing dimension if not.
+</p>
+<p>
+Note that for some classes (e.g. <tt>BoundaryConditionsContainer</tt>) the situation is more complex, since we don't just template over dimension.  In such cases there should be a file named like <tt>BoundaryConditionsContainerImplementation.hpp</tt> which you can include, either in the hpp file (if you do not provide a cpp) or in your cpp file (and add further explicit instantiations there).  See <a class="wiki" href="/cgi-bin/trac.cgi/wiki/StaticAndDynamicPolymorphism#Explicitinstantiation">StaticAndDynamicPolymorphism#Explicitinstantiation</a> for more info.
+</p>
+<h2 id="AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error (possibly) in a file in the CxxTest folder</h2>
+<p>
+The following error (or actually, warning, which is then taken as an error)
+</p>
+<pre class="wiki">cxxtest/cxxtest/TestSuite.h: In function 'bool CxxTest::equals(X, Y) [with X = long unsigned int, Y = int]':
+cxxtest/cxxtest/TestSuite.h:58:   instantiated from 'void CxxTest::doAssertEquals(const char*, unsigned int, const char*, X, const char*, Y, const char*) [with X = long unsigned int, Y = int]'
+.&lt;FILE_NAME&gt;:&lt;LINE_NUMBER&gt;   instantiated from here
+cxxtest/cxxtest/TestSuite.h:49: warning: comparison between signed and unsigned integer expressions
+</pre><p>
+is usually due to a comparison between an <tt>unsigned</tt> variable and a hardcoded number (taken as an <tt>int</tt> by the compiler) in a <tt>TS_ASSERT_EQUALS</tt>, for example
+</p>
+<div class="code"><pre><span class="kt">unsigned</span> my_var <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+TS_ASSERT_EQUALS<span class="p">(</span>my_var<span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+</pre></div><p>
+To tell the compiler to treat the (second) 10 as an <tt>unsigned</tt>, do the following
+</p>
+<div class="code"><pre>TS_ASSERT_EQUALS<span class="p">(</span>my_var<span class="p">,</span> <span class="mi">10</span>u<span class="p">);</span>
+</pre></div><h2 id="Error:voidYOUR_TEST_CLASS::YOUR_TEST_METHODisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</h2>
+<p>
+Remember all test methods need to be declared as <tt>public</tt>.
+</p>
+<h2 id="Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingboostnumericublasmatrix.hpp">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if you are including &lt;boost/numeric/ublas/matrix.hpp&gt;)</h2>
+<p>
+These are ublas vectors and matrices. Do
+</p>
+<div class="code"><pre><span class="cp">#include "UblasIncludes.hpp"
+</span></pre></div><p>
+Note that it is not enough to do
+</p>
+<div class="code"><pre><span class="cp">#include &lt;boost/numeric/ublas/matrix.hpp&gt;
+</span></pre></div><p>
+as then you would have to write <tt>boost::numeric::ublas::c_matrix&lt;double,2,2&gt;</tt> instead of <tt>c_matrix&lt;double,2,2&gt;</tt>.
+</p>
+<h2 id="GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</h2>
+<p>
+If the following is printed
+</p>
+<pre class="wiki">global/src/DistributedVector.cpp:47: static void DistributedVector::CheckForPetsc(): Assertion `petsc_is_initialised' failed.
+</pre><p>
+it is probably because you have forgotten to do
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+in your test.
+</p>
+<h2 id="Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  Error message is MPI_COMM_RANK and code is 197"</h2>
+<p>
+You may have included <tt>PetscSetupAndFinalize.hpp</tt> in a source file - it should only be included in test files (and must be included in all tests files that use PETSc).
+</p>
+<h2 id="Boostserializationvector.hpp">Boost/serialization/vector.hpp</h2>
+<p>
+<strong>Note</strong>: this error should no longer occur, as we include a workaround within Chaste.
+</p>
+<p>
+(<a class="missing ticket">#1024</a>) If you see this:
+</p>
+<pre class="wiki">/usr/include/boost/serialization/vector.hpp:126: error: redefinition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long int, std::allocator&lt;long int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: previous definition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long int, std::allocator&lt;long int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: redefinition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long unsigned int, std::allocator&lt;long unsigned int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: previous definition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long unsigned int, std::allocator&lt;long unsigned int&gt; &gt; &gt;'
+scons: building terminated because of errors.
+</pre><p>
+put 
+</p>
+<div class="code"><pre><span class="cp">#include &lt;climits&gt;
+</span></pre></div><p>
+before
+</p>
+<div class="code"><pre><span class="cp">#include "boost/serialization/vector.hpp"
+</span></pre></div><h2 id="glibcdetectedfree:invalidpointer">glibc detected free(): invalid pointer</h2>
+<p>
+If you get an error starting something like:
+</p>
+<pre class="wiki">** glibc detected *** heart/build/debug/mechanics/TestCardiacElectroMechanicsProblemRunner: free(): invalid pointer: 0x00000000019ff758 ***
+======= Backtrace: =========
+/lib/libc.so.6[0x7f32485ae08a]
+/lib/libc.so.6(cfree+0x8c)[0x7f32485b1c1c]
+</pre><p>
+then it may be because you haven't included a virtual destructor in the base class of your inheritance hierarchy, and you're deleting a derived class via a pointer of base class type. Another situation that may provoke this error is when you make use of <tt>CellwiseData</tt> but forget to call <tt>ReallocateMemory()</tt>.
+</p>
+<h2 id="Invalidapplicationofsizeoftoincompletetypeboost::STATIC_ASSERTION_FAILUREfalse">Invalid application of 'sizeof' to incomplete type 'boost::STATIC_ASSERTION_FAILURE&lt;false&gt;'</h2>
+<p>
+If you get this error
+</p>
+<pre class="wiki">/usr/include/boost/archive/detail/oserializer.hpp:566: error: invalid application of 'sizeof' to incomplete type 'boost::STATIC_ASSERTION_FAILURE&lt;false&gt;' 
+</pre><p>
+then you need to archive a <i>const</i> pointer to your object instead of just a pointer, e.g. instead of 
+</p>
+<div class="code"><pre>Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> p_electrodes <span class="o">=</span> <span class="k">new</span> Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span>mesh<span class="p">,</span><span class="kc">false</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span>magnitude<span class="p">,</span>duration<span class="p">);</span>
+output_arch <span class="o">&lt;&lt;</span> p_electrodes<span class="p">;</span>
+</pre></div><p>
+put 
+</p>
+<div class="code"><pre>Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> <span class="k">const</span> p_electrodes <span class="o">=</span> <span class="k">new</span> Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span>mesh<span class="p">,</span><span class="kc">false</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span>magnitude<span class="p">,</span>duration<span class="p">);</span>
+output_arch <span class="o">&lt;&lt;</span> p_electrodes<span class="p">;</span>
+</pre></div><h2 id="functiondefinitiondoesnotdeclareparameters">"function definition does not declare parameters"</h2>
+<p>
+If you get this sort of error:
+</p>
+<pre class="wiki">cell_based/src/tissue/cell/TissueCell.cpp:172: error: function definition does not declare parameters
+scons: *** [cell_based/build/debug/src/tissue/cell/TissueCell.os] Error 1
+scons: building terminated because of errors.
+</pre><p>
+then the relevant function definition is incorrectly typed. Check you have two colons, e.g. <tt>TissueCell::AddCell()</tt>.
+</p>
+<h2 id="error:expectedprimary-expressionbeforetoken">"error: expected primary-expression before '&gt;' token"</h2>
+<p>
+If you are trying to call a method that is templated, like this:
+</p>
+<div class="code"><pre><span class="k">if</span> <span class="p">(</span>cell_iter<span class="o">-&gt;</span>rGetCellPropertyCollection<span class="p">().</span>HasProperty<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">())</span>
+</pre></div><p>
+but get this sort of error:
+</p>
+<pre class="wiki">error: expected primary-expression before '&gt;' token
+error: expected primary-expression before ')' token
+</pre><p>
+then this may be because the compiler doesn't know that the method is a template itself, and so parses the &lt; character as "less than" and gets confused later on. In this case, you need to explicitly tell the compiler that the method is a template so that it parses &lt; as the opening bracket of a template parameter list, like this:
+</p>
+<div class="code"><pre><span class="k">if</span> <span class="p">(</span>cell_iter<span class="o">-&gt;</span>rGetCellPropertyCollection<span class="p">().</span><span class="k">template</span> HasProperty<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">())</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

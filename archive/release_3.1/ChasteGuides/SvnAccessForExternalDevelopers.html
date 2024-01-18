@@ -1,0 +1,64 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/SvnAccessForExternalDevelopers - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/SvnAccessForExternalDevelopers" href="/chaste/tutorials/release_3.1/ChasteGuides/SvnAccessForExternalDevelopers.html">SvnAccessForExternalDevelopers</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="AccessingtheChastesourcecoderepository">Accessing the Chaste source code repository</h1>
+<p>
+Following requests from a couple of Chaste users and discussions between the developers, we have decided to offer read-only access to the Chaste repository via anonymous login. This access is provided with the caveat that the code is always in development (and the latest revision is not guaranteed to be passing all tests), and we will not be able to provide full support for between-release versions of the code. New users should therefore download one of the source releases.
+</p>
+<p>
+The repository uses <a class="ext-link" href="http://subversion.tigris.org/"><span class="icon">&nbsp;</span>Subversion</a> to manage code versioning.  You can checkout from Subversion via an IDE plug-in; or using a command-line client: to create a new directory called Chaste with an anonymous read-only checkout of Chaste do
+</p>
+<pre class="wiki">svn --username anonymous checkout https://chaste.cs.ox.ac.uk/svn/chaste/trunk/ Chaste
+</pre><p>
+and use your email address as the password.
+</p>
+<p>
+If you wish to work with the latest revision, see <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a> for some helpful links and information.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

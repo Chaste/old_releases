@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#a1.ForusersoftheCardiacChasteexecutable">1. For users of the Cardiac Chaste executable</a>
+  </li>
+  <li>
+    <a href="#a2.ForusersoftheChastecodethisincludesallcell-basedusers">2. For users of the Chaste code (this includes all cell-based users)</a>
+    <ol>
+      <li>
+        <ol>
+          <li>
+            <a href="#Installation">Installation</a>
+          </li>
+          <li>
+            <a href="#RunningChaste">Running Chaste</a>
+          </li>
+          <li>
+            <a href="#Miscellaneousinformation">Miscellaneous information</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#a3.Furtherinformationfordevelopers">3. Further information for developers</a>
+  </li>
+  <li>
+    <a href="#a4.Advanced">4. Advanced</a>
+  </li>
+  <li>
+    <a href="#a5.ChasteAdministrators">5. Chaste Administrators</a>
+  </li>
+  <li>
+    <a href="#Automaticallygeneratedalphabeticallistingofguidepages">Automatically generated alphabetical listing of guide pages</a>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="a1.ForusersoftheCardiacChasteexecutable">1. For users of the Cardiac Chaste executable</h1>
+<p>
+This section is for users of the cardiac chaste standalone executable, which can be downloaded from the <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/download.html"><span class="icon">​</span>downloads</a> section of the public Chaste website. The executable does not require any installation of supporting software, takes in XML input files, and outputs the results of simulations in Meshalyzer, Cmgui and Paraview-readable formats.
+</p>
+<ul><li>Start by reading the README file that is supplied with the executable, which explains how to run the executable
+</li><li>The file <tt>ChasteParametersFullFormat.xml</tt>, also supplied with the executable, can be used as a reference when altering the XML parameters file; or, when read through, describes the full functionality of the executable.
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials/CardiacExecutable.html">Tutorial examples of simulations using the executable</a>
+</li><li><a class="missing source">Default parameters values</a> -- read off from this file
+</li><li>File format information is given in the file <tt>docs/FileFormats.html</tt>, supplied with the executable (files such as, for example, input files referred to in the XML parameters file and read in by the executable).
+</li></ul><h1 id="a2.ForusersoftheChastecodethisincludesallcell-basedusers">2. For users of the Chaste code (this includes all cell-based users)</h1>
+<p>
+This section is for users of the Chaste source code. The latest release of the source code can be downloaded from the <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/download.html"><span class="icon">​</span>downloads</a> section of the public Chaste website (do not download the release if you are a new <em>developer</em> (including users based in Compbio/CMB with full wiki and svn access); instead see below). If you have downloaded the latest release you can either follow the installation instructions supplied with the code (see the README file), or use the installation guide below.
+</p>
+<p>
+New developers should, rather than downloading the release, follow the installation instructions below, including the part on checking-out the latest version of the code.
+</p>
+<h3 id="Installation">Installation</h3>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides.html">Installation guides</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">How to specify paths to the libraries Chaste uses, etc.</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/RunningFirstTests.html">Run tests to check the installation</a>
+</li></ul><h3 id="RunningChaste">Running Chaste</h3>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/ReleaseNotes.html">ReleaseNotes</a> and <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a> on changes since the last release
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials.html">Tutorials</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides.html">Visualisation guides</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HowTo.html">'How to' index</a> -- links to test code illustrating how various things can be done
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/UserBuildGuide.html">User build guide</a> -- including how to compile optimised code
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/TroubleShooting.html">Troubleshooting</a> -- solutions to some common or difficult problems are given here
+</li><li><a href="https://chaste.cs.ox.ac.uk/public-docs/">Public API documentation for the latest revision</a> and <a href="/chaste/tutorials/">API documentation for release versions</a> including <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.4/"><b>documentation for this release</b></a>
+</li></ul><h3 id="Miscellaneousinformation">Miscellaneous information</h3>
+<ul><li><a class="missing source">Default parameters values</a> -- read off from this file, ignore the <tt>Simulation</tt> block, which only applies to the executable.
+</li><li>File format information is given in the file <tt>docs/FileFormats.html</tt>, supplied with the release. (The latest version of this file may also be viewed <a class="missing source">here</a> - click on the 'download in original format' link at the bottom of the page).
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/ChasteUnits.html">Units of parameters used in Chaste</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/FiniteElementImplementations.html">Equations and finite element implementations</a> -- the pdf file attached to this page describes the exact PDEs being solved in various parts of Chaste and the finite element methods used to solve them.
+</li></ul><h1 id="a3.Furtherinformationfordevelopers">3. Further information for developers</h1>
+<p>
+New developers (including users based in Compbio/CMB with full wiki and svn access) should read the 'users of the source code' section above, and also see
+</p>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/ExternalDeveloperGuide.html">Helpful resources for external users of development versions of Chaste</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/BestPracticeGuide.html">Some best practices for developers to follow</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html">Developer scons build guide</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html">Fixing "bad" commits</a>
+</li><li><a class="wiki" href="/trac/wiki/ChasteStrategies">ChasteStrategies</a> -- see in particular the coding standards guide
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/CheckoutUserProject.html">User Projects</a> -- for creating or checking out a personal user project, in the repository, which uses the core code
+</li><li>It is also worth familiarising yourself with <a class="wiki" href="/trac/wiki/UsefulNotes">UsefulNotes</a>
+</li><li><span style="display:none"></span> <a href="https://chaste.cs.ox.ac.uk/docs/">Full API documentation for the latest revision</a> (not accessible to anonymous login)
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/RunningAcceptanceTests.html">RunningAcceptanceTests</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration.html">GitMigration</a>
+</li></ul><h1 id="a4.Advanced">4. Advanced</h1>
+<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/RunningBinariesFromCommandLine.html">How to run Chaste binaries directly from the command line</a> (i.e. using scons to compile but not run).
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/BuildingCardiacExecutable.html">How to build the standalone cardiac executable</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AccessCodeRepository.html">SVN access for non-developers</a> (see also <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a>)
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/HPCInstallGuide.html">HPC Install Guide</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/StateVariableInterpolation.html">State-variable Interpolation</a> -- state-variable interpolation is a way of improving conduction velocity accuracy in large cardiac electro-physiology simulations
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FEM assemblers and solvers</a> -- this page describes how the finite element solvers work internally  
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/NmoodLectureNotes.html">Lecture notes</a> -- lectures on a course on <em>Numerical methods and object-oriented design</em>, which includes various sections on Chaste architecture (especially on PDE solving)
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/SolvingCardiacProblems.html">Solving cardiac problems</a> -- describes the implementation of the cardiac solvers for developers (see <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials.html">tutorials</a> for user guides)
+</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/CardiacMechanicsSolvers.html">Cardiac mechanics solvers</a> -- a bit of information on how the cardiac mechanics solvers are connected to the main mechanics solvers.
+</li></ul><h1 id="a5.ChasteAdministrators">5. Chaste Administrators</h1>
+<ul><li><a class="wiki" href="/trac/wiki/CreatingBranch">Creating a branch</a>
+</li><li><a class="wiki" href="/trac/wiki/MakingARelease">Making a release</a> --- including how to release a tag of a user project.
+</li><li><a class="wiki" href="/trac/wiki/ServerSetup">Configuration of chaste.cs</a>
+</li><li><a class="wiki" href="/trac/wiki/MachineNames">List of build machines</a>
+</li><li><a class="wiki" href="/trac/wiki/AutomatedBuilds">How the accounts used for automated builds are set up</a>
+</li></ul><hr />
+<h1 id="Automaticallygeneratedalphabeticallistingofguidepages">Automatically generated alphabetical listing of guide pages</h1>
+<p>
+<ul><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/AccessCodeRepository.html" title="Accessing the Chaste source code repository ">AccessCodeRepository</a> Accessing the Chaste source code repository <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html" title="Fixing bad commits ">AutomatedBuildGuide</a> Fixing bad commits <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/BestPracticeGuide.html" title="Best practices for Chaste developers ">BestPracticeGuide</a> Best practices for Chaste developers <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/BoostSerialization.html" title="Implementing checkpointing for classes with Boost Serialization ">BoostSerialization</a> Implementing checkpointing for classes with Boost Serialization <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/BuildingCardiacExecutable.html" title="Building the cardiac executable ">BuildingCardiacExecutable</a> Building the cardiac executable <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/CardiacMechanicsSolvers.html" title="Mechanics solvers ">CardiacMechanicsSolvers</a> Mechanics solvers <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/ChasteUnits.html" title="Units used in Chaste ">ChasteUnits</a> Units used in Chaste <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/CmakeBuildGuide.html" title="File Layout ">CmakeBuildGuide</a> File Layout <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/CodeGenerationFromCellML.html" title="Using CellML electrophysiology models in Cardiac Chaste ">CodeGenerationFromCellML</a> Using CellML electrophysiology models in Cardiac Chaste <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/ConvertingAssemblersToUseNewDesign.html" title="Converting assemblers to use the new FEM solver design ">ConvertingAssemblersToUseNewDesign</a> Converting assemblers to use the new FEM solver design <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html" title="Developer Build Guide ">DeveloperBuildGuide</a> Developer Build Guide <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/ExternalDeveloperGuide.html" title="Helpful resources for users of development versions of Chaste ">ExternalDeveloperGuide</a> Helpful resources for users of development versions of Chaste <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/FiniteElementAssemblersAndSolvers.html" title="FEM assemblers and solvers ">FiniteElementAssemblersAndSolvers</a> FEM assemblers and solvers <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/FiniteElementImplementations.html" title="FEM implementations ">FiniteElementImplementations</a> FEM implementations <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/GitMigration.html" title="ChasteGuides/GitMigration">GitMigration</a> ChasteGuides/GitMigration<ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html" title="The hostconfig system ">HostconfigSystem</a> The hostconfig system <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/HowTo.html" title="Chaste HOWTO Index ">HowTo</a> Chaste HOWTO Index <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/NmoodLectureNotes.html" title="ChasteGuides/NmoodLectureNotes">NmoodLectureNotes</a> ChasteGuides/NmoodLectureNotes<ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/RunningAcceptanceTests.html" title="Running Acceptance Tests ">RunningAcceptanceTests</a> Running Acceptance Tests <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/RunningBinariesFromCommandLine.html" title="Troubleshooting ">RunningBinariesFromCommandLine</a> Troubleshooting <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/RunningCellBasedVisualization.html" title="Running the cell-based visualizer ">RunningCellBasedVisualization</a> Running the cell-based visualizer <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/RunningFirstTests.html" title="Running Chaste for the first time ">RunningFirstTests</a> Running Chaste for the first time <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/SolvingCardiacProblems.html" title="Solving a cardiac problem ">SolvingCardiacProblems</a> Solving a cardiac problem <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/StateVariableInterpolation.html" title="What is State Variable Interpolation (SVI)? ">StateVariableInterpolation</a> What is State Variable Interpolation (SVI)? <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/StructureOfCellBasedSimulations.html" title="Structure of cell-based simulations in Chaste ">StructureOfCellBasedSimulations</a> Structure of cell-based simulations in Chaste <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/TroubleShooting.html" title="Troubleshooting ">TroubleShooting</a> Troubleshooting <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/UserBuildGuide.html" title="User build guide ">UserBuildGuide</a> User build guide <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/UsingDebugMacros.html" title="Using Debug Macros ">UsingDebugMacros</a> Using Debug Macros <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides.html" title="Visualising simulation results ">VisualisationGuides</a> Visualising simulation results <ul><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides/CombineConsecutiveSimulations.html" title="ChasteGuides/VisualisationGuides/CombineConsecutiveSimulations">CombineConsecutiveSimulations</a> ChasteGuides/VisualisationGuides/CombineConsecutiveSimulations<ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides/ParaviewForCardiac.html" title="Visualising cardiac simulations with Paraview ">ParaviewForCardiac</a> Visualising cardiac simulations with Paraview <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides/UsingCmgui.html" title="Visualising cardiac simulations with Cmgui ">UsingCmgui</a> Visualising cardiac simulations with Cmgui <ul></ul></li><li><a href="/chaste/tutorials/release_3.4/ChasteGuides/VisualisationGuides/UsingMeshalyzer.html" title="Visualising cardiac simulations with Meshalyzer ">UsingMeshalyzer</a> Visualising cardiac simulations with Meshalyzer <ul></ul></li></ul></li></ul>
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

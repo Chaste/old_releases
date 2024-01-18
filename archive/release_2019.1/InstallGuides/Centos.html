@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Centos - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="ChasteinstallationonCentos">Chaste installation on Centos</h1>
+<p>
+<a class="wiki" href="/trac/wiki/InstallGuides/Centos?version=3">There's a historical version of this installation guide too</a>
+</p>
+<p>
+These are the steps that I followed to install all the Chaste dependencies, run the test pack and build the executable.
+</p>
+<p>
+Details of the machine are:
+</p>
+<p>
+Host: compute-lung
+</p>
+<p>
+Linux version 2.6.32-220.17.1.el6.x86_64 CentOS release 6.2 (Final)
+</p>
+<h2 id="Preliminary">Preliminary</h2>
+<p>
+Note: do not install Boost.  This Centos comes with Boost 1.41.0 which is too buggy to use with Chaste
+</p>
+<pre class="wiki">yum install scons subversion
+yum install eclipse eclipse-cdt eclipse-subclipse subversion-javahl
+yum install openmpi openmpi-devel
+yum install  gcc-gfortran gcc-c++ valgrind valgrind-openmpi xerces-c-devel xsd zlib-devel
+yum install python-lxml python-dateutil
+
+
+#For rdflib
+rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-7.noarch.rpm
+yum install python-rdflib
+yum install joe
+
+
+#For Amara
+# This is a bit too tricky but I basically used bits and pieces from the Fedora repos
+
+#VTK and CVODE
+yum install vtk-devel
+rpm -i ftp://rpmfind.net/linux/fedora/linux/releases/17/Everything/x86_64/os/Packages/s/sundials-2.3.0-11.fc17.x86_64.rpm
+rpm -i ftp://rpmfind.net/linux/fedora/linux/releases/17/Everything/x86_64/os/Packages/s/sundials-devel-2.3.0-11.fc17.x86_64.rpm
+</pre><h2 id="Boost1.42">Boost (1.42)</h2>
+<pre class="wiki">#Install Boost-jam rpm: boost-jam-3.1.18-1.7.x86_64
+wget http://sourceforge.net/projects/boost/files/boost/1.42.0/boost_1_42_0.tar.gz
+tar xvfz boost_1_42_0.tar.gz 
+cd boost_1_42_0
+bjam "-sTOOLS=gcc" --prefix=$HOME/boost install
+</pre><h2 id="PETScversion3.1">PETSc (version 3.1)</h2>
+<p>
+PETSc 3.1 takes care of downloading, compiling and installing blas, lapack, ((openmpi,)) hdf5, parmetis and hypre
+</p>
+<pre class="wiki">
+### Really required!
+export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib/
+
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.0.0-p8.tar.gz
+tar xzvf petsc-3.0.0-p8.tar.gz 
+rm petsc-3.0.0-p8.tar.gz
+cd petsc-3.0.0-p8/
+export PETSC_DIR=`pwd`
+
+
+export PETSC_ARCH=linux-gnu
+./config/configure.py  --download-f-blas-lapack=yes --with-mpi-dir=/usr/lib64/openmpi --download-hdf5=yes --download-parmetis=yes --download-hypre=yes -with-x=false --with-clanguage=cxx
+make all
+
+export PETSC_ARCH=linux-gnu-opt
+./config/configure.py  --download-f-blas-lapack=yes --with-mpi-dir=/usr/lib64/openmpi --download-hdf5=yes --download-parmetis=yes --download-hypre=yes -with-x=false --with-clanguage=cxx --with-debugging=0
+make all
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/VisualisationGuides/ParaviewForCardiac - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="VisualisingcardiacsimulationswithParaview">Visualising cardiac simulations with Paraview</h1>
+<p>
+Paraview is a popular VTK-based visualisation tool.  Chaste can convert its simulation results into the VTK format, including support for parallel VTK when running simulations in parallel.
+Paraview also supports an annotated VTK format which allows animating the results of time-varying simulations, and we provide a script to add these annotations to Chaste results.
+</p>
+<p>
+For general information on using Paraview, see its <a class="ext-link" href="http://www.paraview.org/paraview/help/documentation.html"><span class="icon">​</span>online documentation</a>.
+</p>
+<p>
+When VTK output has been requested (e.g. using the <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2019.1/classHeartConfig.html" title="Documentation for the HeartConfig class"><span class="icon">​</span>class:HeartConfig</a> <tt>SetVisualizeWithVtk</tt> method or the <tt>OutputVisualizer</tt> element in Chaste's XML input file), then the simulation results folder will contain a <tt>vtk_output</tt> subfolder.  This will contain a <tt>.vtu</tt> file for normal VTK output, or a <tt>.pvtu</tt> file for parallel VTK output.
+</p>
+<p>
+To add Paraview's animation annotations, run our script using a command like:
+</p>
+<pre class="wiki">&lt;path_to_Chaste&gt;/python/utils/AddVtuTimeAnnotations.py &lt;original_results&gt;.vtu &lt;annotated_results&gt;.vtu
+</pre><p>
+Launch Paraview with
+</p>
+<div class="code"><pre>paraview --data<span class="o">=</span>&lt;annotated_results&gt;.vtu
+</pre></div><p>
+You should see an initial window looking something like that below.  Click on the green 'Apply' button to get things started.
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview01_initial.png"><img src="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview01_initial.png" /></a>
+</p>
+<p>
+Select the component of the results to visualise from the 'Solid Color' drop-down menu, circled in green in the screenshot below.  This will typically be 'V' for the transmembrane potential or 'Phi_e' for the extracellular potential in a bidomain simulation.
+</p>
+<p>
+Finally, click the 'play' button (also circled in green) to animate the results.
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview02_selectV.png"><img src="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview02_selectV.png" /></a>
+</p>
+<p>
+If running on an older version of Paraview and using time annotations, you may need to set the colour scale manually.  The dialog shown below is accessed via the button circled in red above.
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview03_color_scale.png"><img src="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides/ParaviewForCardiac/paraview03_color_scale.png" /></a>
+</p>
+<p>
+Uncheck 'Automatically Rescale to Fit Data Range' and then press 'Rescale Range' to enter suitable maximum and minimum values.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

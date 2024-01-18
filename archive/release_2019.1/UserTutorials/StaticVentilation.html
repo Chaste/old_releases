@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/StaticVentilation - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file lung/test/tutorials/TestStaticVentilationTutorial.hpp at revision <a class="changeset" href="/trac/changeset/196f6e705993/git_repo" title="Copyright Mayhem!
+">196f6e705993/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocalculateventilationdistributioninanairwaytreeforagivenflowrateatthetrachea">An example showing how to calculate ventilation distribution in an airway tree for a given flow rate at the trachea</h1>
+<p>
+In this tutorial we demonstrate the use of MatrixVentilationProblem to calculate airflow distribution in an airway
+tree model. Homogeneous pressure boundary conditions are used at the terminals of the tree and a flow boundary condition
+is used at the trachea. We demonstrate how to calculate the total bronchial pressure drop at different flow rates.
+</p>
+<p>
+The usual headers are included
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+</pre></div><p>
+MatrixVentilationProblem does most of the work in calculating a ventilation distribution.
+</p>
+<div class="code"><pre><span class="cp">#include "MatrixVentilationProblem.hpp"
+</span>
+</pre></div><p>
+Note that this tutorial only works with UMFPACK or KLU -- we need to warn the user if it's not installed
+</p>
+<div class="code"><pre><span class="cp">#include "Warnings.hpp"
+</span>
+</pre></div><p>
+MatrixVentilationProblem uses the Petsc solver library. This setups up Petsc ready for use.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+Define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestStaticVentilationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestCalculatePressureDrop<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+First we setup a MatrixVentilationProblem and tell it to load an airway centerline mesh.
+</p>
+<p>
+Note that the airway centerline  mesh cannot have intermediate nodes/elements within an airway.
+Typically intermediate nodes are found in imaging derived airways centerlines. These can be removed
+using the AirwayRemesher class.
+</p>
+<h2 id="IMPORTANT">IMPORTANT</h2>
+<p>
+See the note below about use of UMFPACK or KLU. If UMFPACK or KLU are not available we use a different (not realistic) airways
+mesh.
+</p>
+<div class="code"><pre><span class="cp">#if defined(LUNG_USE_UMFPACK) || defined(LUNG_USE_KLU)
+</span>        MatrixVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="s">"lung/test/data/simplified_airways"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+<span class="cp">#else
+</span>        WARNING<span class="p">(</span><span class="s">"Not compiled with UMFPACK or KLU.  Using non-realistic airway tree."</span><span class="p">);</span>
+        MatrixVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="s">"mesh/test/data/y_branch_3d_mesh"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+<span class="cp">#endif
+</span>
+</pre></div><p>
+Matrix ventilation problem uses SI units but the mesh is specified in mm. This method allows the solver
+to handle this discrepancy.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetMeshInMilliMetres<span class="p">();</span>
+
+</pre></div><p>
+Airway meshes can have radii defined either on nodes (default) or on edges. Here we tell the solver
+that the mesh has radii defined on edges.
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetRadiusOnEdge<span class="p">();</span>
+
+</pre></div><p>
+The ventilation solver can use different flow models. By default it uses the simplest Poiseuille flow
+model. Whilst this is quick to calculate the results are not accurate for high flow rates. Here we
+tell the solver to use a more accurate flow model based on Pedley 1970. Whilst this is more accurate
+simulations take longer!
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>SetDynamicResistance<span class="p">();</span>
+
+</pre></div><p>
+We define some tracheal flow rates to test. The values are specified in m<sup>3/s
+These give a range from 10 L/min to 100 L/min.
+</sup></p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> flows<span class="p">;</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00017</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00083</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00167</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.003</span><span class="p">);</span>
+
+</pre></div><p>
+Loop over the tracheal flow rates and solve
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> i <span class="o">&lt;</span> flows<span class="p">.</span>size<span class="p">();</span> <span class="o">++</span>i<span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+This sets the boundary conditions: flow at the trachea and homogeneous zero pressure at the terminal airways
+</p>
+<div class="code"><pre>            problem<span class="p">.</span>SetOutflowFlux<span class="p">(</span>flows<span class="p">[</span>i<span class="p">]);</span>
+            problem<span class="p">.</span>SetConstantInflowPressures<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+</pre></div><p>
+Calculates flow on the tree
+</p>
+<div class="code"><pre>            problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+Here we obtain vectors containing the calculated pressures and fluxes at all nodes and elements in the mesh.
+</p>
+<div class="code"><pre>            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> flux<span class="p">,</span> pressure<span class="p">;</span>
+            problem<span class="p">.</span>GetSolutionAsFluxesAndPressures<span class="p">(</span>flux<span class="p">,</span> pressure<span class="p">);</span>
+
+</pre></div><p>
+The vectors can be used to analyse the flow distribution in detail.
+However, for this example we just output the total bronchial pressure drop between the trachea and the terminal
+airways.
+</p>
+<div class="code"><pre>            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Total bronchial pressure drop for a tracheal flow rate of "</span> <span class="o">&lt;&lt;</span> flows<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" m^3/s is "</span> <span class="o">&lt;&lt;</span> pressure<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" Pa.</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+           <span class="c1">// cout &lt;&lt; pressure[1] &lt;&lt; endl;
+</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="IMPORTANT:UsingUMFPACKKLU">IMPORTANT: Using UMFPACK/KLU</h2>
+<p>
+Ventilation problems lead to very badly conditioned matrices. Iterative solvers such as GMRES can stall on these
+matrices. When running problems on large airway trees it is vital that to change the linear solver to a direct
+solver such as UMFPACK or KLU. UMFPACK and KLU are not pre-requisites for installing Chaste, hence this is not (currently)
+the default linear solver for ventilation problems.
+</p>
+<p>
+<em>UMFPACK or KLU should be considered pre-requisites for large ventilation problems</em>
+</p>
+<p>
+To use UMFPACK or KLU, you need to have PETSc installed with UMFPACK/KLU.
+</p>
+<p>
+To switch on UMFPACK or KLU on within chaste, set "ccflags='-DLUNG_USE_UMFPACK'" or
+"ccflags='-DLUNG_USE_KLU'" in your local.py or
+open the file <tt>lung/src/ventilation/MatrixVentilationProblem.hpp</tt> and uncomment the line
+#define LUNG_USE_UMFPACK near the top of the file.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestStaticVentilationTutorial.hpp">File name <tt>TestStaticVentilationTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+<span class="cp">#include "MatrixVentilationProblem.hpp"
+</span>
+<span class="cp">#include "Warnings.hpp"
+</span>
+<span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestStaticVentilationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestCalculatePressureDrop<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+<span class="cp">#if defined(LUNG_USE_UMFPACK) || defined(LUNG_USE_KLU)
+</span>        MatrixVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="s">"lung/test/data/simplified_airways"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+<span class="cp">#else
+</span>        WARNING<span class="p">(</span><span class="s">"Not compiled with UMFPACK or KLU.  Using non-realistic airway tree."</span><span class="p">);</span>
+        MatrixVentilationProblem <span class="nf">problem</span><span class="p">(</span><span class="s">"mesh/test/data/y_branch_3d_mesh"</span><span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+<span class="cp">#endif
+</span>
+        problem<span class="p">.</span>SetMeshInMilliMetres<span class="p">();</span>
+
+        problem<span class="p">.</span>SetRadiusOnEdge<span class="p">();</span>
+
+        problem<span class="p">.</span>SetDynamicResistance<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> flows<span class="p">;</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00017</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00083</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.00167</span><span class="p">);</span>
+        flows<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.003</span><span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> i <span class="o">&lt;</span> flows<span class="p">.</span>size<span class="p">();</span> <span class="o">++</span>i<span class="p">)</span>
+        <span class="p">{</span>
+            problem<span class="p">.</span>SetOutflowFlux<span class="p">(</span>flows<span class="p">[</span>i<span class="p">]);</span>
+            problem<span class="p">.</span>SetConstantInflowPressures<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+            problem<span class="p">.</span>Solve<span class="p">();</span>
+
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> flux<span class="p">,</span> pressure<span class="p">;</span>
+            problem<span class="p">.</span>GetSolutionAsFluxesAndPressures<span class="p">(</span>flux<span class="p">,</span> pressure<span class="p">);</span>
+
+            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Total bronchial pressure drop for a tracheal flow rate of "</span> <span class="o">&lt;&lt;</span> flows<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" m^3/s is "</span> <span class="o">&lt;&lt;</span> pressure<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" Pa.</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+           <span class="c1">// cout &lt;&lt; pressure[1] &lt;&lt; endl;
+</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

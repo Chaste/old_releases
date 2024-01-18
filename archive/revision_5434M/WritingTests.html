@@ -1,0 +1,133 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> WritingTests tutorial file </h1></div>
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   <div class="wikipage">
+    <div id="searchable"><p>
+This tutorial is <strong>not</strong> automatically generated from a file.
+</p>
+<p>
+In this tutorial we show how to write a test using CxxTest.
+</p>
+<p>
+The following header file need to be included.
+</p>
+<div class="code"><pre>#<B><span class="code-keyword">include</span></B> <span class="code-string"><B>&lt;cxxtest/TestSuite.h&gt;</span></B>
+</pre></div><p>
+Now we have to define a class containing the tests. It is sensible to 
+name the class the same name as the filename. The class should inherit
+from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre>class TestWritingTestsTutorial : public <B><span class="code-keyword">CxxTest</span></B>::TestSuite
+{
+</pre></div><p>
+Now we can define some tests, which must be <strong>public</strong>, begin with the word 'Test' return <tt>void</tt>, and take in no parameters.
+</p>
+<div class="code"><pre><B><span class="code-keyword">public</span></B>:
+    <span class="code-type"><B>void</span></B> TestOnePlusOneEqualsTwo()
+    {
+</pre></div><p>
+To test two integers are equal, we can use the macro <tt>TS_ASSERT_EQUALS</tt>.
+</p>
+<div class="code"><pre>        <span class="code-type"><B>int</span></B> some_number = 1+1;
+        TS_ASSERT_EQUALS(some_number, 2);
+</pre></div><p>
+To test whether two numbers are equal to within a certain (absolute) tolerance we can use <tt>TS_ASSERT_DELTA</tt>. This should
+almost always be used when comparing two <tt>double</tt>s.
+</p>
+<div class="code"><pre>        <span class="code-type"><B>double</span></B> another_number = 1.000001+1.0001;
+        TS_ASSERT_DELTA(another_number, 2.0, 1e-2);
+    }
+</pre></div><p>
+This second test shows some of the other <tt>TS_ASSERT</tt> macros that are available. 
+</p>
+<div class="code"><pre>    <span class="code-type"><B>void</span></B> TestSomeOtherStuff()
+    {
+        TS_ASSERT( 1==1 ); <I><span class="code-comment">// however, it is better to use TS_ASSERT_EQUALS, below
+</span></I>        TS_ASSERT_EQUALS( (true||false), true);
+        TS_ASSERT_DIFFERS( 1.348329534564385643543957436, 1.348329534564395643543957436);
+        TS_ASSERT_LESS_THAN(2.71828183, 3.14159265); <I><span class="code-comment">// Note: to test if y is greater than x, use TS_ASSERT_LESS_THAN(y,x).
+</span></I>        TS_ASSERT_LESS_THAN_EQUALS(-1e100, 1e100);
+        TS_ASSERT_THROWS_ANYTHING( throw 0; ); <I><span class="code-comment">// normally you would put a function call inside the brackets
+</span></I>
+        <span class="code-type"><B>double</span></B> x;
+        TS_ASSERT_THROWS_NOTHING( x=1; );  <I><span class="code-comment">// normally you would put a function call inside the brackets
+</span></I>    }
+};
+</pre></div><p>
+Note that methods which don't start with 'Test' are compiled but not run. So, if you want to stop a single test running, just put
+an 'x' or a 'don't' before its name
+</p>
+<div class="code"><pre>    <span class="code-type"><B>void</span></B> dontTestThis()
+    {
+        TS_ASSERT_EQUALS(1,2);
+    }
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre>#<B><span class="code-keyword">include</span></B> <span class="code-string"><B>&lt;cxxtest/TestSuite.h&gt;</span></B>
+
+class TestWritingTestsTutorial : public <B><span class="code-keyword">CxxTest</span></B>::TestSuite
+{
+<B><span class="code-keyword">public</span></B>:
+    <span class="code-type"><B>void</span></B> TestOnePlusOneEqualsTwo()
+    {
+        <span class="code-type"><B>int</span></B> some_number = 1+1;
+        TS_ASSERT_EQUALS(some_number, 2);
+        <span class="code-type"><B>double</span></B> another_number = 1.000001+1.0001;
+        TS_ASSERT_DELTA(another_number, 2.0, 1e-2);
+    }
+
+    <span class="code-type"><B>void</span></B> TestSomeOtherStuff()
+    {
+        TS_ASSERT( 1==1 );
+        TS_ASSERT_EQUALS( (true||false), true);
+        TS_ASSERT_DIFFERS( 1.348329534564385643543957436, 1.348329534564395643543957436);
+        TS_ASSERT_LESS_THAN(2.71828183, 3.14159265);
+        TS_ASSERT_LESS_THAN_EQUALS(-1e100, 1e100);
+        TS_ASSERT_THROWS_ANYTHING( throw 0; );
+    }
+
+    <span class="code-type"><B>void</span></B> dontTestThis()
+    {
+        TS_ASSERT_EQUALS(1,2);
+    }
+};
+</pre></div></div>
+   </div>
+   
+  

@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/ChasteUnits - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="UnitsusedinChaste">Units used in Chaste</h1>
+<h2 id="CardiacUnits">Cardiac Units</h2>
+<p>
+Note: F=Farad, S=Siemen=Amp/Volt, A=Ampere, u=micro (ie mu).
+</p>
+<table class="wiki">
+<tr><td style="text-align: left"><strong>Quantity</strong> </td><td> <strong>Units</strong> </td><td> <strong>Notes</strong> 
+</td></tr><tr><td style="text-align: left">Length  </td><td style="text-align: right"> cm</td><td style="text-align: right"> hence surface-area-to-volume ratio is cm<sup>-1</sup> etc
+</td></tr><tr><td style="text-align: left">Time </td><td> ms </td><td>
+</td></tr><tr><td style="text-align: left">Voltage or intra- or extracellular potential </td><td> mV </td><td> 
+</td></tr><tr><td style="text-align: left">Capacitance per unit surface area  </td><td> uF cm<sup>-2</sup> </td><td style="text-align: right"> C<sub>m</sub>, which we refer to as the capacitance, is actually a capacitance per unit area. The SI unit
+</td></tr><tr><td> </td><td> </td><td> of capicitance is the Farad ( = Coulombs/Volts) (C=Q/V) 
+</td></tr><tr><td style="text-align: left">Conductivities </td><td> mS cm<sup>-1</sup> </td><td> 
+</td></tr><tr><td style="text-align: left">(Stimulus) currents per unit volume </td><td> uA cm<sup>-3</sup> </td><td> Applies to (intracellular) <strong>stimulus currents given to cells in mono/bidomain problems</strong>  
+</td></tr><tr><td>  </td><td> </td><td> (ie a stimulus current as a RHS source term in the bidomain equations. Note we don't allow 
+</td></tr><tr><td>  </td><td> </td><td> RHS extracellular stimuli) 
+</td></tr><tr><td style="text-align: left">Currents per unit area </td><td> uA cm<sup>-2</sup>              </td><td> Applies to <strong>all ionic currents</strong> (single-cell/mono/bidomain equations), <strong>intracellular stimuli</strong> 
+</td></tr><tr><td> </td><td>  </td><td> <strong>in single-cell problems</strong> or applied as Neumann boundary conditions, and <strong>extracellular</strong> 
+</td></tr><tr><td> </td><td>  </td><td> <strong>stimuli through electrodes</strong> (which are also Neumann boundary conditions) 
+</td></tr></table>
+<h2 id="Cell-based">Cell-based</h2>
+<table class="wiki">
+<tr><td style="text-align: left"><strong>Quantity</strong> </td><td> <strong>Units</strong> </td><td> <strong>Notes</strong> 
+</td></tr><tr><td style="text-align: left">Length  </td><td> dimensionless </td><td> Nondimensionalised by typical cell diameter (approx 10<sup>-5</sup> m) 
+</td></tr><tr><td style="text-align: left">Time </td><td> hours </td><td>
+</td></tr></table>
+<h2 id="Mechanics">Mechanics</h2>
+<p>
+Material laws parameters, pressures, and active stresses (in cardiac electro-mechanics) are in kPa. For mechanics simulations the
+user is free to choose the units for all other quantities, but should do so consistently. For example, if gravity is applied, then 
+<tt>[density * gravitational acceleration]</tt> should be equal <tt>kPa/[length]</tt> (here <tt>[]</tt> denotes "units of"), since the governing equations
+state that divergence of stress summed with density times gravitational acceleration is zero.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

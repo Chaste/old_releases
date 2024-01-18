@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/RunningAcceptanceTests - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#RunningAcceptanceTests">Running Acceptance Tests</a>
+    <ol>
+      <li>
+        <a href="#InstallingTextTest">Installing TextTest</a>
+      </li>
+      <li>
+        <a href="#RunningtheAcceptanceTestsManually">Running the Acceptance Tests Manually</a>
+      </li>
+      <li>
+        <a href="#UpdatingtheComparisonresults">Updating the 'Comparison' results</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="RunningAcceptanceTests">Running Acceptance Tests</h1>
+<p>
+Acceptance tests are tests of the compiled Chaste executable, where we check that for a given input parameter file, it generates all of the same output files as it used to.
+</p>
+<p>
+The results that are to be compared with are stored in the Chaste trunk under
+</p>
+<pre class="wiki">apps/texttest/chaste
+</pre><p>
+for nightly tests, and
+</p>
+<pre class="wiki">apps/texttest/weekly
+</pre><p>
+for weekly tests.
+</p>
+<h2 id="InstallingTextTest">Installing TextTest</h2>
+<p>
+TextTest is both the testing framework, and a little gui to help visualize results, and replace reference files when there are intended differences.
+</p>
+<p>
+Not all the build machines have this installed. <tt>userpc58</tt> has at the moment, see <a class="wiki" href="/trac/wiki/InstallTextTest">InstallTextTest</a> if you want to set it up elsewhere.
+</p>
+<h2 id="RunningtheAcceptanceTestsManually">Running the Acceptance Tests Manually</h2>
+<ol><li>Do an <tt>svn up</tt> to the required version, and build a fresh executable (i.e. <tt>scons cl=1 b=IntelProduction exe=1 apps/src</tt>).
+</li><li>Check that the environment variable <tt>TEXTTEST_HOME</tt> is set to either (the full path to) <tt>apps/texttest/chaste</tt> or <tt>apps/texttest/weekly</tt> as appropriate (see below).
+</li><li>Navigate to the folder that contains the Chaste executable (e.g. <tt>cd ~/eclipse/workspace/Chaste/apps/src</tt>)
+</li><li>Run TextTest from here (on <tt>userpc58</tt> this is currently at <tt>~/texttest-3.19/source/bin/texttest.py</tt>)
+</li><li>Select all the available tests and press <tt>Run</tt>.
+<ul><li>They should now go green or red one-by-one as the tests are run.
+</li></ul></li></ol><h2 id="UpdatingtheComparisonresults">Updating the 'Comparison' results</h2>
+<p>
+<tt>catalogue.chaste</tt> is created for each individual test, and this lists the directory structure and files that are created when the test runs. If you want any of this to change, the reference <tt>catalogue.chaste</tt> file will need updating for that test.
+</p>
+<p>
+By clicking on each 'red' result, the differences will be displayed in the panel on the bottom right. 
+</p>
+<ul><li>If you decide these are intended, then you can update the reference results in the repository by right-clicking the filename and selecting 'Save' (then commit as usual from command line or eclipse).
+</li><li>If these results are not intended, then something is broken and the code should be fixed!
+</li></ul><p>
+<strong>Note:</strong>
+</p>
+<ul><li>Texttest keeps a list of files to compare with reference versions for each acceptance test in the file <tt>apps/texttest/chaste/config.chaste</tt>. If any of the files that you want to compare are found in a different place in the output, or you want to compare new ones (or remove some), you'll need to edit this file too.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

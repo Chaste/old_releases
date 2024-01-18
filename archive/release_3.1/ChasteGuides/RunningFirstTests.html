@@ -1,0 +1,142 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/RunningFirstTests - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/RunningFirstTests" href="/chaste/tutorials/release_3.1/ChasteGuides/RunningFirstTests.html">RunningFirstTests</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="RunningChasteforthefirsttime">Running Chaste for the first time</h1>
+<p>
+Once the dependencies have been installed, and Chaste is downloaded, it is time to check whether everything is set-up correctly, by running the tests. There are, at the time of writing, over 300 test files (found in folders such as <tt>pde/test</tt>, <tt>heart/test</tt>, etc) for testing the source code (found in <tt>pde/src</tt>, <tt>heart/src</tt>, etc).
+</p>
+<h2 id="Afirsttest">A first test</h2>
+<p>
+In the command line, <tt>cd</tt> to the main Chaste directory, and then run
+</p>
+<pre class="wiki">scons test_suite=global/test/TestHelloWorld.hpp
+</pre><p>
+Alternatively, in eclipse, create a new 'Make Target' using this command, as shown in the attached screenshot. Double-click the new Make Target to run this command.
+</p>
+<p>
+If this compiles and runs, you should see
+</p>
+<pre class="wiki">Passed
+OK!
+</pre><p>
+in the output (also shown in attached screenshot). The output also says how many tests that have been run passed ("All 300 tests run passed" in the screenshot; for you it will probably be "All 1 tests run passed"), and gives the location of a local file named <tt>index.html</tt> which you can load in a web-browser to see the test summary.
+</p>
+<h2 id="Runningallthetests">Running all the tests</h2>
+<h3 id="Option1:alltestsinonego">Option 1: all tests in one go</h3>
+<p>
+Run the following, either in the command line, or by creating a make target.
+</p>
+<pre class="wiki">scons
+</pre><p>
+This may take of the order of a few hours the first time, as there is a lot of compilation and running to do. Once it is completed, check the 
+local webpage (as described above) - if it is all green you are good to go!
+</p>
+<p>
+Note: if you have a multicore machine you can do <tt>scons -j4</tt>, say, to have 4 processors compiling and running tests.
+</p>
+<h3 id="Option2:alltestscomponentbycomponent">Option 2: all tests, component by component</h3>
+<p>
+Instead of running all the tests in one go, you may want to do the following to verify that particular components are running fine before moving to the next one. The <tt>pde</tt> component for example depends on <tt>mesh</tt> but not vice versa, so the below checks the <tt>mesh</tt> before <tt>pde</tt>. 
+</p>
+<pre class="wiki">scons global
+scons io
+scons linalg
+scons mesh
+scons ode
+scons pde
+scons continuum_mechanics
+</pre><p>
+Or, just
+</p>
+<pre class="wiki">scons core
+</pre><p>
+for all of the above.
+</p>
+<p>
+Then, if you are interested in cardiac Chaste
+</p>
+<pre class="wiki">scons heart
+</pre><p>
+or, if you are interested in cell-based Chaste
+</p>
+<pre class="wiki">scons cell_based
+scons crypt
+</pre><h2 id="NoteonBoosterror">Note on Boost error</h2>
+<p>
+If you have installed Chaste using the Ubuntu package, you may sometimes see an ugly looking error such as
+</p>
+<pre class="wiki">*** Process received signal ***
+Signal: Aborted (6)
+Signal code:  (-6)
+[0xb775c40c]
+[0xb775c424]
+..
+*** End of error message ***
+Aborted (core dumped)
+</pre><p>
+and/or
+</p>
+<pre class="wiki">pure virtual method called 
+terminate called without an active exception
+</pre><p>
+Check to see if the output still says 
+</p>
+<pre class="wiki">Passed
+OK!
+</pre><p>
+if so, the test ran fine, and the error is due to a bug in Boost (one of the dependencies). See <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/TroubleShooting.html#Purevirtualmethodcalledterminatecalledwithoutanactiveexception">here</a>; essentially the message can be ignored.
+</p>
+
+        
+        
+      </div>
+          <h3>Attachments</h3>
+          <ul>
+              <li>
+      <a href="/chaste/tutorials/release_3.1/ChasteGuides/RunningFirstTests/eclipse_screenshot.jpg" title="View attachment">eclipse_screenshot.jpg</a>
+      (<span title="232230 bytes">226.8 KB</span>)
+              </li>
+          </ul>
+
+    </div>
+  </body>
+</html>

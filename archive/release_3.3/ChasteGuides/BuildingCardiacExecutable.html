@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/BuildingCardiacExecutable - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Buildingthecardiacexecutable">Building the cardiac executable</h1>
+<p>
+From within the Chaste source folder, the following command generates the Chaste executable:
+</p>
+<div class="code"><pre>scons <span class="nv">compile_only</span><span class="o">=</span>1 <span class="nv">chaste_libs</span><span class="o">=</span>1 <span class="nv">static</span><span class="o">=</span>0 <span class="nv">build</span><span class="o">=</span>GccOpt <span class="nv">exe</span><span class="o">=</span>1 apps
+</pre></div><p>
+(The distributed stand-alone executable uses "static=1", but it requires making sure that all the dependencies are available as static libraries.)
+</p>
+<p>
+The executable Chaste can then be found in the <tt>apps/src</tt> folder.
+</p>
+<p>
+To use the correct dynamic libraries you will need to make sure that <tt>LD_LIBRARY_PATH</tt> is set up correctly in your environment, to point to the locations where the libraries used in building Chaste are contained.
+</p>
+<p>
+In order to run a simulation edit the <tt>ChasteParameters.xml</tt> file according to your needs and, from the Chaste directory, type
+</p>
+<div class="code"><pre>apps/src/Chaste ChasteParameters.xml
+</pre></div><p>
+Please note that the output directory specified in the <tt>ChasteParameters.xml</tt> file is relative to a directory defined by the environmental variable <tt>CHASTE_TEST_OUTPUT</tt>.
+If this variable is not set, results will be found relative to the 'testoutput' folder in the main Chaste directory (unlike when scons is used to run tests).
+You can use a command like the following to change the location:
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">CHASTE_TEST_OUTPUT</span><span class="o">=</span><span class="s2">"/path/to/desired/folder"</span>
+</pre></div><p>
+If you want to run Chaste in parallel manner you have to add mpirun to your <tt>PATH</tt>.
+You can for example type:
+</p>
+<div class="code"><pre>ln -s <span class="nv">$CHASTE_LIBS</span>/petsc-3.0.0-p8/linux-gnu/bin/mpirun ~/bin/
+</pre></div><p>
+Now you can run Chaste in parallel on "N" processors, by typing 
+</p>
+<div class="code"><pre>mpirun -np N apps/src/Chaste ChasteParameters.xml
+</pre></div><p>
+Please note that the number of processes "N" should be less than or equal to the number of processors existing on your machine.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/ExternalDeveloperGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="HelpfulresourcesforusersofdevelopmentversionsofChaste">Helpful resources for users of development versions of Chaste</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#HelpfulresourcesforusersofdevelopmentversionsofChaste">Helpful resources for users of development versions of Chaste</a>
+    <ol>
+      <li>
+        <a href="#Themostrecentgoodrevision">The most recent "good revision"</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#ContributingCodeBacktoChaste">Contributing Code Back to Chaste</a>
+    <ol>
+      <li>
+        <a href="#Beforeyoustart">Before you start</a>
+        <ol>
+          <li>
+            <a href="#CodingStandards">Coding Standards</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Openaticket">Open a ticket</a>
+      </li>
+      <li>
+        <a href="#Workinginanewbranch">Working in a new branch</a>
+      </li>
+      <li>
+        <a href="#Testing">Testing</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This page is intended to assist those external to the core Chaste team who still want to develop with the "bleeding edge" latest development code, rather than merely the last official release.
+</p>
+<p>
+Since some parts of the Chaste code-base are not released (e.g. those relating specifically to papers in preparation), some of the developer resources, such as results from the automated tests and full documentation for the latest revision, are not made publicly available.  We have now created some additional resources to improve this situation.
+</p>
+<h2 id="Themostrecentgoodrevision">The most recent "good revision"</h2>
+<p>
+Occasionally broken code is committed to the Chaste repository, or some unexpected tests fail.  This can be frustrating if users do not know if it's something they've broken, or if the fault lies with the repository code. We now offer a range of git branches to help developers choose how stable they want their code to be:
+</p>
+<table class="wiki">
+<tr><td> <strong>Branch</strong> </td><td> <strong>What it's for</strong> 
+</td></tr><tr><td> <tt>develop</tt> </td><td> Bleeding-edge development code, new feature (ticket) branches should branch off here to minimise conflicts 
+</td></tr><tr><td> <tt>passed_continuous</tt> </td><td> latest code that passed continuous tests and isn't disastrous 
+</td></tr><tr><td> <tt>passed_nightly</tt> </td><td> latest code that passed above tests, plus some longer nightly ones including coverage and memory testing 
+</td></tr><tr><td> <tt>passed_portability</tt> </td><td> latest code that passed above tests, plus our suite of tests for different dependency versions 
+</td></tr><tr><td> <tt>master</tt> </td><td> Latest release-candidate quality code that has passed all tests 
+</td></tr><tr><td> <tt>release</tt> </td><td> The last full release of the code. 
+</td></tr></table>
+<p>
+You can get these revisions by <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/AccessCodeRepository.html">cloning the repository</a> and then doing
+</p>
+<pre class="wiki">git checkout &lt;branch&gt;
+</pre><p>
+e.g.
+</p>
+<pre class="wiki">git checkout master
+</pre><h1 id="ContributingCodeBacktoChaste">Contributing Code Back to Chaste</h1>
+<h2 id="Beforeyoustart">Before you start</h2>
+<p>
+If you intend to submit code back to the main Chaste repository, please see <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/BestPracticeGuide.html">ChasteGuides/BestPracticeGuide</a>.
+</p>
+<h3 id="CodingStandards">Coding Standards</h3>
+<p>
+To understand why Chaste variables, methods and classes are named like they are please see our <a class="wiki" href="/trac/wiki/CodingStandardsStrategy">C++ naming conventions</a>.
+</p>
+<p>
+We also lay out and document our code in a particular way, see <a class="wiki" href="/trac/wiki/CodeStructureStrategy">CodeStructureStrategy</a>.
+</p>
+<p>
+You may also want to read through the other 'strategies' that we use to keep things consistent and well tested at <a class="wiki" href="/trac/wiki/ChasteStrategies">ChasteStrategies</a>.
+</p>
+<h2 id="Openaticket">Open a ticket</h2>
+<p>
+First start a new ticket on this wiki (buttons in top right) and describe the problem you are trying to solve.
+</p>
+<h2 id="Workinginanewbranch">Working in a new branch</h2>
+<p>
+Please see <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/GitGuide.html#Ticketworkflow">ChasteGuides/GitGuide#Ticketworkflow</a> for how to work in a new branch - you should branch off <tt>develop</tt> if you want to contribute code back to the main Chaste repository.
+</p>
+<p>
+Make sure you merge in the latest <tt>develop</tt> branch into your ticket regularly to keep up to date and avoid lots of changes before merging back in to our main repo.
+</p>
+<p>
+If you would like to work with our repository, please contact the developers via the mailing list and we will create an account for you.
+</p>
+<p>
+Ideally, write a comment on your ticket about any commits that you have done and pushed to your ticket branch on the chaste.cs.ox.ac.uk git repo.
+</p>
+<h2 id="Testing">Testing</h2>
+<p>
+Run all tests (continuous, nightly, parallel, coverage, memory) as per <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeBuildGuide.html#OtherUsefulTargets">ChasteGuides/CmakeBuildGuide#OtherUsefulTargets</a>
+</p>
+<p>
+When you have run all tests locally, then we can run them on the Chaste buildbot server via <a href="https://chaste.cs.ox.ac.uk/buildbot/builders">https://chaste.cs.ox.ac.uk/buildbot/builders</a> before merging your ticket into <tt>develop</tt> when all these pass.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

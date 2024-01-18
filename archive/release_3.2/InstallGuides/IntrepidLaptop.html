@@ -1,0 +1,118 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/IntrepidLaptop - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/IntrepidLaptop" href="/chaste/tutorials/release_3.2/InstallGuides/IntrepidLaptop.html">IntrepidLaptop</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Jonathansinstallationonhisnewlaptop">Jonathan's installation on his new laptop</h1>
+<p>
+NB: This is outdated - the <a class="wiki" href="/chaste/tutorials/release_3.2/InstallGuides/UbuntuPackage.html">Ubuntu package</a> is now the recommended approach.
+</p>
+<p>
+Just recording my own notes for now.  I can tidy it up if it would be helpful for others.
+</p>
+<h2 id="Ubuntupackages">Ubuntu packages</h2>
+<pre class="wiki">sudo aptitude install scons subversion
+sudo aptitude install joe xemacs21-gnome-nomule
+</pre><p>
+In synaptic:
+</p>
+<ul><li>Turn off installation of recommended packages
+</li><li>Apply markings: <a class="attachment" href="/chaste/tutorials/release_3.2/InstallGuides/IntrepidLaptop/chaste-marks.txt" title="Attachment 'chaste-marks.txt' in InstallGuides/IntrepidLaptop">attachment:chaste-marks.txt</a>
+</li></ul><h2 id="MPI">MPI</h2>
+<p>
+I've been getting odd errors trying to use Ubuntu's MPI, even after making sure it used the mpich version:
+</p>
+<pre class="wiki">sudo /usr/sbin/update-alternatives --set mpi /usr/lib/mpich-shmem/include
+</pre><p>
+So I've installed the patched MPI from <a class="wiki" href="/trac/wiki/InstallPetscAndMpi">InstallPetscAndMpi</a>, using
+</p>
+<pre class="wiki">./configure --prefix=$HOME/src/mpi --with-comm=shared --with-device=ch_shmem --disable-f77 --enable-sharedlib &amp;&amp; make &amp;&amp; make install
+</pre><p>
+(I may experiment with the <tt>--disable-cxx --without-mpe</tt> flags.)
+</p>
+<p>
+However, this still gives errors when compiling with shared libraries.  I've now figured out that I <i>can</i> use Ubuntu's MPI without problems, <i>provided</i> I don't try to build shared Chaste libraries, so it looks like the root cause of the errors is the same.
+</p>
+<h2 id="PETSc">PETSc</h2>
+<pre class="wiki">wget ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-2.3.3-p15.tar.gz
+tar -zxf petsc-lite-2.3.3-p15.tar.gz
+cd petsc-2.3.3-p15
+export PETSC_DIR=`pwd`
+./config/configure.py --with-mpi --with-x=false -PETSC_ARCH=linux-gnu --with-clanguage=cxx
+make all
+./config/configure.py --with-mpi --with-x=false -PETSC_ARCH=linux-gnu-opt --with-clanguage=cxx --with-debugging=0
+make all
+</pre><p>
+Note: if using your own MPI install, specify <tt>--with-mpi-dir=/path/to/mpich</tt> instead of <tt>--with-mpi</tt>.
+</p>
+<h2 id="XSD">XSD</h2>
+<p>
+Unfortunately, whilst Intrepid does have a package for this (<tt>xsdcxx</tt>) it's a different version from that used by Chaste.
+</p>
+<pre class="wiki">wget http://codesynthesis.com/download/xsd/2.3/linux-gnu/x86_64/xsd-2.3.1-x86_64-linux-gnu.tar.bz2
+tar -jxf xsd-2.3.1-x86_64-linux-gnu.tar.bz2
+# Ensure the xsd command is on your path, or add it to your hostconfig tools
+ln -s /home/jonc/src/xsd-2.3.1-x86_64-linux-gnu/bin/xsd ~/bin/xsd
+</pre><h2 id="Othersoftwaresettings">Other software &amp; settings</h2>
+<ul><li><a class="wiki" href="/trac/wiki/InstallMetis">InstallMetis</a>
+</li><li>Eclipse:
+<ul><li>Set eclipse prefs as per <a class="wiki" href="/trac/wiki/SetupEclipse">SetupEclipse</a>
+</li><li>Install subclipse (and optionally pydev) as per <a class="wiki" href="/trac/wiki/InstallEclipsePlugins">InstallEclipsePlugins</a>
+</li></ul></li></ul>
+        
+        
+      </div>
+          <h3>Attachments</h3>
+          <ul>
+              <li>
+      <a href="/chaste/tutorials/release_3.2/InstallGuides/IntrepidLaptop/chaste-marks.txt" title="View attachment">chaste-marks.txt</a>
+      (<span title="2068 bytes">2.0 KB</span>)
+                <q>Synaptic markings for packages to install</q>
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_3.2/InstallGuides/IntrepidLaptop/default.py" title="View attachment">default.py</a>
+      (<span title="1908 bytes">1.9 KB</span>)
+                <q>Host config file</q>
+              </li>
+          </ul>
+
+    </div>
+  </body>
+</html>

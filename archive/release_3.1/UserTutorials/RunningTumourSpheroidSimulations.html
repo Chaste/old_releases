@@ -1,0 +1,365 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningTumourSpheroidSimulations - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningTumourSpheroidSimulations" href="/chaste/tutorials/release_3.1/UserTutorials/RunningTumourSpheroidSimulations.html">RunningTumourSpheroidSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningTumourSpheroidSimulationsTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/16454" title=" * #2101 - add tutorial using `NagaiHondaDifferentialAdhesionForce`
+ * ...">r16454</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtoruntumourspheroidsimulations">An example showing how to run tumour spheroid simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to simulate a growing cell monolayer culture or
+multicellular tumour spheroid. Like the crypt simulations, tumour spheroid simulations
+include cell-cycle models and force laws to determine how cells divide and
+move. In tumour spheroid simulations, however, these are also coupled to a
+system of partial differential equations (PDEs) that determine the concentration
+of specified nutrients (e.g. oxygen) throughout the cell population. Also, unlike
+in a crypt simulation (for example), the cell population may grow substantially as the simulation
+progresses.
+</p>
+<p>
+In summary, the main difference between this tutorial and the other cell-based simulation
+tutorials is that a PDE is defined, which is used in the simulation.
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in the other cell-based simulation tutorials, we begin by including the necessary header files. We have
+encountered some of these files already. Recall that often <tt>CheckpointArchiveTypes.hpp</tt>
+or <tt>CellBasedSimulationArchiver.hpp</tt> must be included as the first Chaste header.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "RandomNumberGenerator.hpp"
+#include "SmartPointers.hpp"
+</span></pre></div><p>
+The <tt>SimpleOxygenBasedCellCycleModel</tt> header file defines a cell-cycle model in which
+a cell's rate of progress through G1 phase changes over time in a simple manner, according
+to the local oxygen concentration. We also include the <tt>WildTypeCellMutationState</tt>
+header file, which defines a wild type cell mutation state that we will use to construct
+cells. A cell mutation state is always required when constructing a cell, however
+in earlier simulation tutorial we used a helper classes ((<tt>CellsGenerator</tt> and <tt>CryptCellsGenerator</tt>) that
+allowed us to avoid having to construct cells directly.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleOxygenBasedCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+</span></pre></div><p>
+The next three header files define: a PDE that describes how oxygen is transported via through the
+domain via diffusion and is consumed by live cells; a constant-valued boundary condition to
+associate with the PDE; and a PDE handler class, which is passed to the simulation object and
+handles the numerical solution of any PDEs.
+</p>
+<div class="code"><pre><span class="cp">#include "CellwiseSourcePde.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "CellBasedPdeHandler.hpp"
+</span></pre></div><p>
+We use an <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "OffLatticeSimulation.hpp"
+</span></pre></div><p>
+The header file <tt>PetscSetupAndFinalize.hpp</tt> must be included in all tests which use Petsc. This is
+a suite of data structures and routines that are used in the finite element
+PDE solvers, which is how we solve the oxygen transport PDE.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+Having included all the necessary header files, we proceed by defining the test class.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningTumourSpheroidSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestSpheroidTutorial<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+This first line can be ignored: it is a macro which just says
+don't run this test if in parallel.
+</p>
+<div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
+</pre></div><p>
+First we want to create a <strong>non-periodic</strong> 'honeycomb' mesh.
+We use the honeycomb mesh generator, as before, saying 10 cells wide
+and 10 cells high. Note that the thickness of the ghost nodes layer is
+0, i.e. there are no ghost nodes, and the <tt>false</tt> indicates that the
+returned mesh is <strong>not</strong> cylindrical. In contrast to the crypt simulation
+tutorial, here we call <tt>GetMesh()</tt> on the <tt>HoneycombMeshGenerator</tt>
+object to return the mesh, which is of type <tt>MutableMesh</tt>.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Next, we need to create some cells. Unlike in the the crypt simulation
+tutorial, we don't just use a <tt>CellsGenerator</tt> class, but do it manually,
+in a loop. First, we define a <tt>std::vector</tt> of cell pointers.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+</pre></div><p>
+This line defines a mutation state to be used for all cells, of type
+<tt>WildTypeCellMutationState</tt> (i.e. 'healthy'):
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+</pre></div><p>
+Now we loop over the nodes...
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+...then create a cell, giving it a <tt>SimpleOxygenBasedCellCycleModel</tt>.
+The spatial dimension (1, 2 or 3) and
+cell proliferative type (STEM, TRANSIT or DIFFERENTIATED) needs to be
+set on the cell-cycle model before it is passed to the cell.
+</p>
+<div class="code"><pre>            SimpleOxygenBasedCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> SimpleOxygenBasedCellCycleModel<span class="p">;</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>STEM<span class="p">);</span>
+</pre></div><p>
+We also alter the default cell-cycle times.
+</p>
+<div class="code"><pre>            p_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span><span class="mf">8.0</span><span class="p">);</span>
+            p_model<span class="o">-&gt;</span>SetTransitCellG1Duration<span class="p">(</span><span class="mf">8.0</span><span class="p">);</span>
+</pre></div><p>
+We now define a random birth time, chosen from [-T,0], where
+T = t<sub>1</sub> + t<sub>2</sub>, where t<sub>1</sub> is a parameter representing the G<sub>1</sub> duration
+of a 'stem' cell, and t<sub>2</sub> is the basic S+G<sub>2</sub>+M phases duration...
+</p>
+<div class="code"><pre>            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span>
+                                 <span class="p">(</span>  p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span>
+                                  <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">()</span> <span class="p">);</span>
+</pre></div><p>
+...then we set the birth time and push the cell back into the vector
+of cells.
+</p>
+<div class="code"><pre>            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+Now that we have defined the cells, we can define the <tt>CellPopulation</tt>. We use a
+<tt>MeshBasedCellPopulation</tt> since although the cell population is mesh-based, it does
+not include any ghost nodes. The constructor takes in the mesh and the cells vector.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+Here we use the <tt>CellData</tt> class, which stores the
+value of the current nutrient concentration for each cell. We have to
+tell the <tt>CellData</tt> class that there is one variable per cell, namely the oxygen
+concentration.  We initialise the oxygen concentration for each node (to 1.0), by
+calling <tt>SetItem</tt>.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>SetDataOnAllCells<span class="p">(</span><span class="s">"oxygen"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Next we instantiate an instance of the PDE class which we defined above.
+This will be passed into the <tt>OffLatticeSimulationWithPdes</tt> object. The
+<tt>CellwiseSourcePde</tt> is a <tt>PDE</tt> class which inherits from
+<tt>AbstractLinearEllipticPde</tt> and represents
+the PDE <i>u_xx</i> + <i>u_yy</i> = <i>k</i>(<i>x</i>,<i>y</i>) <i>u</i>, where <i>u</i>(<i>x</i>,<i>y</i>) denotes
+the oxygen concentration at
+position (<i>x</i>,<i>y</i>) and the function <i>k</i>(<i>x</i>,<i>y</i>) specifies the rate of consumption by live cells
+there. Here <i>k</i>(<i>x</i>,<i>y</i>) takes the value -0.03 (the coefficient below) if
+the cell located at (<i>x</i>,<i>y</i>) is a live cell, and zero if the cell has died due
+to oxygen deprivation.
+</p>
+<div class="code"><pre>        CellwiseSourcePde<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde<span class="p">(</span>cell_population<span class="p">,</span> <span class="o">-</span><span class="mf">0.03</span><span class="p">);</span>
+</pre></div><p>
+We also create a constant-valued boundary condition to associate with the PDE.
+This boundary condition object takes in a single argument in its constructor,
+the value at the boundary. We also introduce a boolean to specify whether this value is the flux at the boundary
+(a Neumann boundary condition) or the value of the state variable at the boundary
+(a Dirichlet boundary condition) below.
+</p>
+<div class="code"><pre>        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bc<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        <span class="kt">bool</span> is_neumann_bc <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</pre></div><p>
+To pass the PDE to our simulator, it must first be encapsulated in a
+<tt>PdeAndBoundaryConditions</tt> object, together with the boundary condition for
+the PDE. The latter is specified by the second and third arguments of the
+<tt>PdeAndBoundaryConditions</tt> constructor below: the second argument defines the value
+of the boundary condition and the third argument defines whether it is of Neumann type
+(true) or Dirichlet type (false). Thus, in our case, we are a specifying no-flux
+boundary condition. Note that we currently cannot impose more than one boundary
+condition for each PDE (so that e.g. we cannot impose a zero-flux boundary condition
+on some part of the boundary and a fixed-value boundary condition on the rest), although
+the boundary condition itself can be made spatially varying or time-dependent.
+</p>
+<p>
+The PDE is tagged to show that the quantity to be solved for (the quantity of interest in
+the cells' data is "oxygen"
+</p>
+<div class="code"><pre>        PdeAndBoundaryConditions<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde_and_bc<span class="p">(</span><span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bc<span class="p">,</span> is_neumann_bc<span class="p">);</span>
+        pde_and_bc<span class="p">.</span>SetDependentVariableName<span class="p">(</span><span class="s">"oxygen"</span><span class="p">);</span>
+</pre></div><p>
+After having created a <tt>PdeAndBoundaryConditions</tt> object, we then pass it
+to a cell-based PDE handler object. This allows us to define any number of PDEs within
+the cell-based simulation.
+</p>
+<div class="code"><pre>        CellBasedPdeHandler<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde_handler<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+        pde_handler<span class="p">.</span>AddPdeAndBc<span class="p">(</span><span class="o">&amp;</span>pde_and_bc<span class="p">);</span>
+</pre></div><p>
+We are now in a position to construct an <tt>OffLatticeSimulationWithPdes</tt> object,
+using the cell population. We then pass the PDE handler object to the simulation.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetCellBasedPdeHandler<span class="p">(</span><span class="o">&amp;</span>pde_handler<span class="p">);</span>
+</pre></div><p>
+We next set the output directory and end time.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"SpheroidTutorial"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of
+the cell population. As in the crypt simulation tutorial, we assume that a cell
+experiences a force from each neighbour that can be represented as a linear overdamped
+spring, so we use a <tt>GeneralisedLinearSpringForce</tt> object.
+Note that we have called the method <tt>SetCutOffLength</tt> on the
+<tt>GeneralisedLinearSpringForce</tt> before passing it to the simulator: this call
+modifies the force law so that two neighbouring cells do not impose
+a force on each other if they are located more than 3 units (=3 cell widths)
+away from each other. This modification is necessary when no ghost nodes are used,
+for example to avoid artificially large forces between cells that lie close together
+on the spheroid boundary.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+</pre></div><p>
+We call <tt>Solve()</tt> on the simulator to run the simulation.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/SpheroidTutorial/results_from_time_0</tt>.
+</p>
+<p>
+Or use Paraview, see <a class="wiki" href="/chaste/tutorials/release_3.1/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> for details.
+</p>
+<div class="code"><pre><span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningTumourSpheroidSimulationsTutorial.hpp">File name <tt>TestRunningTumourSpheroidSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "RandomNumberGenerator.hpp"
+#include "SmartPointers.hpp"
+#include "SimpleOxygenBasedCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "CellwiseSourcePde.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "CellBasedPdeHandler.hpp"
+
+#include "OffLatticeSimulation.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningTumourSpheroidSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestSpheroidTutorial<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            SimpleOxygenBasedCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> SimpleOxygenBasedCellCycleModel<span class="p">;</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>STEM<span class="p">);</span>
+
+            p_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span><span class="mf">8.0</span><span class="p">);</span>
+            p_model<span class="o">-&gt;</span>SetTransitCellG1Duration<span class="p">(</span><span class="mf">8.0</span><span class="p">);</span>
+
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span>
+                                 <span class="p">(</span>  p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span>
+                                  <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">()</span> <span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        cell_population<span class="p">.</span>SetDataOnAllCells<span class="p">(</span><span class="s">"oxygen"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+
+        CellwiseSourcePde<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde<span class="p">(</span>cell_population<span class="p">,</span> <span class="o">-</span><span class="mf">0.03</span><span class="p">);</span>
+
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bc<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        <span class="kt">bool</span> is_neumann_bc <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+        PdeAndBoundaryConditions<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde_and_bc<span class="p">(</span><span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bc<span class="p">,</span> is_neumann_bc<span class="p">);</span>
+        pde_and_bc<span class="p">.</span>SetDependentVariableName<span class="p">(</span><span class="s">"oxygen"</span><span class="p">);</span>
+
+        CellBasedPdeHandler<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> pde_handler<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+        pde_handler<span class="p">.</span>AddPdeAndBc<span class="p">(</span><span class="o">&amp;</span>pde_and_bc<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetCellBasedPdeHandler<span class="p">(</span><span class="o">&amp;</span>pde_handler<span class="p">);</span>
+
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"SpheroidTutorial"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

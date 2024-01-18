@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/CheckoutUserProject - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <ol>
+      <li>
+        <a href="#CreateaNEWprojectintherepository">Create a NEW project in the repository</a>
+      </li>
+      <li>
+        <a href="#CheckoutanEXISTINGproject">Check out an EXISTING project</a>
+        <ol>
+          <li>
+            <a href="#InEclipse">In Eclipse</a>
+          </li>
+          <li>
+            <a href="#Onthecommandline">On the command line</a>
+          </li>
+          <li>
+            <a href="#Ineithercase">In either case</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Important:touseexistingChastecode">Important: to use existing Chaste code</a>
+        <ol>
+          <li>
+            <a href="#Makingoneuserprojectdependonanother">Making one user project depend on another</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Buildingyourproject">Building your project</a>
+      </li>
+      <li>
+        <a href="#Committingchanges">Committing changes</a>
+      </li>
+      <li>
+        <a href="#Removingthechecked-outprojectfromalocalmachine">Removing the checked-out project from a local machine</a>
+      </li>
+      <li>
+        <a href="#Creatingatagandtarballofaprojecttoreleasewithapaper">Creating a tag and tarball of a project to release with a paper</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+If you wish to have a personal projects folder for individual work using Chaste source code and the Chaste build system.
+</p>
+<h2 id="CreateaNEWprojectintherepository">Create a NEW project in the repository</h2>
+<p>
+It is easiest to use the command line for this, run something like:
+</p>
+<pre class="wiki">svn cp -m "[YOUR_PROJECT_NAME] Create new project." https://chaste.cs.ox.ac.uk/svn/chaste/projects/template https://chaste.cs.ox.ac.uk/svn/chaste/projects/YOUR_PROJECT_NAME
+</pre><p>
+Obviously substituting in your new project name for <tt>YOUR_PROJECT_NAME</tt>!
+</p>
+<h2 id="CheckoutanEXISTINGproject">Check out an EXISTING project</h2>
+<p>
+If you want access to the project in eclipse, then follow the first set of instructions, otherwise command line is simpler.
+</p>
+<h3 id="InEclipse">In Eclipse</h3>
+<ul><li>In Eclipse go to Window-&gt;Open Perspective-&gt;Other-&gt;SVN Repository Exploring
+</li><li>If it isn't already there, add the repository location (by right-click the windowing, clicking 'New'): 
+<ul><li><em>Internal developers</em> - <tt>https://chaste.cs.ox.ac.uk/svn/chaste</tt> (internal developers should be able to browse through the projects folder to checkout the project they want)
+</li><li><em>External developers/collaborators</em> - <tt>https://chaste.cs.ox.ac.uk/svn/chaste/projects/&lt;YOUR_PROJECT_NAME&gt;</tt> (you need to specify the exact project if you aren't allowed to see this page <a href="https://chaste.cs.ox.ac.uk/trac/browser/projects">https://chaste.cs.ox.ac.uk/trac/browser/projects</a>). 
+</li><li><strong>NB</strong>: you <strong>can't</strong> checkout projects from the location <tt>https://chaste.cs.ox.ac.uk/svn/chaste/trunk/projects</tt>.
+</li></ul></li><li>Right-click on the project folderyou want and click 'Checkout'
+<ul><li>choose a name, for example YOUR_PROJECT_NAME from above. <em>Make sure there are no spaces or slashes</em>.
+</li><li>Click Finish.
+</li><li>From a command line, do
+<pre class="wiki">cdchaste    (this is an alias we have set up to 'cd' into the Chaste source folder)
+cd projects
+ln -s ../../YOUR_PROJECT_NAME
+</pre></li></ul></li><li>You can then make changes in either the 'checked out project' or the projects inside Chaste/projects/YOUR_PROJECT_NAME.
+</li><li>But to avoid subclipse confusion, you should do svn commit and updates fromthe separate YOUR_PROJECT_NAME eclipse project.
+</li></ul><h3 id="Onthecommandline">On the command line</h3>
+<p>
+It seems tidiest to check all of your projects out into the same location, then put a symbolic link to them from the <tt>Chaste/projects</tt> folder.
+</p>
+<pre class="wiki"># Go to the folder that contains `Chaste` - the Chaste source code folder (not the source code folder itself, the one above!), then do:
+svn co "https://chaste.cs.ox.ac.uk/svn/chaste/projects/&lt;YOUR_PROJECT_NAME&gt;"
+cd Chaste/projects
+ln -s ../../&lt;YOUR_PROJECT_NAME&gt;
+</pre><h3 id="Ineithercase">In either case</h3>
+<ul><li>It is sensible to edit the <tt>.project</tt> file in your new project, in order for a default Eclipse checkout of it to have a sensible name.
+</li></ul><h2 id="Important:touseexistingChastecode">Important: to use existing Chaste code</h2>
+<p>
+As default the build system will only 'pull in' the core components of Chaste (ode solvers, meshes etc.). If you want to use 'crypt', 'cell_based', or 'heart' code then you need to alter a setting:
+</p>
+<ul><li>Open projects/YOUR_PROJECT_NAME/SConscript and use the appropriate commented alternative. e.g. for a project that depends on 'heart' use:
+<pre class="wiki"># Chaste libraries used by this project.
+# Select which line to uncomment based on what your project needs, or alter as required.
+#chaste_libs_used = ['core']
+#chaste_libs_used = ['cell_based']
+chaste_libs_used = ['heart']
+#chaste_libs_used = ['cell_based', 'heart']
+</pre></li><li>You can then commit the change to <tt>SConscript</tt>, you only need to do this once per project.
+</li></ul><h3 id="Makingoneuserprojectdependonanother">Making one user project depend on another</h3>
+<p>
+It is straightforward to make one user project depend on another, for ease of code re-use. 
+</p>
+<p>
+For example, suppose the user project <tt>User2</tt> depends on the <tt>heart</tt> code, and we also want it to depend on the user project <tt>User1</tt>, then in the file <tt>projects/User2/SConscript</tt> we simply modify the line
+</p>
+<pre class="wiki">chaste_libs_used = ['heart']
+</pre><p>
+to
+</p>
+<pre class="wiki">chaste_libs_used = ['heart', 'projects/User1']
+</pre><p>
+NB - <tt>User1</tt> project will have to be checked out before <tt>User2</tt> project can build.
+</p>
+<h2 id="Buildingyourproject">Building your project</h2>
+<p>
+To run tests in your project, <strong>go to the Chaste source folder</strong>, and either use 
+</p>
+<pre class="wiki">scons test_suite=projects/YOUR_PROJECT_NAME/test/TEST_FILE
+</pre><p>
+or 
+</p>
+<pre class="wiki">scons projects/YOUR_PROJECT_NAME
+</pre><p>
+The latter will run all the tests defined in projects/YOUR_PROJECT_NAME/test/ContinuousTestPack.txt. Note that no projects are run on the integration machine, either following a commit or nightly. If you want to run nightly tests locally on your machine, create a test pack called 'NightlyTestPack.txt' (although '&lt;Something&gt;TestPack.txt' would also work) and use 
+</p>
+<pre class="wiki">scons projects/YOUR_PROJECT_NAME build=_onlytests_Nightly
+</pre><p>
+or perhaps
+</p>
+<pre class="wiki">scons projects/YOUR_PROJECT_NAME build=GccOpt_onlytests_Nightly
+</pre><p>
+See <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for more information on how to build, including further options to scons.
+</p>
+<h2 id="Committingchanges">Committing changes</h2>
+<p>
+You should be able to do team operations on the separate Eclipse project representing your user project.
+</p>
+<p>
+Note that committing/updating from the top Chaste directory <em>only</em> affects core chaste, not your project, as everything in Chaste/projects is ignored.
+</p>
+<p>
+Note that a commit to user project WILL FAIL with a message like this
+</p>
+<pre class="wiki">Transmitting file data .svn: Commit failed (details follow):
+svn: 'pre-commit' hook failed with error output:
+Branch or project commit with no indication in log message
+</pre><p>
+unless the commit has a comment starting with square brackets, e.g. 
+</p>
+<pre class="wiki">svn ci -m "[YourName] A description of your commit"
+</pre><p>
+this is to avoid developers having to look through lists of user project changes.
+</p>
+<h2 id="Removingthechecked-outprojectfromalocalmachine">Removing the checked-out project from a local machine</h2>
+<p>
+Because subclipse gets confused, it is best to use the command line to remove the files from your local machine.  In Eclipse, select the project (not the folder under Chaste/projects, but the actual project in the navigator) and choose 'Delete', but make sure 'Do not delete contents' is selected.  Then open up a terminal and do
+</p>
+<pre class="wiki">cdchaste
+rm -rf projects/YOUR_PROJECT_NAME
+</pre><h2 id="Creatingatagandtarballofaprojecttoreleasewithapaper">Creating a tag and tarball of a project to release with a paper</h2>
+<p>
+See <a class="wiki" href="/trac/wiki/MakingARelease#Bolt-onprojects">MakingARelease</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

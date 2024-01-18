@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ChasteInstallationOnMacOSMojave - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonMacOSMojave">Installing Chaste on MacOS Mojave</h1>
+<p>
+<strong>Warning: we're currently writing this guide and currently it does not work'''
+</strong></p>
+<p>
+This install guide is based upon a fresh install of OSX Mojave in October 2018.
+</p>
+<p>
+It worked for cell based with scons on the 2nd of November 2018 (please update this page if it works for you, or send a message to chaste-users@&hellip;) 
+</p>
+<h2 id="Xcode">Xcode</h2>
+<p>
+Install Xcode from app store. (Version 10.0)
+</p>
+<ul><li>Xcode provides the "g++" compiler
+</li></ul><h2 id="HomeBrew">Home Brew</h2>
+<p>
+see <a class="ext-link" href="http://mxcl.github.com/homebrew/"><span class="icon">​</span>http://mxcl.github.com/homebrew/</a>
+</p>
+<pre class="wiki">/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+</pre><p>
+Check <tt>brew doctor</tt> to ensure homebrew is installed properly
+</p>
+<h2 id="Dependencies">Dependencies</h2>
+<p>
+If you're using the cell based code only you can roll the next few installs together. It will take a while.
+</p>
+<pre class="wiki">brew install wget scons xerces-c petsc sundials xsd cmake vtk
+</pre><p>
+This installs the necessary programs (may need to enter your password)
+</p>
+<pre class="wiki">brew cask install xquartz paraview
+</pre><h3 id="Parmetis">Parmetis</h3>
+<p>
+There's no homebrew installer for parmetis so install this directly
+</p>
+<p>
+Download and unzip the installer (4.0.3) from <a class="ext-link" href="http://glaros.dtc.umn.edu/gkhome/metis/parmetis/download"><span class="icon">​</span>http://glaros.dtc.umn.edu/gkhome/metis/parmetis/download</a> 
+</p>
+<p>
+in the parmetis directory
+</p>
+<pre class="wiki">make config
+make 
+make install
+</pre><p>
+You can now delete the downloaded files if you like
+</p>
+<h2 id="Getthechastesourcecode">Get the chaste source code</h2>
+<p>
+See
+</p>
+<p>
+<a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository">https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/AccessCodeRepository</a>
+</p>
+<p>
+You will need to change line 59 of 
+</p>
+<pre class="wiki">    self._cc_flags = ['-Wall', '-Werror']
+</pre><p>
+to 
+</p>
+<pre class="wiki">    self._cc_flags = []
+</pre><h2 id="HostConfig">Host Config</h2>
+<p>
+Use <a class="attachment" href="/chaste/tutorials/release_2018.1/InstallGuides/ChasteInstallationOnMacOSMojave/local.py" title="Attachment 'local.py' in InstallGuides/ChasteInstallationOnMacOSMojave">attachment:local.py</a><a class="trac-rawlink" href="/chaste/tutorials/release_2018.1/InstallGuides/ChasteInstallationOnMacOSMojave/local.py" title="Download">​</a> (experimental) for your <a class="missing wiki">host config?</a>. Note some of the version numbers will need to be updated to the current versions on Homebrew.
+</p>
+<p>
+Save it as python/hostconfig/local.py.
+</p>
+<hr />
+<h2 id="Moreforthedeveloper">More for the developer</h2>
+<h3 id="Valgrind">Valgrind</h3>
+<p>
+Not necessary, but useful to the serious developer.
+</p>
+<pre class="wiki">brew install valgrind
+</pre><h2 id="Handythings">Handy things</h2>
+<p>
+To be able to see the tmp folder in finder use 
+</p>
+<pre class="wiki">sudo chflags nohidden /tmp
+</pre><p>
+Useful aliases to add to <tt>~/.bash_profile</tt>
+</p>
+<pre class="wiki">nano ~/.bash_profile
+</pre><pre class="wiki">alias cdchaste='cd /Users/chaste/workspace/Chaste' #Or similar
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

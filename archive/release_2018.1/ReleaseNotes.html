@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ReleaseNotes - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <ol>
+      <li>
+        <a href="#ChangessinceRelease2017.1">Changes since Release 2017.1</a>
+        <ol>
+          <li>
+            <a href="#Headlinefeatures">Headline features</a>
+          </li>
+          <li>
+            <a href="#Newdependencysupport">New dependency support</a>
+          </li>
+          <li>
+            <a href="#Core">Core</a>
+          </li>
+          <li>
+            <a href="#FuturePlans">Future Plans</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+Please mention any changes to the code which will break users' code here - to be put in the release notes for the next release.  Also mention any significant improvements or new features.
+</p>
+<p>
+The real definitive release notes will be written in <a class="source" href="/trac/browser/trunk/docs/ReleaseNotes.html">source:trunk/docs/ReleaseNotes.html</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/docs/ReleaseNotes.html" title="Download">​</a> at the time of release.  To make that process easier, please structure this page in the same manner, rather than simply copying from <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a>.
+</p>
+<p>
+<a class="wiki" href="/trac/wiki/OlderReleaseNotes">OlderReleaseNotes</a> -- release notes for previous releases.
+</p>
+<hr />
+<h2 id="ChangessinceRelease2017.1">Changes since Release 2017.1</h2>
+<h3 id="Headlinefeatures">Headline features</h3>
+<ul><li>Chaste now supports Ubuntu 18.04 LTS (Bionic). 
+</li></ul><h3 id="Newdependencysupport">New dependency support</h3>
+<ul><li>Chaste now supports Boost 1.66 and 1.67 (boosts 1.64 and 1.65 are a bit buggy for us and should be avoided if possible).
+</li><li>Chaste now supports CVODE (Sundials versions) 3.0.0 and 3.1.0.
+</li><li>Chaste now supports HDF5 versions 1.8.20 and 1.10.2.
+</li><li>Chaste now supports PETSc versions 3.8 and 3.9.
+</li><li>Chaste now supports VTK version 8.1.
+</li><li>Chaste now supports Xerces versions 3.2.0 and 3.2.1.
+</li></ul><h3 id="Core">Core</h3>
+<ul><li>CVODE 3.0.0 has changed its interface for analytic Jacobians, dropping the <tt>long int N</tt> that was the first argument. We have followed suit in Chaste's <tt>AbstractCvodeSystem::EvaluateAnalyticJacobian()</tt> method, so <strong>this may break user projects</strong> if you have your own CVODE systems which override this method. To fix this just delete the argument and get the size directly from the vectors if you need it.
+</li></ul><h3 id="FuturePlans">Future Plans</h3>
+<p>
+This will be the last release of Chaste to support Ubuntu 14.04 LTS and its dependencies. The following will not be supported in future releases:
+</p>
+<ul><li>Boost &lt; 1.58
+</li><li>CMake &lt; 3.5
+</li><li>HDF5 &lt; 1.8.16
+</li><li>Parmetis &lt; 4.0
+</li><li>PETSc &lt; 3.6
+</li><li>VTK &lt; 6.2
+</li><li>XSD &lt; 4.0
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/RunningCellBasedVisualization - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/RunningCellBasedVisualization" href="/chaste/tutorials/release_2.1/ChasteGuides/RunningCellBasedVisualization.html">RunningCellBasedVisualization</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Runningthecell-basedvisualizer">Running the cell-based visualizer</h1>
+<p>
+<i>Note: this page describes how to use the java visualiser supplied with the source release. The <strong>new, recommended approach is to use Paraview</strong> (see tutorials)</i>
+</p>
+<p>
+To run a Visualization you must 
+</p>
+<ul><li>Compile the java Visualizer file
+</li><li>Run the Visualizer
+</li></ul><h2 id="a1.Compilethejava">1. Compile the java</h2>
+<p>
+From the Chaste main directory
+</p>
+<pre class="wiki">[chaste@hodgkin Chaste]$ cd anim
+[chaste@hodgkin anim]$ javac Visualize.java
+[chaste@hodgkin anim]$ javac Visualize1dChainIn2d.java
+[chaste@hodgkin anim]$ javac Visualize2d.java
+[chaste@hodgkin anim]$ javac Visualize2dCells.java
+</pre><p>
+There is a clash between some of the Visualize classes, so you may need to recompile the one you want.
+</p>
+<h2 id="a2a.Runsimplevisualizationfromtheanimfolder">2a. Run simple visualization from the anim folder</h2>
+<pre class="wiki">[chaste@hodgkin anim]$ java Visualize /tmp/chaste/testoutput/CryptWithBirthVariableRestLength/results
+[chaste@hodgkin anim]$ java Visualize1dChainIn2d example_data/data_1d_chain_in_2d.dat
+[chaste@hodgkin anim]$ java Visualize2d example_data/data_2d_node.dat example_data/data_2d_element.dat
+</pre><h2 id="a2b.Runthe2Dcellvisualizerfromtheanimfolder">2b. Run the 2D cell visualizer from the anim folder</h2>
+<p>
+To simply visualize cells, use:
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ java Visualize2dCells &lt;data_path_and_prefix&gt; &lt;options&gt;
+</pre><p>
+The pathname of the input must come first but the additional arguments <tt>output</tt>, <tt>springs</tt>, <tt>nocells</tt>, <tt>ghosts</tt> and <tt>notcylindrical</tt> may appear in any order. The Visualizer will warn you if any options are not recognised but will continue running.
+</p>
+<p>
+The pathname probably looks something like
+</p>
+<pre class="wiki">&lt;data_path_and_prefix&gt; = /tmp/YOUR_USERNAME/testoutput/CHASTE_TEST_NAME/results_from_time_0 
+or
+&lt;data_path_and_prefix&gt; = /tmp/YOUR_USERNAME/testoutput/CHASTE_TEST_NAME/results_from_time_1.8333
+</pre><p>
+Note that you don't have to specify separate nodes and elements files anymore - just the folder they live in.
+</p>
+<p>
+The following are command-line options:
+</p>
+<table class="wiki">
+<tr><td> <strong>Command</strong> </td><td> <strong>Default</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>output</tt> </td><td> Off </td><td> Writes an output to PNG files, which can be converted into an animated GIF (see below) 
+</td></tr><tr><td> <tt>springs</tt> </td><td> Off </td><td> Draws the springs between the cells 
+</td></tr><tr><td> <tt>nocells</tt> </td><td> Off </td><td> Do not draw the Voronoi cells 
+</td></tr><tr><td> <tt>ghosts</tt> </td><td> Off </td><td> Visualize the ghost nodes (and springs) 
+</td></tr><tr><td> <tt>notcylindrical</tt> </td><td> Off </td><td> Supress the cylindrical routine (print to screen exactly what is in the input files). This is automatically set to 'On' if a <tt>results.vizsetup</tt> file with the parameter <tt>MeshWidth</tt> is not supplied.
+</td></tr><tr><td> <tt>beta_catenin</tt> </td><td> On* </td><td> Displays a 'GFP style' simulation with shading dependent on protein concentrations. This is automatically set to 'On' if <tt>results.vizsetup</tt> has a line which reads <tt>BetaCatenin</tt>. 
+</td></tr><tr><td> <tt>ancestors</tt> </td><td> On* </td><td> Draws the ancestor index of a cell with a pretty colour 
+</td></tr><tr><td> <tt>nutrients</tt> </td><td> On* </td><td> Inputs a double associated with each cell and displays the cell with a colour proportional to the value of the double 
+</td></tr><tr><td> <tt>axes</tt> </td><td> On </td><td> Draws axes on the simualtion 
+</td></tr></table>
+<p>
+* When the appropriate results files are present.
+</p>
+<p>
+For example, to switch off cell drawing but draw ghost nodes and springs, use:
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ java Visualize2dCells &lt;data_path_and_prefix&gt; ghosts springs nocells
+</pre><h3 id="Memory">Memory</h3>
+<p>
+If you get an out of memory error, use
+</p>
+<pre class="wiki">java -Xmn100M -Xms512M -Xmx512M Visualize2dCells &lt;path&gt;
+</pre><p>
+for big simulations (24 hours of big crypts), or even
+</p>
+<pre class="wiki">java -Xmn200M -Xms700M -Xmx700M Visualize2dCells &lt;path&gt;
+</pre><p>
+for really big simulations (50 hours of full sized crypts). See comment 1 in <a class="missing ticket">ticket:293</a>
+</p>
+<h3 id="MakinganMPEGmovie">Making an MPEG movie</h3>
+<p>
+When you have created image0*.png files in the anim folder (by running the visualizer with the <tt>output</tt> argument), go to the anim folder (<tt>cdchaste</tt> then <tt>cd anim</tt>)and simply type
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ ./make_a_movie
+</pre><p>
+This creates an MPEG format movie using MPlayer, and seems to compress it, whatever the length, into a file of about 15MB.
+</p>
+<h3 id="Makingananimatedgif">Making an animated gif</h3>
+<pre class="wiki">[chaste@userpc60 anim]$ convert image*.png my_cool_animation.gif
+</pre><h3 id="Renamingfiles">Renaming files</h3>
+<p>
+You may want to do this so you can show the results from one simulation following on from another, before making your movie.  The following changes the filenames from image0*.png to image2*.png.
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ for f in image*; do mv $f ${f/image0/image2}; done 
+</pre><hr />
+<h2 id="Dataformats">Data formats</h2>
+<h3 id="Visualize1D">Visualize (1D)</h3>
+<p>
+In a single text file, on each line, expects: <tt>time x_1 x_2 ... x_n</tt>
+where x_1,...,x_n are ordered points
+</p>
+<h3 id="Visualize1dChainIn2d">Visualize1dChainIn2d</h3>
+<p>
+In a single text file, on each line, expects: <tt>time x_1 y_1 ... x_n y_n</tt>
+where (x_1,y_1),...,(x_n,y_n) are ordered points
+</p>
+<h3 id="Visualize2d">Visualize2d</h3>
+<p>
+Requires two arguments. The first is the node file, where each line should be of the form
+</p>
+<pre class="wiki">    time x_1 y_1 ... x_n y_n
+</pre><p>
+where (x_1,y_1),...,(x_n,y_n) are points. The second is the element file where each line should be of the form
+</p>
+<pre class="wiki">    time element1_node1 element1_node2 element1_node3 ... elementn_node1 elementn_node2 elementn_node3
+</pre><h3 id="Visualize2dCells">Visualize2dCells</h3>
+<p>
+Requires two files. The first is the nodes file (results.viznodes), where each line should be of the form
+</p>
+<pre class="wiki">    time x_1 y_1 c_1... x_n y_n c_n
+</pre><p>
+where (x_1,y_1),...,(x_n,y_n) are points and c_1,...,c_n are numbers corresponding to cell types:
+</p>
+<ul><li>0 = stem cell (cyan)
+</li><li>1 = transit cell (yellow) 
+</li><li>2 = differentiated cell (pink) 
+</li><li>3 = early cancer cell (light grey)
+</li><li>4 = late cancer cell (grey)
+</li><li>5 = labelled cell (purple)
+</li><li>6 = apoptosing cell (dark grey)
+</li><li>7 = sloughed cell or ghost node (invisible (silver), with all connecting edges invisible)
+</li></ul><p>
+The second is the elements file (results.vizelements), where each line should be of the form
+</p>
+<pre class="wiki">    time element1_node1 element1_node2 element1_node3 ... elementn_node1 elementn_node2 elementn_node3
+</pre><p>
+An optional third file is the setup file (results.vizsetup), which includes parameters such as
+</p>
+<pre class="wiki">    MeshWidth value
+    BetaCatenin
+    Complete
+</pre><p>
+Complete tells the Visualizer that this set of results files are finished and it can read the last line safely.
+N.B. A setup file is required for a cylindrical visualization - to tell the visualizer what the crypt width is.
+</p>
+<p>
+Other visualizer results files take the form <tt>results.viz&lt;Whatever&gt;</tt>
+</p>
+<p>
+Where <tt>&lt;whatever&gt;</tt> can currently be
+</p>
+<ul><li><tt>bCat</tt> - for a beta-catenin visualization.
+</li><li><tt>fibres</tt> 
+</li><li><tt>nutrients</tt> - to display a concentration for each cell.
+</li><li><tt>Ancestors</tt> - to display clonal populations.
+</li></ul><p>
+These files should all take the same form as <tt>results.viznodes</tt>, a row for every time step (with time as first item in the row) followed by a number of variables relating to each cell.
+</p>
+<p>
+All the files should all be in a folder called 'vis_results/'. The location of this folder is then specified when calling Visualize2dCells.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

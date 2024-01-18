@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SingleCellSimulation - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file heart/test/tutorials/TestSingleCellSimulationTutorial.hpp at revision <a class="changeset" href="/trac/changeset/ac1f5d6c3043/git_repo" title="Update tabs &amp; trailing whitespace for release
+">ac1f5d6c3043/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#Anexampleshowinghowtorunasinglecellsimulation">An example showing how to run a single cell simulation</a>
+    <ol>
+      <li>
+        <a href="#Introduction">Introduction</a>
+      </li>
+      <li>
+        <a href="#DefiningaCVODEmodel">Defining a CVODE model</a>
+      </li>
+      <li>
+        <a href="#NumericalConsiderations">Numerical Considerations</a>
+      </li>
+      <li>
+        <a href="#ChangingParametersintheCellModel">Changing Parameters in the Cell Model</a>
+      </li>
+      <li>
+        <a href="#Runningmodeltosteadystate">Running model to steady state</a>
+      </li>
+      <li>
+        <a href="#Gettingdetailforpacesofinterest">Getting detail for paces of interest</a>
+      </li>
+      <li>
+        <a href="#CalculatingAPDandUpstrokeVelocity">Calculating APD and Upstroke Velocity</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#Code">Code</a>
+    <ol>
+      <li>
+        <a href="#FilenameTestSingleCellSimulationTutorial.hpp">File name <tt>TestSingleCellSimulationTutorial.hpp</tt></a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="Anexampleshowinghowtorunasinglecellsimulation">An example showing how to run a single cell simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we run a single cell simulation,
+showing:
+</p>
+<ul><li>how to load a cardiac cell (using CVODE - best solver to use for single cell simulations).
+</li><li>how to define the stimulus (using the default from CellML).
+</li><li>run the model to steady state using the <tt>SteadyStateRunner</tt>.
+</li><li>solve the model for the number of paces of interest.
+</li><li>Write to voltage data to a file.
+</li><li>Use <tt>CellProperties</tt> to output information such as APD and upstroke velocity.
+</li></ul><p>
+ 
+The first thing to do is to include the headers.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "AbstractCvodeCell.hpp"
+#include "CellProperties.hpp"
+#include "EulerIvpOdeSolver.hpp"
+#include "RegularStimulus.hpp"
+#include "Shannon2004Cvode.hpp"
+#include "SteadyStateRunner.hpp"
+</span></pre></div><p>
+This test is always run sequentially (never in parallel)
+</p>
+<div class="code"><pre><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><p>
+Now we define the test class, which must inherit from <tt>CxxTest::TestSuite</tt>
+as usual, and the (public) test method
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestSingleCellSimulationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestShannonSimulation<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+CVODE is still an optional Chaste dependency, but it is highly recommended for
+working with single cell simulations. This tutorial code will only run if CVODE is installed and enabled
+(see <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a> and <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html">ChasteGuides/CmakeBuildGuide</a>).
+</p>
+<div class="code"><pre><span class="cp">#ifdef CHASTE_CVODE
+</span></pre></div><h2 id="DefiningaCVODEmodel">Defining a CVODE model</h2>
+<p>
+Setup a CVODE model that has empty solver and stimulus
+This is necessary to initialise the cell model.
+</p>
+<p>
+If you want to define your own stimulus without using the default one,
+you can define it here instead of giving it an empty stimulus:
+</p>
+<p>
+<tt>boost::shared_ptr&lt;RegularStimulus&gt; p_stimulus(new RegularStimulus(-25.5,2.0,50.0,500));</tt>
+</p>
+<p>
+the parameters are magnitude, duration, period, and start time of stimulus.
+</p>
+<div class="code"><pre>        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>RegularStimulus<span class="o">&gt;</span> p_stimulus<span class="p">;</span>
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractIvpOdeSolver<span class="o">&gt;</span> p_solver<span class="p">;</span>
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCvodeCell<span class="o">&gt;</span> p_model<span class="p">(</span><span class="k">new</span> CellShannon2004FromCellMLCvode<span class="p">(</span>p_solver<span class="p">,</span> p_stimulus<span class="p">));</span>
+
+</pre></div><p>
+Once the model is set up we can tell it to use the the default stimulus from CellML,
+(if one has been labelled, you get an exception if not), and return it.
+</p>
+<p>
+NB. You could automatically check whether one is available with:
+</p>
+<p>
+<tt>p_model-&gt;HasCellMLDefaultStimulus()</tt>
+</p>
+<div class="code"><pre>        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>RegularStimulus<span class="o">&gt;</span> p_regular_stim <span class="o">=</span> p_model<span class="o">-&gt;</span>UseCellMLDefaultStimulus<span class="p">();</span>
+
+</pre></div><p>
+Now you can modify certain parameters of the stimulus function, such as the period
+</p>
+<div class="code"><pre>        p_regular_stim<span class="o">-&gt;</span>SetPeriod<span class="p">(</span><span class="mf">1000.0</span><span class="p">);</span>
+
+</pre></div><h2 id="NumericalConsiderations">Numerical Considerations</h2>
+<p>
+Cardiac cell models can be pretty tricky to deal with, as they are very stiff and sometimes full
+of singularities.
+</p>
+<p>
+One of the first things you want to ensure is that the maximum timestep CVODE can take is less
+than or equal to the duration of the stimulus. Otherwise CVODE could evaluate the right-hand side
+before and after the stimulus, and never see it (giving you a cell that never does anything).
+This can be done using something like:
+</p>
+<p>
+<tt>double max_timestep = p_regular_stim-&gt;GetDuration();</tt>
+</p>
+<p>
+instead of the declaration of <tt>max_timestep</tt> below. In this tutorial we want an answer that is
+refined in time to give an accurate upstroke velocity. So we make the maximum timestep even
+smaller, to match the printing timestep. A rough rule of thumb would be to use the smaller of
+stimulus duration and printing time step as your CVODE maximum timestep. But note CVODE will still
+give sensible answers if printing timestep is less than maximum timestep, it might just decide
+to interpolate the output instead of evaluate it directly, if it thinks it will be
+accurate enough to meet your tolerances.
+</p>
+<p>
+A common error from CVODE is <strong>TOO_MUCH_WORK</strong>, this means CVODE tried to exceed the maximum number of
+internal time steps it is allowed to do. You can try using the method <tt>SetMaxSteps</tt> to change
+the default (500) to a larger value, with a command like:
+</p>
+<p>
+<tt>p_model-&gt;SetMaxSteps(1e5);</tt>
+</p>
+<p>
+We have found that 1e5 should be enough for a single pace of all models we've tried so far,
+but if you were running for a long time (e.g. 1000 paces in one Solve call) you would need to increase this.
+</p>
+<p>
+Another common error from CVODE is:
+<strong>the error test failed repeatedly or with |h| = hmin.</strong>
+</p>
+<p>
+Since we don't change hmin (and it defaults to a very small value), this generally means the
+ODE system has got to a situation where refining the timestep is not helping the convergence.
+</p>
+<p>
+This generally indicates that you are hitting some sort of singularity, or divide by zero, in
+the model. Unfortunately cardiac models are full of these, they can sometimes be manually edited out
+by changing the cellML file, for instance using <a class="ext-link" href="http://en.wikipedia.org/wiki/L%27H%C3%B4pital%27s_rule"><span class="icon">​</span>L'Hopital's rule</a>.
+</p>
+<p>
+In this case, one other thing you can try is to change the absolute and relative
+tolerances of the CVODE solver, the default being (1e-5,1e-7), although it isn't clear whether
+refining sometimes makes things worse for models with singularities,
+as CVODE goes to look for trouble in areas with steep gradients.
+</p>
+<p>
+For this particular test, we are going to specify quite strict tolerances, so that the test gets the same results
+on different versions of CVODE and different compilers.
+</p>
+<div class="code"><pre>        p_model<span class="o">-&gt;</span>SetTolerances<span class="p">(</span><span class="mf">1e-8</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">);</span>
+
+</pre></div><p>
+By default we use an analytic Jacobian for CVODE cells.
+In some cases (the Hund-Rudy model particularly being one) the
+analytic Jacobian contains effectively divide-by-zero entries, even at resting potential. If you observe
+CVODE errors when trying to run simulations, it can be worth switching off the analytic Jacobian and resorting
+to a numerical approximation. This can be done with the following command:
+</p>
+<p>
+<tt>p_model-&gt;ForceUseOfNumericalJacobian();</tt>
+</p>
+<h2 id="ChangingParametersintheCellModel">Changing Parameters in the Cell Model</h2>
+<p>
+You can also change any parameters that are labelled in the cell model.
+</p>
+<p>
+Instructions for annotating parameters can be found at <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
+</p>
+<p>
+Here we show how to change the parameter dictating the maximal conductance of the IKs current.
+Note this call actually leaves it unchanged from the default,
+you can experiment with changing it and examine the impact on APD.
+</p>
+<div class="code"><pre>        p_model<span class="o">-&gt;</span>SetParameter<span class="p">(</span><span class="s">"membrane_slow_delayed_rectifier_potassium_current_conductance"</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">);</span>
+
+</pre></div><h2 id="Runningmodeltosteadystate">Running model to steady state</h2>
+<p>
+Now we run the model to steady state.
+You can detect for steady state alternans by giving it true as a second parameter
+<tt>SteadyStateRunner steady_runner(p_model, true);</tt>
+</p>
+<p>
+You may change the number of maximum paces the runner takes. The default is 1e5.
+</p>
+<div class="code"><pre>        SteadyStateRunner <span class="nf">steady_runner</span><span class="p">(</span>p_model<span class="p">);</span>
+        steady_runner<span class="p">.</span>SetMaxNumPaces<span class="p">(</span><span class="mi">100u</span><span class="p">);</span>
+        <span class="kt">bool</span> result<span class="p">;</span>
+        result <span class="o">=</span> steady_runner<span class="p">.</span>RunToSteadyState<span class="p">();</span>
+
+</pre></div><p>
+Check that the model has NOT reached steady state
+(this model needs more than 100 paces to reach steady state).
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>result<span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+</pre></div><h2 id="Gettingdetailforpacesofinterest">Getting detail for paces of interest</h2>
+<p>
+Now we solve for the number of paces we are interested in.
+</p>
+<p>
+The absolute values of start time and end time are typically only relevant for the stimulus, in general
+nothing else on the right-hand side of the equations uses time directly.
+</p>
+<p>
+i.e. if you have a <tt>RegularStimulus</tt> of period 1000ms then you would get exactly the same results
+calling Solve(0,1000,...) twice, as you would calling Solve(0,1000,...) and Solve(1000,2000,...).
+</p>
+<p>
+Single cell results can be very sensitive to the sampling time step, because of the steepness of the upstroke.
+</p>
+<p>
+For example, try changing the line below to 1 ms. The upstroke velocity that is detected will change
+from 339 mV/ms to around 95 mV/ms. APD calculations will only ever be accurate to sampling timestep
+for the same reason.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> max_timestep <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+        p_model<span class="o">-&gt;</span>SetMaxTimestep<span class="p">(</span>max_timestep<span class="p">);</span>
+
+        <span class="kt">double</span> sampling_timestep <span class="o">=</span> max_timestep<span class="p">;</span>
+        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> end_time <span class="o">=</span> <span class="mf">1000.0</span><span class="p">;</span>
+        OdeSolution solution <span class="o">=</span> p_model<span class="o">-&gt;</span>Compute<span class="p">(</span>start_time<span class="p">,</span> end_time<span class="p">,</span> sampling_timestep<span class="p">);</span>
+
+</pre></div><p>
+<tt>p_model</tt> retains the state variables at the end of <tt>Solve</tt>, if you call <tt>Solve</tt> again the state
+variables will evolve from their new state, not the original initial conditions.
+</p>
+<p>
+Write the data out to a file.
+</p>
+<div class="code"><pre>        solution<span class="p">.</span>WriteToFile<span class="p">(</span><span class="s">"TestCvodeCells"</span><span class="p">,</span> <span class="s">"Shannon2004Cvode"</span><span class="p">,</span> <span class="s">"ms"</span><span class="p">);</span>
+
+</pre></div><h2 id="CalculatingAPDandUpstrokeVelocity">Calculating APD and Upstroke Velocity</h2>
+<p>
+Calculate APD and upstroke velocity using <tt>CellProperties</tt>
+</p>
+<div class="code"><pre>        <span class="kt">unsigned</span> voltage_index <span class="o">=</span> p_model<span class="o">-&gt;</span>GetSystemInformation<span class="p">()</span><span class="o">-&gt;</span>GetStateVariableIndex<span class="p">(</span><span class="s">"membrane_voltage"</span><span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> voltages <span class="o">=</span> solution<span class="p">.</span>GetVariableAtIndex<span class="p">(</span>voltage_index<span class="p">);</span>
+        CellProperties <span class="nf">cell_props</span><span class="p">(</span>voltages<span class="p">,</span> solution<span class="p">.</span>rGetTimes<span class="p">());</span>
+
+        <span class="kt">double</span> apd <span class="o">=</span> cell_props<span class="p">.</span>GetLastActionPotentialDuration<span class="p">(</span><span class="mi">90</span><span class="p">);</span>
+        <span class="kt">double</span> upstroke_velocity <span class="o">=</span> cell_props<span class="p">.</span>GetLastMaxUpstrokeVelocity<span class="p">();</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"APD = "</span> <span class="o">&lt;&lt;</span> apd <span class="o">&lt;&lt;</span> <span class="s">"ms"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Upstroke velocity = "</span> <span class="o">&lt;&lt;</span> upstroke_velocity <span class="o">&lt;&lt;</span> <span class="s">"mV/ms"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+
+</pre></div><p>
+Here we just check that the values are equal to the ones we expect,
+with appropriate precision to pass on different versions of CVODE.
+</p>
+<p>
+(These reference values were generated with tolerances of Abs=1e-12, Rel=1e-12.)
+</p>
+<div class="code"><pre>        TS_ASSERT_DELTA<span class="p">(</span>apd<span class="p">,</span> <span class="mf">212.411</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>upstroke_velocity<span class="p">,</span> <span class="mf">338.704</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">);</span>
+
+</pre></div><p>
+CVODE is still an optional dependency for Chaste, but is required for this tutorial.
+If CVODE is not installed this tutorial will
+not do anything, but we can at least alert the user to this.
+</p>
+<div class="code"><pre><span class="cp">#else
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Cvode is not enabled.</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<span class="cp">#endif
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestSingleCellSimulationTutorial.hpp">File name <tt>TestSingleCellSimulationTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "AbstractCvodeCell.hpp"
+#include "CellProperties.hpp"
+#include "EulerIvpOdeSolver.hpp"
+#include "RegularStimulus.hpp"
+#include "Shannon2004Cvode.hpp"
+#include "SteadyStateRunner.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestSingleCellSimulationTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestShannonSimulation<span class="p">()</span>
+    <span class="p">{</span>
+<span class="cp">#ifdef CHASTE_CVODE
+</span>        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>RegularStimulus<span class="o">&gt;</span> p_stimulus<span class="p">;</span>
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractIvpOdeSolver<span class="o">&gt;</span> p_solver<span class="p">;</span>
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCvodeCell<span class="o">&gt;</span> p_model<span class="p">(</span><span class="k">new</span> CellShannon2004FromCellMLCvode<span class="p">(</span>p_solver<span class="p">,</span> p_stimulus<span class="p">));</span>
+
+        boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>RegularStimulus<span class="o">&gt;</span> p_regular_stim <span class="o">=</span> p_model<span class="o">-&gt;</span>UseCellMLDefaultStimulus<span class="p">();</span>
+
+        p_regular_stim<span class="o">-&gt;</span>SetPeriod<span class="p">(</span><span class="mf">1000.0</span><span class="p">);</span>
+
+        p_model<span class="o">-&gt;</span>SetTolerances<span class="p">(</span><span class="mf">1e-8</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">);</span>
+
+        p_model<span class="o">-&gt;</span>SetParameter<span class="p">(</span><span class="s">"membrane_slow_delayed_rectifier_potassium_current_conductance"</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">);</span>
+
+        SteadyStateRunner <span class="nf">steady_runner</span><span class="p">(</span>p_model<span class="p">);</span>
+        steady_runner<span class="p">.</span>SetMaxNumPaces<span class="p">(</span><span class="mi">100u</span><span class="p">);</span>
+        <span class="kt">bool</span> result<span class="p">;</span>
+        result <span class="o">=</span> steady_runner<span class="p">.</span>RunToSteadyState<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>result<span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+        <span class="kt">double</span> max_timestep <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+        p_model<span class="o">-&gt;</span>SetMaxTimestep<span class="p">(</span>max_timestep<span class="p">);</span>
+
+        <span class="kt">double</span> sampling_timestep <span class="o">=</span> max_timestep<span class="p">;</span>
+        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> end_time <span class="o">=</span> <span class="mf">1000.0</span><span class="p">;</span>
+        OdeSolution solution <span class="o">=</span> p_model<span class="o">-&gt;</span>Compute<span class="p">(</span>start_time<span class="p">,</span> end_time<span class="p">,</span> sampling_timestep<span class="p">);</span>
+
+        solution<span class="p">.</span>WriteToFile<span class="p">(</span><span class="s">"TestCvodeCells"</span><span class="p">,</span> <span class="s">"Shannon2004Cvode"</span><span class="p">,</span> <span class="s">"ms"</span><span class="p">);</span>
+
+        <span class="kt">unsigned</span> voltage_index <span class="o">=</span> p_model<span class="o">-&gt;</span>GetSystemInformation<span class="p">()</span><span class="o">-&gt;</span>GetStateVariableIndex<span class="p">(</span><span class="s">"membrane_voltage"</span><span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> voltages <span class="o">=</span> solution<span class="p">.</span>GetVariableAtIndex<span class="p">(</span>voltage_index<span class="p">);</span>
+        CellProperties <span class="nf">cell_props</span><span class="p">(</span>voltages<span class="p">,</span> solution<span class="p">.</span>rGetTimes<span class="p">());</span>
+
+        <span class="kt">double</span> apd <span class="o">=</span> cell_props<span class="p">.</span>GetLastActionPotentialDuration<span class="p">(</span><span class="mi">90</span><span class="p">);</span>
+        <span class="kt">double</span> upstroke_velocity <span class="o">=</span> cell_props<span class="p">.</span>GetLastMaxUpstrokeVelocity<span class="p">();</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"APD = "</span> <span class="o">&lt;&lt;</span> apd <span class="o">&lt;&lt;</span> <span class="s">"ms"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Upstroke velocity = "</span> <span class="o">&lt;&lt;</span> upstroke_velocity <span class="o">&lt;&lt;</span> <span class="s">"mV/ms"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>apd<span class="p">,</span> <span class="mf">212.411</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>upstroke_velocity<span class="p">,</span> <span class="mf">338.704</span><span class="p">,</span> <span class="mf">1.25</span><span class="p">);</span>
+
+<span class="cp">#else
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Cvode is not enabled.</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<span class="cp">#endif
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

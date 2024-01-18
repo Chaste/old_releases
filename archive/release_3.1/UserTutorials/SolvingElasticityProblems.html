@@ -1,0 +1,542 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SolvingElasticityProblems - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/SolvingElasticityProblems" href="/chaste/tutorials/release_3.1/UserTutorials/SolvingElasticityProblems.html">SolvingElasticityProblems</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/continuum_mechanics/test/TestSolvingElasticityProblemsTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/16457" title="Run beautify script.">r16457</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Solvingsolidmechanicsproblems">Solving solid mechanics problems</h1>
+<p>
+In this tutorial we show how Chaste can be used to solve solid mechanics problems.
+We assume the reader has some familiarity with solid mechanics problems (the
+equations of nonlinear elasticity are given in the PDF on equations
+and finite element implementations (see <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a> --&gt; Miscellaneous information)). It is also best
+to have had a look at the solving linear PDEs tutorials.
+</p>
+<p>
+In brief, there several facets to solid mechanics models:
+</p>
+<ul><li>Time-dependent problems versus static problems
+</li><li>Linear elasticity versus nonlinear elasticity
+</li><li>Compressible versus incompressible materials
+</li><li>The type of material behaviour (elastic, visco-elastic, etc..)
+</li><li>Specification of geometry, material law, body force, displacement boundary conditions, and traction boundary conditions
+</li></ul><p>
+ 
+The solvers currently implemented are STATIC (time-independent) and use NONLINEAR ELASTICITY. There are solvers for
+both INCOMPRESSIBLE and COMPRESSIBLE deformations. The material behaviour is
+assumed to be ELASTIC (stress is just a function of strain, not strain-rate etc), and in particular HYPER-ELASTIC
+(stress is a function of strain via a 'strain energy function', for which stress is obtained by differentiating the
+strain energy function with respect to strain).
+</p>
+<p>
+To solve a mechanics problem we need to
+</p>
+<ul><li>Choose the solver (compressible or incompressible)
+</li><li>Specify the geometry (ie the mesh)
+</li><li>Specify the material law (ie the strain-energy function) (incompressible or compressible as appropriate).
+</li><li>Specify the BODY FORCE -- this is a force density acting throughout the body (eg. acceleration due to gravity),
+and also the mass density.
+</li><li>Specify some DISPLACEMENT BOUNDARY CONDITIONS -- some part of the boundary must have the displacement specified on it
+</li><li>Specify TRACTION BOUNDARY CONDITIONS (if non-zero) on the rest of the boundary -- tractions are forces per unit area applied
+the rest of the surface of the deformable object.
+</li></ul><p>
+ 
+<strong>VERY IMPORTANT NOTE:</strong> For incompressible problems, make sure you read the comment about HYPRE below before going to
+3D or refining meshes in these tests.
+</p>
+<p>
+<strong>Another note:</strong> mechanics problems are not currently implemented to scale in parallel yet.
+</p>
+<p>
+As always we include this first class as a test suite
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+On some systems there is a clash between Boost Ublas includes and PETSc.  This can be
+resolved by making sure that Chaste's interface to the Boost libraries are included
+as early as possible.
+</p>
+<div class="code"><pre><span class="cp">#include "UblasCustomFunctions.hpp"
+</span></pre></div><p>
+The incompressible solver is called <tt>IncompressibleNonlinearElasticitySolver</tt>
+</p>
+<div class="code"><pre><span class="cp">#include "IncompressibleNonlinearElasticitySolver.hpp"
+</span></pre></div><p>
+The simplest incompressible material law is the Mooney-Rivlin material law (of which
+Neo-Hookean laws are a subset)
+</p>
+<div class="code"><pre><span class="cp">#include "MooneyRivlinMaterialLaw.hpp"
+</span></pre></div><p>
+Another incompressible material law
+</p>
+<div class="code"><pre><span class="cp">#include "ExponentialMaterialLaw.hpp"
+</span></pre></div><p>
+This is a useful helper class
+</p>
+<div class="code"><pre><span class="cp">#include "NonlinearElasticityTools.hpp"
+</span></pre></div><p>
+As before: PetscSetupAndFinalize.hpp must be included in every test that uses PETSc. Note that it
+cannot be included in the source code.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><h2 id="Simpleincompressibledeformation:2Dshapehangingundergravity">Simple incompressible deformation: 2D shape hanging under gravity</h2>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestSolvingElasticityProblemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><p>
+In the first test we use INCOMPRESSIBLE nonlinear elasticity. For incompressible elasticity, there
+is a constraint on the deformation, which results in a pressure field (a Lagrange multiplier)
+which is solved for together with the deformation.
+</p>
+<p>
+All the mechanics solvers solve for the deformation using the finite element method with QUADRATIC
+basis functions for the deformation. This necessitates the use of a <tt>QuadraticMesh</tt> - such meshes have
+extra nodes that aren't vertices of elements, in this case midway along each edge. (The displacement
+is solved for at <i>each node</i> in the mesh (including internal [non-vertex] nodes), whereas the pressure
+is only solved for at each vertex - in FEM terms, quadratic interpolation for displacement, linear
+interpolation for pressure, which is required for stability. The pressure at internal nodes is computed
+by linear interpolation).
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestSimpleIncompressibleProblem<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+First, define the geometry. This should be specified using the <tt>QuadraticMesh</tt> class, which inherits from <tt>TetrahedralMesh</tt>
+and has mostly the same interface. Here we define a 0.8 by 1 rectangle, with elements 0.1 wide.
+(<tt>QuadraticMesh</tt>s can also be read in using <tt>TrianglesMeshReader</tt>; see next tutorial/rest of code base for examples of this).
+</p>
+<div class="code"><pre>        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.8</span> <span class="c">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="c">/*height*/</span><span class="p">);</span>
+</pre></div><p>
+We use a Mooney-Rivlin material law, which applies to isotropic materials and has two parameters.
+Restricted to 2D however, it only has one parameter, which can be thought of as the total
+stiffness. We declare a Mooney-Rivlin law, setting the parameter to 1.
+</p>
+<div class="code"><pre>        MooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Next, the body force density. In realistic problems this will either be
+acceleration due to gravity (ie b=(0,-9.81)) or zero if the effect of gravity can be neglected.
+In this problem we apply a gravity-like downward force.
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> body_force<span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span>  <span class="mf">0.0</span><span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">;</span>
+</pre></div><p>
+Two types of boundary condition are required: displacement and traction. As with the other PDE solvers,
+the displacement (Dirichlet) boundary conditions are specified at nodes, whereas traction (Neumann) boundary
+conditions are specified on boundary elements.
+</p>
+<p>
+In this test we apply displacement boundary conditions on one surface of the mesh, the upper (Y=1.0) surface.
+We are going to specify zero-displacement at these nodes.
+We do not specify any traction boundary conditions, which means that (effectively) zero-traction boundary
+conditions (ie zero pressures) are applied on the three other surfaces.
+</p>
+<p>
+We need to get a <tt>std::vector</tt> of all the node indices that we want to fix. The <tt>NonlinearElasticityTools</tt>
+has a static method for helping do this: the following gets all the nodes for which Y=1.0. The second
+argument (the '1') indicates Y . (So, for example, <tt>GetNodesByComponentValue(mesh, 0, 10)</tt> would get the nodes on X=10).
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mesh<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Before creating the solver we create a <tt>SolidMechanicsProblemDefinition</tt> object,  which contains
+everything that defines the problem: mesh, material law, body force,
+the fixed nodes and their locations, any traction boundary conditions, and the density
+(which multiplies the body force, otherwise isn't used).
+</p>
+<div class="code"><pre>        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+</pre></div><p>
+Set the material problem on the problem definition object, saying that the problem, and
+the material law, is incompressible. All material law files can be found in
+<tt>continuum_mechanics/src/problem/material_laws</tt>.
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+</pre></div><p>
+Set the fixed nodes, choosing zero displacement for these nodes (see later for how
+to provide locations for the fixed nodes).
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+</pre></div><p>
+Set the body force and the density. (Note that the second line isn't technically
+needed, as internally the density is initialised to 1)
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>body_force<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetDensity<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Now we create the (incompressible) solver, passing in the mesh, problem definition
+and output directory
+</p>
+<div class="code"><pre>        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"SimpleIncompressibleElasticityTutorial"</span><span class="p">);</span>
+</pre></div><p>
+.. and to compute the solution, just call <tt>Solve()</tt>
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+<strong>Visualisation</strong>. Go to the folder <tt>SimpleIncompressibleElasticityTutorial</tt> in your test-output directory.
+There should be 2 files, initial.nodes and solution.nodes. These are the original nodal positions and the deformed
+positions. Each file has two columns, the x and y locations of each node. To visualise the solution in say
+Matlab or Octave, you could do: <tt>x=load('solution.nodes'); plot(x(:,1),x(:,2),'k*')</tt>. For Cmgui output, see below.
+</p>
+<p>
+To get the actual solution from the solver, use these two methods. Note that the first
+gets the deformed position (ie the new location, not the displacement). They are both of size
+num_total_nodes.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;&amp;</span> r_deformed_positions <span class="o">=</span> solver<span class="p">.</span>rGetDeformedPosition<span class="p">();</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> r_pressures <span class="o">=</span> solver<span class="p">.</span>rGetPressures<span class="p">();</span>
+</pre></div><p>
+Let us obtain the values of the new position, and the pressure, at the bottom right corner node.
+</p>
+<div class="code"><pre>        <span class="kt">unsigned</span> node_index <span class="o">=</span> <span class="mi">8</span><span class="p">;</span>
+        assert<span class="p">(</span> fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">);</span> <span class="c">// check that X=0.8, ie that we have the correct node,
+</span>        assert<span class="p">(</span> fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">);</span> <span class="c">// check that Y=0.0, ie that we have the correct node,
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"New position: "</span> <span class="o">&lt;&lt;</span> r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span> <span class="o">&lt;&lt;</span> r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Pressure: "</span> <span class="o">&lt;&lt;</span> r_pressures<span class="p">[</span>node_index<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+</pre></div><p>
+The recommended visualiser is Cmgui. This method can be used to convert all the output files to Cmgui format.
+They are placed in <tt>[OUTPUT_DIRECTORY]/cmgui</tt>. A script is created to easily load the data: in a
+terminal cd to this directory and call <tt>cmgui LoadSolutions.com</tt>. (In this directory, the initial position is given by
+solution_0.exnode, the deformed by solution_1.exnode).
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+</pre></div><p>
+These are just to check that nothing has been accidentally changed in this test.
+Newton's method (with damping) was used to solve the nonlinear problem, and we check that
+4 iterations were needed to converge.
+</p>
+<div class="code"><pre>        TS_ASSERT_DELTA<span class="p">(</span>r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">0</span><span class="p">),</span>  <span class="mf">0.7980</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mf">0.1129</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">4</span>u<span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+<i>Exercise</i>: convert to a compressible solver and compare the resultant deformations.
+The next tutorial describes how to solve for a compressible deformation,
+but the changes are essentially trivial: <tt>IncompressibleNonlinearElasticitySolver</tt> needs to be changed to
+<tt>CompressibleNonlinearElasticitySolver</tt>, the line <tt>problem_defn.SetMaterialLaw(..)</tt> needs changing, and
+the material law itself should be of type <tt>AbstractCompressibleMaterialLaw</tt>. An example is
+<tt>CompressibleMooneyRivlinMaterialLaw</tt>. Also <tt>solver.rGetPressures()</tt> doesn't exist (or make sense)
+when the solver is an <tt>CompressibleNonlinearElasticitySolver</tt>.
+</p>
+<h2 id="Incompressibledeformation:2Dshapehangingundergravitywithabalancingtraction">Incompressible deformation: 2D shape hanging under gravity with a balancing traction</h2>
+<p>
+We now repeat the above test but include a traction on the bottom surface (Y=0). We apply this
+in the inward direction so that is counters (somewhat) the effect of gravity. We also show how stresses
+and strains can be written to file.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestIncompressibleProblemWithTractions<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+All of this is exactly as above
+</p>
+<div class="code"><pre>        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.8</span> <span class="c">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="c">/*height*/</span><span class="p">);</span>
+
+        MooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> body_force<span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span>  <span class="mf">0.0</span><span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mesh<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Now the traction boundary conditions. We need to collect all the boundary elements on the surface which we want to
+apply non-zero tractions, put them in a <tt>std::vector</tt>, and create a corresponding <tt>std::vector</tt> of the tractions
+for each of the boundary elements. Note that the each traction is a 2D vector with dimensions of pressure.
+</p>
+<p>
+First, declare the data structures:
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> tractions<span class="p">;</span>
+</pre></div><p>
+Create a constant traction
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> traction<span class="p">;</span>
+        traction<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        traction<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c">// this choice of sign corresponds to an inward force (if applied to the bottom surface)
+</span></pre></div><p>
+Loop over boundary elements
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+If the centre of the element has Y value of 0.0, it is on the surface we need
+</p>
+<div class="code"><pre>            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+</pre></div><p>
+Put the boundary element and the constant traction into the stores.
+</p>
+<div class="code"><pre>                BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+                boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+                tractions<span class="p">.</span>push_back<span class="p">(</span>traction<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div><p>
+A quick check
+</p>
+<div class="code"><pre>        assert<span class="p">(</span>boundary_elems<span class="p">.</span>size<span class="p">()</span> <span class="o">==</span> <span class="mi">8</span>u<span class="p">);</span>
+</pre></div><p>
+Now create the problem definition object, setting the material law, fixed nodes and body force as
+before (this time not calling <tt>SetDensity()</tt>, so using the default density of 1.0,
+and also calling a method for setting tractions, which takes in the boundary elements
+and tractions for each of those elements.
+</p>
+<div class="code"><pre>        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>body_force<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetTractionBoundaryConditions<span class="p">(</span>boundary_elems<span class="p">,</span> tractions<span class="p">);</span>
+</pre></div><p>
+Create solver as before
+</p>
+<div class="code"><pre>        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"IncompressibleElasticityWithTractionsTutorial"</span><span class="p">);</span>
+</pre></div><p>
+In this test we also output the stress and strain. For the former, we have to tell the solver to store
+the stresses that are computed during the solve. This currently only works in parallel.
+</p>
+<div class="code"><pre>        <span class="k">if</span><span class="p">(</span>PetscTools<span class="o">::</span>IsSequential<span class="p">())</span> <span class="c">// see #2084
+</span>        <span class="p">{</span>
+            solver<span class="p">.</span>SetComputeAverageStressPerElementDuringSolve<span class="p">();</span>
+        <span class="p">}</span>
+</pre></div><p>
+Call <tt>Solve()</tt>
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+Write the final deformation gradients to file. The i-th line of this file provides the deformation gradient F,
+written as 'F(0,0) F(0,1) F(1,0) F(1,1)', evaluated at the centroid of the i-th element.
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>WriteCurrentDeformationGradients<span class="p">(</span><span class="s">"deformation_grad"</span><span class="p">);</span>
+</pre></div><p>
+Since we called <tt>SetComputeAverageStressPerElementDuringSolve</tt>, we can write the stresses to file too. However,
+note that for each element this is not the stress evaluated at the centroid, but the mean average of the stresses
+evaluated at the quadrature points - for technical cardiac electromechanics reasons, it is difficult to
+define the stress at non-quadrature points.
+</p>
+<div class="code"><pre>        <span class="k">if</span><span class="p">(</span>PetscTools<span class="o">::</span>IsSequential<span class="p">())</span> <span class="c">// see #2084
+</span>        <span class="p">{</span>
+            solver<span class="p">.</span>WriteCurrentAverageElementStresses<span class="p">(</span><span class="s">"2nd_PK_stress"</span><span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+Another quick check
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">3</span>u<span class="p">);</span> <span class="c">// 3 rather than 4 this time
+</span></pre></div><p>
+Visualise as before by going to the output directory and doing
+<tt>x=load('solution.nodes'); plot(x(:,1),x(:,2),'m*')</tt> in Matlab/octave, or by using Cmgui.
+The effect of the traction should be clear (especially when compared to
+the results of the first test).
+</p>
+<p>
+Create Cmgui output
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+</pre></div><p>
+This is just to check that nothing has been accidentally changed in this test
+</p>
+<div class="code"><pre>        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">8</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span> <span class="mf">0.8574</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">8</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.0310</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+More examples are given in the next tutorial
+</p>
+<h2 id="IMPORTANT:UsingHYPRE">IMPORTANT: Using HYPRE</h2>
+<p>
+Mechanics solves being nonlinear are expensive, so it is recommended you also use <tt>build=GccOpt_ndebug</tt> (when running scons)
+on larger problems.
+</p>
+<p>
+When running <strong>incompressible</strong> problems in 3D, or with more elements, it is vital to also change the linear solver to use HYPRE, an algebraic multigrid
+solver. Without HYRPE, the linear solve (i) may become very very slow; or (ii) may not converge, in which case the nonlinear
+solve will (probably) not converge. HYPRE is (currently) not a pre-requisite for installing Chaste, hence this is not (currently)
+the default linear solver for incompressible mechanics problems, although this will change in the future.
+</p>
+<p>
+<i>HYPRE should be considered a pre-requisite for large incompressible mechanics problems.</i>
+</p>
+<p>
+To use HYRPE, you need to have PETSc installed with HYPRE. However, if you followed installation
+instructions for Chaste 2.1 or later, you probably do already have PETSc installed with HYPRE.
+</p>
+<p>
+To switch on HYPRE, open the file <tt>continuum_mechanics/src/solver/AbstractNonlinearElasticitySolver</tt> and uncomment the line
+#define MECH_USE_HYPRE
+near the top of the file (currently: line 57).
+</p>
+<p>
+Note: PETSc unfortunately doesn't quit if you try to use HYPRE without it being installed, but it spew lots of error messages.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestSolvingElasticityProblemsTutorial.hpp">File name <tt>TestSolvingElasticityProblemsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "UblasCustomFunctions.hpp"
+#include "IncompressibleNonlinearElasticitySolver.hpp"
+#include "MooneyRivlinMaterialLaw.hpp"
+#include "ExponentialMaterialLaw.hpp"
+#include "NonlinearElasticityTools.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestSolvingElasticityProblemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestSimpleIncompressibleProblem<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.8</span> <span class="c">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="c">/*height*/</span><span class="p">);</span>
+
+        MooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> body_force<span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span>  <span class="mf">0.0</span><span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mesh<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+
+        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+
+        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>body_force<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetDensity<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"SimpleIncompressibleElasticityTutorial"</span><span class="p">);</span>
+
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;&amp;</span> r_deformed_positions <span class="o">=</span> solver<span class="p">.</span>rGetDeformedPosition<span class="p">();</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> r_pressures <span class="o">=</span> solver<span class="p">.</span>rGetPressures<span class="p">();</span>
+        <span class="kt">unsigned</span> node_index <span class="o">=</span> <span class="mi">8</span><span class="p">;</span>
+        assert<span class="p">(</span> fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.8</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">);</span> <span class="c">// check that X=0.8, ie that we have the correct node,
+</span>        assert<span class="p">(</span> fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>node_index<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">);</span> <span class="c">// check that Y=0.0, ie that we have the correct node,
+</span>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"New position: "</span> <span class="o">&lt;&lt;</span> r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">0</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span> <span class="o">&lt;&lt;</span> r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Pressure: "</span> <span class="o">&lt;&lt;</span> r_pressures<span class="p">[</span>node_index<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">0</span><span class="p">),</span>  <span class="mf">0.7980</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>r_deformed_positions<span class="p">[</span>node_index<span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mf">0.1129</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">4</span>u<span class="p">);</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> TestIncompressibleProblemWithTractions<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="c">/*stepsize*/</span><span class="p">,</span> <span class="mf">0.8</span> <span class="c">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="c">/*height*/</span><span class="p">);</span>
+
+        MooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> body_force<span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span>  <span class="mf">0.0</span><span class="p">;</span>
+        body_force<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes <span class="o">=</span> NonlinearElasticityTools<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>GetNodesByComponentValue<span class="p">(</span>mesh<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> tractions<span class="p">;</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> traction<span class="p">;</span>
+        traction<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        traction<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c">// this choice of sign corresponds to an inward force (if applied to the bottom surface)
+</span>        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+                BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+                boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+                tractions<span class="p">.</span>push_back<span class="p">(</span>traction<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        assert<span class="p">(</span>boundary_elems<span class="p">.</span>size<span class="p">()</span> <span class="o">==</span> <span class="mi">8</span>u<span class="p">);</span>
+
+        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>body_force<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetTractionBoundaryConditions<span class="p">(</span>boundary_elems<span class="p">,</span> tractions<span class="p">);</span>
+
+        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"IncompressibleElasticityWithTractionsTutorial"</span><span class="p">);</span>
+
+        <span class="k">if</span><span class="p">(</span>PetscTools<span class="o">::</span>IsSequential<span class="p">())</span> <span class="c">// see #2084
+</span>        <span class="p">{</span>
+            solver<span class="p">.</span>SetComputeAverageStressPerElementDuringSolve<span class="p">();</span>
+        <span class="p">}</span>
+
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+        solver<span class="p">.</span>WriteCurrentDeformationGradients<span class="p">(</span><span class="s">"deformation_grad"</span><span class="p">);</span>
+        <span class="k">if</span><span class="p">(</span>PetscTools<span class="o">::</span>IsSequential<span class="p">())</span> <span class="c">// see #2084
+</span>        <span class="p">{</span>
+            solver<span class="p">.</span>WriteCurrentAverageElementStresses<span class="p">(</span><span class="s">"2nd_PK_stress"</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">3</span>u<span class="p">);</span> <span class="c">// 3 rather than 4 this time
+</span>
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">8</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span> <span class="mf">0.8574</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">8</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.0310</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

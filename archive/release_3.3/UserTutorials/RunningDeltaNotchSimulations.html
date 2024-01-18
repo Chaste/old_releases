@@ -1,0 +1,437 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningDeltaNotchSimulations - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningDeltaNotchSimulationsTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="AnexampleshowinghowtorunDeltaNotchsimulations">An example showing how to run <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to simulate a growing cell monolayer culture
+into which a simple model of <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling is incorporated. This model was developed
+by Collier et al. ("Pattern formation by lateral inhibition with feedback: a mathematical
+model of delta-notch intercellular signalling", J. Theor. Biol. 183:429-446) and comprises
+two ODEs to describe the evolution in concentrations of Delta and Notch in each cell. The ODE
+for Notch includes a reaction term that depends on the mean Delta concentration among neighbouring
+cells. Thus in this simulation each cell needs to be able to access information about its
+neighbours. We use the <tt>CellData</tt> class to facilitate this, and introduce a subclass
+of <tt>OffLatticeSimulation</tt> called <tt>DeltaNotchOffLatticeSimulation</tt> to handle the updating
+of <tt>CellData</tt> at each time step as cell neighbours change.
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous tutorials, we begin by including the necessary header files. We have
+encountered these files already. Recall that often, either <tt>CheckpointArchiveTypes.hpp</tt>
+or <tt>CellBasedSimulationArchiver.hpp</tt> must be included the first Chaste header.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "NodeBasedCellPopulation.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "CellAgesWriter.hpp"
+#include "CellIdWriter.hpp"
+#include "CellProliferativePhasesWriter.hpp"
+#include "CellVolumesWriter.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellProliferativePhasesCountWriter.hpp"
+#include "CellProliferativeTypesCountWriter.hpp"
+#include "SmartPointers.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+The next header file defines a simple stochastic cell-cycle model that includes the functionality
+for solving each cell's <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling ODE system at each time step, using information about neighbouring
+cells through the <tt>CellData</tt> class. We note that in this simple cell-cycle model, the
+proliferative status of each cell is unaffected by its <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity; such dependence could
+easily be introduced given an appropriate model of this coupling.
+</p>
+<div class="code"><pre><span class="cp">#include "DeltaNotchCellCycleModel.hpp"
+</span></pre></div><p>
+The next header file defines the class that simulates the evolution of a <tt>CellPopulation</tt>,
+specialized to deal with updating of the <tt>CellData</tt> class to deal with Delta-Notch
+signalling between cells.
+</p>
+<p>
+The next header defines the simulation class modifier corresponding to the Delta-Notch cell-cycle model.
+This modifier leads to the <tt>CellData</tt> cell property being updated at each timestep to deal with Delta-Notch signalling.
+</p>
+<div class="code"><pre><span class="cp">#include "DeltaNotchTrackingModifier.hpp"
+</span>
+</pre></div><p>
+Having included all the necessary header files, we proceed by defining the test class.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningDeltaNotchSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Test1:avertex-basedmonolayerwithDeltaNotchsignalling">Test 1: a vertex-based monolayer with <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
+<p>
+In the first test, we demonstrate how to simulate a monolayer that incorporates
+<a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling, using a vertex-based approach.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedMonolayerWithDeltaNotch</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We include the next line because Vertex simulations cannot be run in parallel
+</p>
+<div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+First we create a regular vertex mesh.
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+</pre></div><p>
+We then create some cells, each with a cell-cycle model, <tt>DeltaNotchCellCycleModel</tt>, which
+incorporates a <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system. In this example we choose to make each cell differentiated,
+so that no cell division occurs.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> elem_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> elem_index<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> elem_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            DeltaNotchCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> DeltaNotchCellCycleModel<span class="p">();</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span><span class="o">*</span><span class="mf">12.0</span><span class="p">;</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Using the vertex mesh and cells, we create a cell-based population object, and specify which results to
+output to file.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellProliferativePhasesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellVolumesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+As we are using the <tt>CellData</tt> class to store the information about each cell required to
+solve the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system, we must first instantiate this singleton and associate it with the
+cell population. Note that we set the number of variables to 3. This is because each cell's ODE system
+comprises two ODEs describing <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity, and an additional 'dummy' ODE with zero reaction term
+that describes how the mean concentration of Delta among neighbouring cells changes. This latter quantity
+remains constant for the purposes of solving the ODE system over each time step, but is updated at the
+end of the time step by a method on <tt>DeltaNotchOffLatticeSimulation</tt>.
+</p>
+<p>
+We choose to initialise the concentrations to random levels in each cell.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"notch"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"mean delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
+and run the simulation. We can make the simulation run for longer to see more patterning by increasing the end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexBasedMonolayerWithDeltaNotch"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+</pre></div><p>
+Then, we define the modifier class, which automatically updates the values of Delta and Notch within the cells in <tt>CellData</tt> and passes it to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>DeltaNotchTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+This modifier assigns target areas to each cell, which are required by the <tt>NagaiHondaForce</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/TestVertexBasedMonolayerWithDeltaNotch/results_from_time_0/results.pvd</tt>.
+</p>
+<h2 id="Test2-anode-basedmonolayerwithDeltaNotchsignalling">Test 2 - a node-based monolayer with <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
+<p>
+In the next test we run a similar simulation as before, but this time with node-based
+'overlapping spheres' model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestNodeBasedMonolayerWithDeltaNotch</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We include the next line because <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/HoneycombMeshGenerator.html" rel="nofollow">HoneycombMeshGenerator?</a>, used in this test, is not
+yet implemented in parallel.
+</p>
+<div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+Most of the code in this test is the same as in the previous test,
+except we now create a 'nodes-only mesh' and <tt>NodeBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+</pre></div><p>
+The mechanics cut-off length (second argument) is used in this simulation to determine nearest
+neighbours for the purpose of the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> intercellular signalling model.
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            DeltaNotchCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> DeltaNotchCellCycleModel<span class="p">();</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span><span class="o">*</span><span class="mf">12.0</span><span class="p">;</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellIdWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+We choose to initialise the concentrations to random levels in each cell.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"notch"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"mean delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestNodeBasedMonolayerWithDeltaNotch"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+</pre></div><p>
+Again we define the modifier class, which automatically updates the values of Delta and Notch within the cells in <tt>CellData</tt> and passes it to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>DeltaNotchTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+</pre></div><p>
+As we are using a node-based cell population, we use an appropriate force law.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/TestNodeBasedMonolayerWithDeltaNotch/results_from_time_0/results.pvd</tt>,
+add a spherical glyph.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningDeltaNotchSimulationsTutorial.hpp">File name <tt>TestRunningDeltaNotchSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "NodeBasedCellPopulation.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "CellAgesWriter.hpp"
+#include "CellIdWriter.hpp"
+#include "CellProliferativePhasesWriter.hpp"
+#include "CellVolumesWriter.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellProliferativePhasesCountWriter.hpp"
+#include "CellProliferativeTypesCountWriter.hpp"
+#include "SmartPointers.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "DeltaNotchCellCycleModel.hpp"
+#include "DeltaNotchTrackingModifier.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningDeltaNotchSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestVertexBasedMonolayerWithDeltaNotch<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> elem_index<span class="o">=</span><span class="mi">0</span><span class="p">;</span> elem_index<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> elem_index<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            DeltaNotchCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> DeltaNotchCellCycleModel<span class="p">();</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span><span class="o">*</span><span class="mf">12.0</span><span class="p">;</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellProliferativePhasesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellVolumesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"notch"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"mean delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexBasedMonolayerWithDeltaNotch"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>DeltaNotchTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestNodeBasedMonolayerWithDeltaNotch<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            DeltaNotchCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> DeltaNotchCellCycleModel<span class="p">();</span>
+            p_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_diff_type<span class="p">);</span>
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span><span class="o">*</span><span class="mf">12.0</span><span class="p">;</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellIdWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"notch"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"mean delta"</span><span class="p">,</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">());</span>
+        <span class="p">}</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestNodeBasedMonolayerWithDeltaNotch"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>DeltaNotchTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

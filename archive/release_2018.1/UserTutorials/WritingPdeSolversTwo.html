@@ -1,0 +1,511 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/WritingPdeSolversTwo - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file pde/test/tutorials/TestWritingPdeSolversTwoTutorial.hpp at revision <a class="changeset" href="/trac/changeset/4f69b9f/git_repo" title="Copyright Mayhem!
+">4f69b9f/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In the previous tutorial we showed how a PDE solver could be written for the
+'simple' case in which the FEM discretisation leads to a linear system Ax=b where
+both A and b are 'assembled'. In this tutorial, we consider the more general case,
+and show to write assembler classes which assemble one particular matrix or vector,
+and how to write solver classes which <em>use</em> assemblers to create and solve the FEM
+linear system.
+</p>
+<p>
+We will take as the test problem the heat equation, <tt>u_t = u_{xx}</tt>, with Dirichlet
+BCs <tt>u = u*</tt> on <tt>Gamma1</tt> and <tt>du/dn = g</tt> on <tt>Gamma2</tt>.
+</p>
+<p>
+We write a solver which uses an <strong>explicit</strong> time-discretisation (as opposed to the implicit
+discretisations used throughout the rest of the code). The FEM linear system that needs to be set up is
+</p>
+<pre class="wiki">M U^{n+1} = (M + dt K) U^{n}  +  c
+</pre><p>
+where <tt>M</tt> is the mass matrix, <tt>K</tt> the stiffness matrix, and <tt>U^{n}</tt> the vector of nodal
+values of u at timestep n. c is the surface integral term coming from the Neumann BCs,
+ie <tt>c_i = integral_over_Gamma2 (g * phi_i dS)</tt>. (This can be compared with an
+implicit time-discretisation, for which we solve <tt>(M - dt K) U^{n+1} = M U^{n} + c</tt>).
+</p>
+<p>
+Let us call <tt>M + dt*K</tt> the 'RHS matrix'. We will write a solver, inheriting from
+<tt>AbstractDynamicLinearPdeSolver</tt>, which is going to <em>use</em> three assemblers: (i) an assembler of
+the mass matrix (already written); (ii) an assembler of the RHS matrix (we have to write this ourselves);
+and (iii) an assembler of surface term, c (already written).
+</p>
+<p>
+Firstly, include <tt>AbstractFeVolumeIntegralAssembler</tt> which the assembler we write will inherit from,
+and <tt>AbstractDynamicLinearPdeSolver</tt>, which the solver we write will inherit from.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "AbstractFeVolumeIntegralAssembler.hpp"
+#include "AbstractDynamicLinearPdeSolver.hpp"
+</span></pre></div><p>
+Some standard includes
+</p>
+<div class="code"><pre><span class="cp">#include "TetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+The two assemblers that we can use
+</p>
+<div class="code"><pre><span class="cp">#include "MassMatrixAssembler.hpp"
+#include "NaturalNeumannSurfaceTermAssembler.hpp"
+</span></pre></div><p>
+Ignore these for the time being
+</p>
+<div class="code"><pre><span class="c1">//#include "HeatEquation.hpp"
+//#include "SimpleLinearParabolicSolver.hpp"
+</span>
+</pre></div><h2 id="Writingassemblers">Writing assemblers</h2>
+<p>
+We need to write an assembler for setting up the matrix <tt>M + dt K</tt>.
+</p>
+<p>
+Any new assembler should inherit from <tt>AbstractFeVolumeIntegralAssembler</tt>, which deals with looping over
+elements, looping over quadrature points, etc. Concrete classes need to provide the integrand for the matrix
+or vector being assembled (exactly as in the previous tutorials). However, in general, the assembler
+class can be used to assemble a matrix OR a vector OR both. The class we write here needs to assemble
+a matrix but not a vector. Note that the parent class <tt>AbstractFeVolumeIntegralAssembler</tt> has two booleans
+in the template list (as well as the dimension template parameters as normal) - these booleans say
+whether this class will be assembling a vector or a matrix (or both).
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">RhsMatrixAssembler</span>
+    <span class="o">:</span> <span class="k">public</span> AbstractFeVolumeIntegralAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="cm">/*problem dim*/</span><span class="p">,</span><span class="nb">false</span> <span class="cm">/*doesn't assemble vectors*/</span><span class="p">,</span><span class="nb">true</span><span class="cm">/*assembles a matrix*/</span><span class="p">,</span>NORMAL <span class="cm">/*amount of interpolation*/</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+</pre></div><p>
+Even when a class isn't being written for a very general dimensions sometimes it is a good idea
+to define the following, and then use <tt>ELEMENT_DIM</tt> etc in the below, as it can make the code a
+bit easier to understand.
+</p>
+<div class="code"><pre>    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> ELEMENT_DIM <span class="o">=</span> DIM<span class="p">;</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> SPACE_DIM <span class="o">=</span> DIM<span class="p">;</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> PROBLEM_DIM <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+</pre></div><p>
+We are assembling a matrix, we means we need to provide a <tt>ComputeMatrixTerm()</tt> method, to return the
+elemental contribution to the RHS matrix. Note that <tt>ELEMENT_DIM+1</tt> is the number of
+nodes in the element (=number of basis functions).
+</p>
+<div class="code"><pre>    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">),</span>PROBLEM_DIM<span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeMatrixTerm<span class="p">(</span>
+                                                                                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> <span class="o">&amp;</span>rPhi<span class="p">,</span>
+                                                                                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> <span class="o">&amp;</span>rGradPhi<span class="p">,</span>
+                                                                                ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rX<span class="p">,</span>
+                                                                                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rU<span class="p">,</span>
+                                                                                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> PROBLEM_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rGradU <span class="cm">/* not used */</span><span class="p">,</span>
+                                                                                Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> ret <span class="o">=</span> zero_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">,</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">);</span>
+
+        <span class="kt">double</span> dt <span class="o">=</span> PdeSimulationTime<span class="o">::</span>GetPdeTimeStep<span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">;</span> i<span class="o">++</span><span class="p">)</span> <span class="c1">// essentially a loop over the basis functions
+</span>        <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> j<span class="o">=</span><span class="mi">0</span><span class="p">;</span> j<span class="o">&lt;</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">;</span> j<span class="o">++</span><span class="p">)</span> <span class="c1">// essentially a loop over the basis functions
+</span>            <span class="p">{</span>
+                <span class="c1">// mass matrix
+</span>                ret<span class="p">(</span>i<span class="p">,</span>j<span class="p">)</span> <span class="o">=</span> rPhi<span class="p">(</span>i<span class="p">)</span><span class="o">*</span>rPhi<span class="p">(</span>j<span class="p">);</span>
+                <span class="c1">// -dt * stiffness matrix
+</span>                <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> dim<span class="o">=</span><span class="mi">0</span><span class="p">;</span> dim<span class="o">&lt;</span>SPACE_DIM<span class="p">;</span> dim<span class="o">++</span><span class="p">)</span>
+                <span class="p">{</span>
+                    ret<span class="p">(</span>i<span class="p">,</span>j<span class="p">)</span> <span class="o">-=</span> dt <span class="o">*</span> rGradPhi<span class="p">(</span>dim<span class="p">,</span>i<span class="p">)</span><span class="o">*</span>rGradPhi<span class="p">(</span>dim<span class="p">,</span>j<span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> ret<span class="p">;</span>
+        <span class="c1">// this could been done more efficiently and succinctly
+</span>        <span class="c1">// using outer_prod(rPhi, rPhi) and prod(trans(rGradPhi), rGradPhi);
+</span>    <span class="p">}</span>
+
+</pre></div><p>
+(If we were (also) assembling a vector, we would also have to provide a <tt>ComputeVectorTerm()</tt> method, which is
+very similar).
+</p>
+<p>
+Now write the constructor.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+    RhsMatrixAssembler<span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pMesh<span class="p">)</span>
+        <span class="o">:</span> AbstractFeVolumeIntegralAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="nb">false</span><span class="p">,</span><span class="nb">true</span><span class="p">,</span>NORMAL<span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+That's the assembler written. The following solver class will show how to use it.
+</p>
+<h2 id="Writingthesolverclass">Writing the solver class</h2>
+<p>
+The parent class here is <tt>AbstractDynamicLinearPdeSolver</tt>, which contains a linear system
+(<tt>this-&gt;mpLinearSystem</tt>), and will deal with allocating memory and solving the linear system.
+The concrete class needs to implement a <tt>SetupLinearSystem()</tt> method which completely sets
+up the linear system. In this case, it needs to set the LHS matrix in the linear system to
+be M, and set the RHS vector to be <tt>rhs_matrix * current_soln</tt>.
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">ExplicitHeatEquationSolver</span> <span class="o">:</span> <span class="k">public</span> AbstractDynamicLinearPdeSolver<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+</pre></div><p>
+The constuctor will take in a mesh and a BCC, the latter will be stored as a member variable
+</p>
+<div class="code"><pre>    BoundaryConditionsContainer<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> mpBoundaryConditions<span class="p">;</span>
+</pre></div><p>
+Declare a matrix for the RHS matrix
+</p>
+<div class="code"><pre>    Mat mRhsMatrix<span class="p">;</span>
+
+</pre></div><p>
+This is the main method which needs to be implemented. It takes in the current solution, and a
+boolean saying whether the matrix (ie A in Ax=b) is being computed or not.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">SetupLinearSystem</span><span class="p">(</span>Vec currentSolution<span class="p">,</span> <span class="kt">bool</span> computeMatrix<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+This is how to use assemblers to set up matrices. We declare a mass matrix assembler,
+pass it the LHS matrix of the linear system, and tell it to assemble. We also declare
+one of our purpose-built <tt>RhsMatrixAssemblers</tt>, pass it the matrix <tt>mRhsMatrix</tt>, and
+tell it to assemble.
+</p>
+<p>
+<strong>Important note</strong>: if any of the assemblers will require the current solution (ie solution
+at the current timestep), this needs to be passed to the assembler, as in the commented
+line below.
+</p>
+<div class="code"><pre>        <span class="k">if</span> <span class="p">(</span>computeMatrix<span class="p">)</span>
+        <span class="p">{</span>
+            MassMatrixAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="o">&gt;</span> mass_matrix_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">);</span>
+            RhsMatrixAssembler<span class="o">&lt;</span>DIM<span class="o">&gt;</span> rhs_matrix_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">);</span>
+
+            mass_matrix_assembler<span class="p">.</span>SetMatrixToAssemble<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetLhsMatrix<span class="p">());</span>
+            mass_matrix_assembler<span class="p">.</span>AssembleMatrix<span class="p">();</span>
+
+            rhs_matrix_assembler<span class="p">.</span>SetMatrixToAssemble<span class="p">(</span>mRhsMatrix<span class="p">);</span>
+            <span class="c1">//rhs_matrix_assembler.SetCurrentSolution(currentSolution);
+</span>            rhs_matrix_assembler<span class="p">.</span>AssembleMatrix<span class="p">();</span>
+
+            <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseLhsMatrix<span class="p">();</span> <span class="c1">// (Petsc communication)
+</span>            PetscMatTools<span class="o">::</span>Finalise<span class="p">(</span>mRhsMatrix<span class="p">);</span>       <span class="c1">// (Petsc communication)
+</span>        <span class="p">}</span>
+
+</pre></div><p>
+Use the RHS matrix to set up the RHS vector, ie set <tt>b=(M+dtK)U^n</tt>
+</p>
+<div class="code"><pre>        MatMult<span class="p">(</span>mRhsMatrix<span class="p">,</span> currentSolution<span class="p">,</span> <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetRhsVector<span class="p">());</span>
+
+</pre></div><p>
+The third assembler we use is the <tt>NaturalNeumannSurfaceTermAssembler</tt>, which assembles
+the vector <tt>c</tt> defined above, using the Neumann BCs stored in the <tt>BoundaryConditionsContainer</tt>
+which is passed in in the constructor
+</p>
+<div class="code"><pre>        NaturalNeumannSurfaceTermAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> surface_integral_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">,</span> mpBoundaryConditions<span class="p">);</span>
+        surface_integral_assembler<span class="p">.</span>SetVectorToAssemble<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetRhsVector<span class="p">(),</span> <span class="nb">false</span> <span class="cm">/*don't zero vector before assembling!*/</span><span class="p">);</span>
+        surface_integral_assembler<span class="p">.</span>Assemble<span class="p">();</span>
+
+</pre></div><p>
+Some necessary PETSc communication before applying Dirichet BCs
+</p>
+<div class="code"><pre>        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseRhsVector<span class="p">();</span>         <span class="c1">// (Petsc communication)
+</span>        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SwitchWriteModeLhsMatrix<span class="p">();</span>  <span class="c1">// (Petsc communication - needs to called when going from adding entries to inserting entries)
+</span>
+</pre></div><p>
+Apply the dirichlet BCs from the BCC to the linear system
+</p>
+<div class="code"><pre>        mpBoundaryConditions<span class="o">-&gt;</span>ApplyDirichletToLinearProblem<span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="p">),</span> computeMatrix<span class="p">);</span>
+
+</pre></div><p>
+Some necessary PETSc communication to finish
+</p>
+<div class="code"><pre>        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseRhsVector<span class="p">();</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseLhsMatrix<span class="p">();</span>
+    <span class="p">}</span>
+<span class="nl">public:</span>
+</pre></div><p>
+The constructor needs to call the parent constructor, save the BCC, <em>say that the (LHS) matrix is constant
+in time</em> (so it is only computed once), and allocate memory for the RHS matrix.
+</p>
+<div class="code"><pre>    ExplicitHeatEquationSolver<span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="o">&gt;*</span> pMesh<span class="p">,</span>
+                               BoundaryConditionsContainer<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> pBoundaryConditions<span class="p">)</span>
+         <span class="o">:</span> AbstractDynamicLinearPdeSolver<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">),</span>
+           mpBoundaryConditions<span class="p">(</span>pBoundaryConditions<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mMatrixIsConstant <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+        PetscTools<span class="o">::</span>SetupMat<span class="p">(</span>mRhsMatrix<span class="p">,</span> <span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> <span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> <span class="mi">9</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Destructor
+</p>
+<div class="code"><pre>    <span class="o">~</span>ExplicitHeatEquationSolver<span class="p">()</span>
+    <span class="p">{</span>
+        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>mRhsMatrix<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+That's all that needs to be written to write your own solver using the solver hierarchy
+</p>
+<h1 id="Atestusingthesolver">A test using the solver</h1>
+<p>
+The following test uses the new solver. Since the interface is exactly the same as the
+other solvers, except for not taking in a PDE (the fact that it solves a parameterless
+heat equation is hardcoded into the solver), all of the below should be recognisable.
+Note however the tiny timestep - this is needed for stability as this is an explicit scheme.
+Also, to compare with the implicit solver, comment out the appropriate lines below. Note that
+the implicit solver may seem quite slow in comparison - this is because the linear system is
+much harder to solve (linear system is Ax=b, for explicit A=M, for implicit A=M-dt*K), but
+remember that the implicit solver can use much larger timesteps.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestWritingPdeSolversTwoTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestExplicitSolver<span class="p">()</span>
+    <span class="p">{</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.05</span> <span class="cm">/*h*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+        <span class="c1">// Set up BCs u=0 on entire boundary
+</span>        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        bcc<span class="p">.</span>DefineZeroDirichletOnMeshBoundary<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+        ExplicitHeatEquationSolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span><span class="o">&amp;</span>bcc<span class="p">);</span>
+        <span class="c1">//// To use the old solver instead, comment out the above line
+</span>        <span class="c1">//// and use these instead (also uncomment the appropriate includes).
+</span>        <span class="c1">//HeatEquation&lt;2&gt; pde;
+</span>        <span class="c1">//SimpleLinearParabolicSolver&lt;2,2&gt; solver(&amp;mesh,&amp;pde,&amp;bcc);
+</span>
+</pre></div><p>
+The interface is exactly the same as the <tt>SimpleLinearParabolicSolver</tt>.
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">0.0001</span><span class="p">);</span>
+        solver<span class="p">.</span>SetTimes<span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> init_cond<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> <span class="mf">0.0</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="kt">double</span> distance_from_centre <span class="o">=</span> sqrt<span class="p">(</span> <span class="p">(</span>x<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>x<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>y<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>y<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span>distance_from_centre <span class="o">&lt;</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                init_cond<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        Vec initial_condition <span class="o">=</span> PetscTools<span class="o">::</span>CreateVec<span class="p">(</span>init_cond<span class="p">);</span>
+        solver<span class="p">.</span>SetInitialCondition<span class="p">(</span>initial_condition<span class="p">);</span>
+
+        solver<span class="p">.</span>SetOutputDirectoryAndPrefix<span class="p">(</span><span class="s">"ExplicitHeatEquationSolver"</span><span class="p">,</span><span class="s">"results"</span><span class="p">);</span>
+
+        solver<span class="p">.</span>SetOutputToTxt<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+        solver<span class="p">.</span>SetPrintingTimestepMultiple<span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</pre></div><p>
+We are now ready to solve the system.
+</p>
+<div class="code"><pre>        Vec result <span class="o">=</span> solver<span class="p">.</span>Solve<span class="p">();</span>
+        ReplicatableVector <span class="nf">result_repl</span><span class="p">(</span>result<span class="p">);</span>
+
+        <span class="c1">// Check nothing has changed in this tutorial
+</span>        TS_ASSERT_DELTA<span class="p">(</span>result_repl<span class="p">[</span><span class="mi">220</span><span class="p">],</span> <span class="mf">0.019512</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+        <span class="c1">// Tidy up
+</span>        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>initial_condition<span class="p">);</span>
+        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>result<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestWritingPdeSolversTwoTutorial.hpp">File name <tt>TestWritingPdeSolversTwoTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "AbstractFeVolumeIntegralAssembler.hpp"
+#include "AbstractDynamicLinearPdeSolver.hpp"
+#include "TetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "MassMatrixAssembler.hpp"
+#include "NaturalNeumannSurfaceTermAssembler.hpp"
+</span><span class="c1">//#include "HeatEquation.hpp"
+//#include "SimpleLinearParabolicSolver.hpp"
+</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">RhsMatrixAssembler</span>
+    <span class="o">:</span> <span class="k">public</span> AbstractFeVolumeIntegralAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="cm">/*problem dim*/</span><span class="p">,</span><span class="nb">false</span> <span class="cm">/*doesn't assemble vectors*/</span><span class="p">,</span><span class="nb">true</span><span class="cm">/*assembles a matrix*/</span><span class="p">,</span>NORMAL <span class="cm">/*amount of interpolation*/</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> ELEMENT_DIM <span class="o">=</span> DIM<span class="p">;</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> SPACE_DIM <span class="o">=</span> DIM<span class="p">;</span>
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> PROBLEM_DIM <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">),</span>PROBLEM_DIM<span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeMatrixTerm<span class="p">(</span>
+                                                                                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> <span class="o">&amp;</span>rPhi<span class="p">,</span>
+                                                                                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> <span class="o">&amp;</span>rGradPhi<span class="p">,</span>
+                                                                                ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rX<span class="p">,</span>
+                                                                                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rU<span class="p">,</span>
+                                                                                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> PROBLEM_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;</span> <span class="o">&amp;</span>rGradU <span class="cm">/* not used */</span><span class="p">,</span>
+                                                                                Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;</span> ret <span class="o">=</span> zero_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">,</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">);</span>
+
+        <span class="kt">double</span> dt <span class="o">=</span> PdeSimulationTime<span class="o">::</span>GetPdeTimeStep<span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">;</span> i<span class="o">++</span><span class="p">)</span> <span class="c1">// essentially a loop over the basis functions
+</span>        <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> j<span class="o">=</span><span class="mi">0</span><span class="p">;</span> j<span class="o">&lt;</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">;</span> j<span class="o">++</span><span class="p">)</span> <span class="c1">// essentially a loop over the basis functions
+</span>            <span class="p">{</span>
+                <span class="c1">// mass matrix
+</span>                ret<span class="p">(</span>i<span class="p">,</span>j<span class="p">)</span> <span class="o">=</span> rPhi<span class="p">(</span>i<span class="p">)</span><span class="o">*</span>rPhi<span class="p">(</span>j<span class="p">);</span>
+                <span class="c1">// -dt * stiffness matrix
+</span>                <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> dim<span class="o">=</span><span class="mi">0</span><span class="p">;</span> dim<span class="o">&lt;</span>SPACE_DIM<span class="p">;</span> dim<span class="o">++</span><span class="p">)</span>
+                <span class="p">{</span>
+                    ret<span class="p">(</span>i<span class="p">,</span>j<span class="p">)</span> <span class="o">-=</span> dt <span class="o">*</span> rGradPhi<span class="p">(</span>dim<span class="p">,</span>i<span class="p">)</span><span class="o">*</span>rGradPhi<span class="p">(</span>dim<span class="p">,</span>j<span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> ret<span class="p">;</span>
+        <span class="c1">// this could been done more efficiently and succinctly
+</span>        <span class="c1">// using outer_prod(rPhi, rPhi) and prod(trans(rGradPhi), rGradPhi);
+</span>    <span class="p">}</span>
+
+<span class="nl">public:</span>
+    RhsMatrixAssembler<span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pMesh<span class="p">)</span>
+        <span class="o">:</span> AbstractFeVolumeIntegralAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="nb">false</span><span class="p">,</span><span class="nb">true</span><span class="p">,</span>NORMAL<span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">ExplicitHeatEquationSolver</span> <span class="o">:</span> <span class="k">public</span> AbstractDynamicLinearPdeSolver<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+    BoundaryConditionsContainer<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> mpBoundaryConditions<span class="p">;</span>
+    Mat mRhsMatrix<span class="p">;</span>
+
+    <span class="kt">void</span> <span class="nf">SetupLinearSystem</span><span class="p">(</span>Vec currentSolution<span class="p">,</span> <span class="kt">bool</span> computeMatrix<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span>computeMatrix<span class="p">)</span>
+        <span class="p">{</span>
+            MassMatrixAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="o">&gt;</span> mass_matrix_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">);</span>
+            RhsMatrixAssembler<span class="o">&lt;</span>DIM<span class="o">&gt;</span> rhs_matrix_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">);</span>
+
+            mass_matrix_assembler<span class="p">.</span>SetMatrixToAssemble<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetLhsMatrix<span class="p">());</span>
+            mass_matrix_assembler<span class="p">.</span>AssembleMatrix<span class="p">();</span>
+
+            rhs_matrix_assembler<span class="p">.</span>SetMatrixToAssemble<span class="p">(</span>mRhsMatrix<span class="p">);</span>
+            <span class="c1">//rhs_matrix_assembler.SetCurrentSolution(currentSolution);
+</span>            rhs_matrix_assembler<span class="p">.</span>AssembleMatrix<span class="p">();</span>
+
+            <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseLhsMatrix<span class="p">();</span> <span class="c1">// (Petsc communication)
+</span>            PetscMatTools<span class="o">::</span>Finalise<span class="p">(</span>mRhsMatrix<span class="p">);</span>       <span class="c1">// (Petsc communication)
+</span>        <span class="p">}</span>
+
+        MatMult<span class="p">(</span>mRhsMatrix<span class="p">,</span> currentSolution<span class="p">,</span> <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetRhsVector<span class="p">());</span>
+
+        NaturalNeumannSurfaceTermAssembler<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> surface_integral_assembler<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="p">,</span> mpBoundaryConditions<span class="p">);</span>
+        surface_integral_assembler<span class="p">.</span>SetVectorToAssemble<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>rGetRhsVector<span class="p">(),</span> <span class="nb">false</span> <span class="cm">/*don't zero vector before assembling!*/</span><span class="p">);</span>
+        surface_integral_assembler<span class="p">.</span>Assemble<span class="p">();</span>
+
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseRhsVector<span class="p">();</span>         <span class="c1">// (Petsc communication)
+</span>        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SwitchWriteModeLhsMatrix<span class="p">();</span>  <span class="c1">// (Petsc communication - needs to called when going from adding entries to inserting entries)
+</span>
+        mpBoundaryConditions<span class="o">-&gt;</span>ApplyDirichletToLinearProblem<span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="p">),</span> computeMatrix<span class="p">);</span>
+
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseRhsVector<span class="p">();</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>FinaliseLhsMatrix<span class="p">();</span>
+    <span class="p">}</span>
+<span class="nl">public:</span>
+    ExplicitHeatEquationSolver<span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="o">&gt;*</span> pMesh<span class="p">,</span>
+                               BoundaryConditionsContainer<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> pBoundaryConditions<span class="p">)</span>
+         <span class="o">:</span> AbstractDynamicLinearPdeSolver<span class="o">&lt;</span>DIM<span class="p">,</span>DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">),</span>
+           mpBoundaryConditions<span class="p">(</span>pBoundaryConditions<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mMatrixIsConstant <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+        PetscTools<span class="o">::</span>SetupMat<span class="p">(</span>mRhsMatrix<span class="p">,</span> <span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> <span class="k">this</span><span class="o">-&gt;</span>mpMesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span> <span class="mi">9</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="o">~</span>ExplicitHeatEquationSolver<span class="p">()</span>
+    <span class="p">{</span>
+        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>mRhsMatrix<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="k">class</span> <span class="nc">TestWritingPdeSolversTwoTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestExplicitSolver<span class="p">()</span>
+    <span class="p">{</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.05</span> <span class="cm">/*h*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+        <span class="c1">// Set up BCs u=0 on entire boundary
+</span>        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        bcc<span class="p">.</span>DefineZeroDirichletOnMeshBoundary<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+        ExplicitHeatEquationSolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span><span class="o">&amp;</span>bcc<span class="p">);</span>
+        <span class="c1">//// To use the old solver instead, comment out the above line
+</span>        <span class="c1">//// and use these instead (also uncomment the appropriate includes).
+</span>        <span class="c1">//HeatEquation&lt;2&gt; pde;
+</span>        <span class="c1">//SimpleLinearParabolicSolver&lt;2,2&gt; solver(&amp;mesh,&amp;pde,&amp;bcc);
+</span>
+        solver<span class="p">.</span>SetTimeStep<span class="p">(</span><span class="mf">0.0001</span><span class="p">);</span>
+        solver<span class="p">.</span>SetTimes<span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> init_cond<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> <span class="mf">0.0</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="kt">double</span> distance_from_centre <span class="o">=</span> sqrt<span class="p">(</span> <span class="p">(</span>x<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>x<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>y<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>y<span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span>distance_from_centre <span class="o">&lt;</span> <span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                init_cond<span class="p">[</span>i<span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        Vec initial_condition <span class="o">=</span> PetscTools<span class="o">::</span>CreateVec<span class="p">(</span>init_cond<span class="p">);</span>
+        solver<span class="p">.</span>SetInitialCondition<span class="p">(</span>initial_condition<span class="p">);</span>
+
+        solver<span class="p">.</span>SetOutputDirectoryAndPrefix<span class="p">(</span><span class="s">"ExplicitHeatEquationSolver"</span><span class="p">,</span><span class="s">"results"</span><span class="p">);</span>
+
+        solver<span class="p">.</span>SetOutputToTxt<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+
+        solver<span class="p">.</span>SetPrintingTimestepMultiple<span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+        Vec result <span class="o">=</span> solver<span class="p">.</span>Solve<span class="p">();</span>
+        ReplicatableVector <span class="nf">result_repl</span><span class="p">(</span>result<span class="p">);</span>
+
+        <span class="c1">// Check nothing has changed in this tutorial
+</span>        TS_ASSERT_DELTA<span class="p">(</span>result_repl<span class="p">[</span><span class="mi">220</span><span class="p">],</span> <span class="mf">0.019512</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">);</span>
+
+        <span class="c1">// Tidy up
+</span>        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>initial_condition<span class="p">);</span>
+        PetscTools<span class="o">::</span>Destroy<span class="p">(</span>result<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

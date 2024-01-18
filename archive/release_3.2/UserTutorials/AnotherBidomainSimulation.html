@@ -1,0 +1,273 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/AnotherBidomainSimulation - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/AnotherBidomainSimulation" href="/chaste/tutorials/release_3.2/UserTutorials/AnotherBidomainSimulation.html">AnotherBidomainSimulation</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestAnotherBidomainSimulationTutorial.hpp at revision <a class="changeset" href="/trac/changeset/20767" title="Copyright mayhem.">r20767</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anotherexampleshowinghowtorunabidomainsimulation">Another example showing how to run a bidomain simulation</h1>
+<p>
+In this tutorial we run another bidomain simulation,
+showing (i) an example using one of the source cell factories, (ii) how to define
+and use fibre directions, and (iii) mentioning how to write other output file formats.
+</p>
+<p>
+The first thing to do is to include the headers as before.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+Rather than write our own cell factory this time, we will use
+the <tt>PlaneStimulusCellFactory</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "PlaneStimulusCellFactory.hpp"
+</span></pre></div><p>
+Now we define the test class, which must inherit from <tt>CxxTest::TestSuite</tt>
+as usual, and the (public) test method
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestAnotherBidomainTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestFibreSimulation<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+It is not the case here, but if there were other tests in the file that
+had already been run and might have changed parameters in <tt>HeartConfig</tt>, we
+would need to call <tt>Reset</tt>
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Reset<span class="p">();</span>
+</pre></div><p>
+Next, we have to create a cell factory of the type we defined above. The plane
+stimulus cell factory sets up cells of the given type with a non-zero stimulus
+for cells on the x=0 boundary. The 2 below is the dimension, and the -2000000
+is the stimulus magnitude (the default stimulus duration is used).
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">2000000</span><span class="p">);</span>
+</pre></div><p>
+Define an end time, output directory and prefix as before
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainFibresTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+</pre></div><p>
+Define a mesh to be read, saying that we also want to read fibres. The extra part can either be
+<tt>cp::media_type::Orthotropic</tt>, in which case <tt>2D_0_to_1mm_800_elements.ortho</tt> will also be read;
+or <tt>cp::media_type::Axisymmetric</tt>, in which case <tt>2D_0_to_1mm_800_elements.axi</tt> will also be read.
+See the file formats documentation for full descriptions of these formats, but basically .axi
+files provide the fibre direction for each element in the mesh, and .ortho files provide the fibre,
+sheet (and normal in 3D) directions for each element in the mesh.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+</pre></div><p>
+The fibre file provided here defines (non-physiological) 'kinked' fibres which are
+in the x-direction for x&lt;0.05, and then the diagonal (1,1) direction for x&gt;0.05.
+It was generated by looping over the mesh that is to be used, as shown here.
+The output is the .ortho file minus the header.
+</p>
+<div class="code"><pre><span class="c">//        TetrahedralMesh&lt;2,2&gt; mesh;
+//        TrianglesMeshReader&lt;2,2&gt; reader("mesh/test/data/2D_0_to_1mm_800_elements");
+//        mesh.ConstructFromMeshReader(reader);
+//        for(unsigned i=0; i&lt;mesh.GetNumElements(); i++)
+//        {
+//            double x = mesh.GetElement(i)-&gt;CalculateCentroid()[0];
+//            if(x&lt;0.05)
+//            {
+//                std::cout &lt;&lt; "1 0 0 1\n";
+//            }
+//            else
+//            {
+//                std::cout &lt;&lt; "0.707106781 0.707106781 -0.707106781 0.707106781\n";
+//            }
+//        }
+//        return;
+</span></pre></div><p>
+This is of course not enough - by default isotropic conductivities are used so the
+variable fibre directions won't make any difference - so we have to alter the
+intracellular and extracellular conductivities to be anisotropic. The first value in
+the following is the conductivity in the fibre direction, the second the conductivity
+in the sheet direction (and the third in 3d would be that in the normal direction).
+Note, we have scaled all the conductivities from the physiological values as the mesh
+is a little too coarse to be able to handle the smallest conductivities (try running with
+scale = 1 to see the error message).
+</p>
+<div class="code"><pre>        <span class="kt">double</span> scale <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">0.19</span><span class="o">*</span>scale<span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">7.0</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">2.4</span><span class="o">*</span>scale<span class="p">));</span>
+</pre></div><p>
+The output will be written to <tt>/tmp/$USER/testoutput/BidomainFibresTutorial</tt>
+in HDF5 format, and converted to Meshalyzer format at the end of the simulation.
+To adjust this, or convert to Cmgui or VTK format as well, use methods in
+<tt>HeartConfig</tt>,  e.g.
+</p>
+<div class="code"><pre>        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithMeshalyzer(false);
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithCmgui<span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+</pre></div><p>
+The other option is to write in VTK format (which needs VTK installed), following
+which the results can be loaded in the visualiser Paraview
+</p>
+<div class="code"><pre>        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithVtk(true);
+</span></pre></div><p>
+If the mesh is a <a class="missing wiki" href="/trac/wiki/DistributedTetrahedralMesh" rel="nofollow">DistributedTetrahedralMesh?</a> then we can use parallel VTK files (.pvtu)
+</p>
+<div class="code"><pre>        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithParallelVtk(true);
+</span></pre></div><p>
+Now we create a problem class, initialise and solve
+</p>
+<div class="code"><pre>        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+The results can now be visualised - the effect of the fibres changing direction at x=0.05
+on the wave should be very clear.
+</p>
+<p>
+Please see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/VisualisationGuides.html">ChasteGuides/VisualisationGuides</a> for details of using Meshalyzer/Cmgui/Paraview.
+</p>
+<p>
+We described in the previous tutorial how to access the latest voltage vector using
+<tt>ReplicatableVector</tt>, here we illustrate how to access the voltage values using the
+<tt>DistributedVector</tt> class, which can be used to only iterate over the values
+of the voltage owned by that process (for parallel simulations).
+</p>
+<div class="code"><pre>        DistributedVector dist_bidomain_voltage <span class="o">=</span> bidomain_problem<span class="p">.</span>GetSolutionDistributedVector<span class="p">();</span>
+        DistributedVector<span class="o">::</span>Stripe bidomain_voltage<span class="p">(</span>dist_bidomain_voltage<span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        DistributedVector<span class="o">::</span>Stripe extracellular_potential<span class="p">(</span>dist_bidomain_voltage<span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</pre></div><p>
+A loop over all the components owned by this process..
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>DistributedVector<span class="o">::</span>Iterator index <span class="o">=</span> dist_bidomain_voltage<span class="p">.</span>Begin<span class="p">();</span>
+             index <span class="o">!=</span> dist_bidomain_voltage<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>index<span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+.. and a simple test, that the 'last' node was stimulated:
+</p>
+<div class="code"><pre>            <span class="k">if</span> <span class="p">(</span>index<span class="p">.</span>Global<span class="o">==</span>bidomain_problem<span class="p">.</span>rGetMesh<span class="p">().</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c">// ie if the last node
+</span>            <span class="p">{</span>
+                TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mi">0</span><span class="p">,</span> bidomain_voltage<span class="p">[</span>index<span class="p">]);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestAnotherBidomainSimulationTutorial.hpp">File name <tt>TestAnotherBidomainSimulationTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestAnotherBidomainTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestFibreSimulation<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Reset<span class="p">();</span>
+
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">2000000</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainFibresTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+
+<span class="c">//        TetrahedralMesh&lt;2,2&gt; mesh;
+//        TrianglesMeshReader&lt;2,2&gt; reader("mesh/test/data/2D_0_to_1mm_800_elements");
+//        mesh.ConstructFromMeshReader(reader);
+//        for(unsigned i=0; i&lt;mesh.GetNumElements(); i++)
+//        {
+//            double x = mesh.GetElement(i)-&gt;CalculateCentroid()[0];
+//            if(x&lt;0.05)
+//            {
+//                std::cout &lt;&lt; "1 0 0 1\n";
+//            }
+//            else
+//            {
+//                std::cout &lt;&lt; "0.707106781 0.707106781 -0.707106781 0.707106781\n";
+//            }
+//        }
+//        return;
+</span>
+        <span class="kt">double</span> scale <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">0.19</span><span class="o">*</span>scale<span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">7.0</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">2.4</span><span class="o">*</span>scale<span class="p">));</span>
+
+        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithMeshalyzer(false);
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithCmgui<span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithVtk(true);
+</span>        <span class="c">//HeartConfig::Instance()-&gt;SetVisualizeWithParallelVtk(true);
+</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        DistributedVector dist_bidomain_voltage <span class="o">=</span> bidomain_problem<span class="p">.</span>GetSolutionDistributedVector<span class="p">();</span>
+        DistributedVector<span class="o">::</span>Stripe bidomain_voltage<span class="p">(</span>dist_bidomain_voltage<span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        DistributedVector<span class="o">::</span>Stripe extracellular_potential<span class="p">(</span>dist_bidomain_voltage<span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span>DistributedVector<span class="o">::</span>Iterator index <span class="o">=</span> dist_bidomain_voltage<span class="p">.</span>Begin<span class="p">();</span>
+             index <span class="o">!=</span> dist_bidomain_voltage<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>index<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>index<span class="p">.</span>Global<span class="o">==</span>bidomain_problem<span class="p">.</span>rGetMesh<span class="p">().</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c">// ie if the last node
+</span>            <span class="p">{</span>
+                TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mi">0</span><span class="p">,</span> bidomain_voltage<span class="p">[</span>index<span class="p">]);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

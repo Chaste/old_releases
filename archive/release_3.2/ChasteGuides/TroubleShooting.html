@@ -1,0 +1,530 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/TroubleShooting - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/TroubleShooting" href="/chaste/tutorials/release_3.2/ChasteGuides/TroubleShooting.html">TroubleShooting</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Troubleshooting">Troubleshooting</h1>
+<p>
+This pages stores a list of common problem and issues that occasionally crop up, together with their solutions. Please update problems and solutions if needed, and add new problems as they crop up.
+</p>
+<p>
+<h4>Table of Contents</h4><ol><li><a href="#Troubleshooting">Troubleshooting</a></li><li>
+<a href="#Runningtestsorexecutables">Running tests or executables</a><ol><li><a href="#Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</a></li><li>
+<a href="#Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</a></li><li>
+<a href="#Semaphoreerrorerroraboutsemgetandsetnum">Semaphore error / error about semget and setnum</a></li><li>
+<a href="#Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling &hellip;</a></li><li>
+<a href="#AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</a></li><li>
+<a href="#LotsofHDF5errorsfollowedimmediatelybytheprogramaborting">Lots of HDF5 errors followed immediately by the program aborting</a></li><li>
+<a href="#Purevirtualmethodcalledterminatecalledwithoutanactiveexception">Pure virtual method called terminate called without an active exception</a></li><li>
+<a href="#Errorusingcheckpointing:unregisteredclass">Error using checkpointing: "unregistered class"</a></li></ol></li><li>
+<a href="#Sconserrors">Scons errors</a><ol><li><a href="#NoSConstructfilefound">No SConstruct file found</a></li><li>
+<a href="#IndexError:stringindexoutofrange">IndexError: string index out of range</a></li><li>
+<a href="#Founddependencycycles">"Found dependency cycle(s)"</a></li></ol></li><li>
+<a href="#PyCmlerrors">PyCml errors</a><ol><li><a href="#ConfigurationError:Notransmembranepotentialfoundcheckyourconfiguration">ConfigurationError: No transmembrane potential found; check your &hellip;</a></li><li>
+<a href="#ConfigurationError:NostimuluscurrentfoundyoullhavetroublegeneratingChastecode">ConfigurationError: No stimulus current found; you'll have trouble &hellip;</a></li><li>
+<a href="#TranslationError:CannotconvertioniccurrentfromampstouAcm2withoutknowingwhichvariableinthecellmodelrepresentsthemembranecapacitance">TranslationError: Cannot convert ionic current from amps to uA/cm<sup>2</sup> &hellip;</a></li></ol></li><li>
+<a href="#Compilationandlinkingerrors">Compilation and linking errors</a><ol><li><a href="#Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it &hellip;</a></li><li>
+<a href="#GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be &hellip;</a></li><li>
+<a href="#Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</a></li><li>
+<a href="#AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error &hellip;</a></li><li>
+<a href="#Error:voidYOUR_TEST_CLASS::YOUR_TEST_METHODisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</a></li><li>
+<a href="#Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingboostnumericublasmatrix.hpp">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if &hellip;</a></li><li>
+<a href="#GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</a></li><li>
+<a href="#Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  &hellip;</a></li><li>
+<a href="#Boostserializationvector.hpp">Boost/serialization/vector.hpp</a></li><li>
+<a href="#glibcdetectedfree:invalidpointer">glibc detected free(): invalid pointer</a></li><li>
+<a href="#Invalidapplicationofsizeoftoincompletetypeboost::STATIC_ASSERTION_FAILUREfalse">Invalid application of 'sizeof' to incomplete type &hellip;</a></li><li>
+<a href="#functiondefinitiondoesnotdeclareparameters">"function definition does not declare parameters"</a></li><li>
+<a href="#error:expectedprimary-expressionbeforetoken">"error: expected primary-expression before '&gt;' token"</a></li><li>
+<a href="#Test...doesnotnameatype">Test... "does not name a type"</a></li><li>
+<a href="#YouaretryingtoincludeaCVODEcardiaccellandtheclassisntrecognised">You are trying to #include a CVODE cardiac cell and the class isn't &hellip;</a></li><li>
+<a href="#Compileerrorcomplainingaboutmethodsbeinghidden">Compile error complaining about methods being hidden</a></li></ol></li><li>
+<a href="#Other">Other</a><ol><li><a href="#Arepositoryhookfailederrormessagewhentryingtocommit">'A repository hook failed' error message when trying to commit</a></li><li>
+<a href="#Rollingbackanaccidentalcommit">Rolling back an accidental commit</a></li></ol></li></ol>
+</p>
+<h1 id="Runningtestsorexecutables">Running tests or executables</h1>
+<h2 id="Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</h2>
+<p>
+Add <tt>throw (Exception)</tt> after the method declaration in the failing test, i.e.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestSomething<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// test
+</span>    <span class="p">}</span>
+</pre></div><h2 id="Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</h2>
+<p>
+If, in a terminal, you are in an output directory, and rerun a test that involves that directory being wiped and recreated, the terminal might act as if there's nothing in the directory, i.e. an <tt>ls</tt> displays no files. Just <tt>cd</tt> out and back into the directory again.
+</p>
+<h2 id="Semaphoreerrorerroraboutsemgetandsetnum">Semaphore error / error about semget and setnum</h2>
+<p>
+<strong>Problem</strong>: <i>The results of a test are summarised as a 'Semaphore error', or an 'MPI semaphore error', with the actual test result containing 'semget failed for setnum =  0', e.g.
+</i></p>
+<pre class="wiki">Running 9 testssemget failed for setnum =  0
+</pre><p>
+This happens occasionally due to shortcomings in MPICH. Rerun the test. If that fails run the MPICH <tt>cleanipcs</tt> script, e.g. by doing:
+</p>
+<div class="code"><pre>~/mpi/sbin/cleanipcs
+</pre></div><h2 id="Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling and running with scons) fails</h2>
+<p>
+Some environment variables are setup by the SCons scripts, you need to export them yourself.
+</p>
+<div class="code"><pre>cdchaste
+<span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$LD_LIBRARY_PATH</span>:<span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/lib
+./component/build/whatever/TestXRunner
+</pre></div><p>
+Also, if files are output to the current directory rather than <tt>/tmp/chaste/testoutput/</tt>, also do 
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">CHASTE_TEST_OUTPUT</span><span class="o">=</span>/tmp/chaste/testoutput/
+</pre></div><p>
+(or <tt>/tmp/whatever/testoutput</tt>).
+</p>
+<h2 id="AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</h2>
+<p>
+If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <i>outward</i> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="/chaste/tutorials/release_3.2/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
+</p>
+<h2 id="LotsofHDF5errorsfollowedimmediatelybytheprogramaborting">Lots of HDF5 errors followed immediately by the program aborting</h2>
+<p>
+The errors look something like:
+</p>
+<pre class="wiki">HDF5-DIAG: Error detected in HDF5 (1.8.4) MPI-process 0:
+ #000: ../../../src/H5F.c line 1954 in H5Fclose(): decrementing file ID failed
+   major: Object atom
+   minor: Unable to close file
+ #001: ../../../src/H5F.c line 1754 in H5F_close(): can't close file
+   major: File accessability
+   minor: Unable to close file
+ #002: ../../../src/H5F.c line 1900 in H5F_try_close(): unable to flush cache
+   major: Object cache
+   minor: Unable to flush data from cache
+ #003: ../../../src/H5F.c line 1679 in H5F_flush(): unable to flush metadata cache
+   major: Object cache
+   minor: Unable to flush data from cache
+ #004: ../../../src/H5AC.c line 955 in H5AC_flush(): Can't flush cache.
+   major: Object cache
+   minor: Unable to flush data from cache
+ #005: ../../../src/H5C.c line 3966 in H5C_flush_cache(): dirty pinned entry flush failed.
+   major: Object cache
+   minor: Unable to flush data from cache
+ #006: ../../../src/H5C.c line 10763 in H5C_flush_single_entry(): unable to flush entry
+   major: Object cache
+   minor: Unable to flush data from cache
+ #007: ../../../src/H5Fsuper_cache.c line 733 in H5F_sblock_flush(): unable to write superblock
+   major: Low-level I/O
+   minor: Write failed
+ #008: ../../../src/H5FDint.c line 185 in H5FD_write(): driver write request failed
+   major: Virtual File Layer
+   minor: Write failed
+ #009: ../../../src/H5FDmpio.c line 1820 in H5FD_mpio_write(): MPI_File_write_at failed
+   major: Internal error (too specific to document in detail)
+   minor: Some MPI function failed
+ #010: ../../../src/H5FDmpio.c line 1820 in H5FD_mpio_write(): MPI_ERR_IO: input/output error
+   major: Internal error (too specific to document in detail)
+   minor: MPI Error String
+HDF5-DIAG: Error detected in HDF5 (1.8.4) MPI-process 0:
+ #000: ../../../src/H5F.c line 1512 in H5Fopen(): unable to open file
+   major: File accessability
+   minor: Unable to open file
+ #001: ../../../src/H5F.c line 1307 in H5F_open(): unable to read superblock
+   major: File accessability
+   minor: Read failed
+ #002: ../../../src/H5Fsuper.c line 305 in H5F_super_read(): unable to find file signature
+   major: File accessability
+   minor: Not an HDF5 file
+ #003: ../../../src/H5Fsuper.c line 153 in H5F_locate_signature(): unable to find a valid file signature
+   major: Low-level I/O
+   minor: Unable to initialize object
+
+Chaste error: io/src/reader/Hdf5DataReader.cpp:83: Hdf5DataReader could not open &lt;filename.h5&gt;
+*** An error occurred in MPI_Barrier
+*** after MPI was finalized
+*** MPI_ERRORS_ARE_FATAL (your MPI job will now abort)
+Abort after MPI_FINALIZE completed successfully; not able to guarantee that all other processes were killed!
+HDF5: infinite loop closing library
+    D,A,S,T,F,F,AC,FD,P,FD,P,FD,P,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,FD,...
+</pre><p>
+This seems to occur when using OpenMPI and an NFS file system. It’s not specific to Chaste (or even to HDF5), but is due to a bug in OpenMPI (see e.g. <a class="ext-link" href="https://bugzilla.redhat.com/show_bug.cgi?id=712300"><span class="icon">&nbsp;</span>https://bugzilla.redhat.com/show_bug.cgi?id=712300</a>). We haven't yet found a workaround. Probably your HDF5 output will be ok when running on a single process, but won’t work at all in parallel.
+</p>
+<h2 id="Purevirtualmethodcalledterminatecalledwithoutanactiveexception">Pure virtual method called terminate called without an active exception</h2>
+<p>
+If you get this when running a test:
+</p>
+<pre class="wiki">pure virtual method called 
+terminate called without an active exception
+(possibly followed by loads of errors)
+</pre><p>
+there are two main causes.  If you are using Boost versions 1.44-1.46.1, and the error occurs after the test has finished, then a <a class="ext-link" href="https://svn.boost.org/trac/boost/ticket/4842"><span class="icon">&nbsp;</span>Boost bug</a> is the likely cause. The bug is harmless, check to see if the test did actually pass. If so, you can either ignore these messages, or try and install a different version of Boost.
+</p>
+<p>
+If not, then it is (probably) because you are trying to call a virtual method from inside an abstract class constructor.  For example, doing
+</p>
+<div class="code"><pre>ConcreteClass<span class="p">(</span>arg<span class="p">)</span> <span class="o">:</span> <span class="k">public</span> AbstractClass<span class="p">(</span>arg<span class="p">)</span>
+<span class="p">{};</span>
+
+AbstractClass<span class="p">(</span>arg<span class="p">)</span>
+<span class="p">{</span>
+   AbstractClass<span class="o">::</span>Method<span class="p">(</span>arg<span class="p">)</span> <span class="c">// which in turn calls some virtual methods
+</span><span class="p">}</span>
+</pre></div><p>
+will lead to the error.
+</p>
+<p>
+Really you shouldn't call virtual methods, even indirectly, from a constructor, as the object may not be in a fully constructed state and you may get unexpected behaviour even if the error above isn't seen (see below for technical details).  Hence the best solution is to change your design so that this isn't necessary.  However, if you know that there's never going to be a class derived from yours then you can do the following, although it's not robust to future code changes:
+</p>
+<div class="code"><pre>ConcreteClass<span class="p">(</span>arg<span class="p">)</span> <span class="o">:</span> <span class="k">public</span> AbstractClass<span class="p">(</span>arg<span class="p">)</span>
+<span class="p">{</span>
+   AbstractClass<span class="o">::</span>Method<span class="p">(</span>arg<span class="p">)</span> <span class="c">// which in turn calls some virtual methods
+</span><span class="p">};</span>
+
+AbstractClass<span class="p">(</span>arg<span class="p">)</span>
+<span class="p">{};</span>
+</pre></div><p>
+Technical details on why this happens:
+</p>
+<ul><li>The problem in the code above is that the compiler will allow you to instantiate an object of type Derived (as it is not abstract: all virtual methods are implemented). 
+</li><li>The construction of a class starts with the construction of all the bases, in this case Base.
+</li><li>The compiler will generate the virtual method table for type Base, where the entry for f() is 0 (not implemented in base). 
+</li><li>The compiler will execute the code in the constructor then. 
+</li><li>After the Base part has completely been constructed, construction of the Derived element part starts. 
+</li><li>The compiler will change the virtual table so that the entry for f() points to Derived::f().
+</li><li>If you try calling the method f() while still constructing Base, the entry in the virtual method table is still null and the application crashes.
+</li></ul><h2 id="Errorusingcheckpointing:unregisteredclass">Error using checkpointing: "unregistered class"</h2>
+<p>
+This error arises when trying to load (or sometimes save) an archive containing an object of a class that hasn't been "seen" by the serialization system.  Unfortunately the serialiation library doesn't tell you in the error which class is the culprit, so you have to use an educated guess.  There are two common cases.
+</p>
+<p>
+The first case occurs most often if you are saving and loading a simulation in different source or test files.  Ensure that you have the same list of includes in both cases, so that all classes "seen" when saving are also "seen" when loading.
+</p>
+<p>
+On older versions of Boost (before 1.37) this can also arise if you are using a "non-standard" cell model in a cardiac simulation, i.e. one that is hard-coded but not one of those available via the XML configuration file.  To resolve this you unfortunately have to include the header for the relevant cell model in <tt>CardiacSimulationArchiver.cpp</tt>; after the inclusion of <tt>HeartConfigRelatedCellFactory.hpp</tt> is a sensible location.
+</p>
+<p>
+See also <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/BoostSerialization.html">the Boost Serialization guide</a>.
+</p>
+<h1 id="Sconserrors">Scons errors</h1>
+<h2 id="NoSConstructfilefound">No SConstruct file found</h2>
+<p>
+The following error
+</p>
+<pre class="wiki">scons: *** No SConstruct file found.
+File "/usr/lib/scons/SCons/Script/Main.py", line 825, in _main
+</pre><p>
+is, as it says, due to no <tt>SConstruct</tt> file found and probably because you are in the wrong directory - you should run scons from the main Chaste directory.
+</p>
+<h2 id="IndexError:stringindexoutofrange">IndexError: string index out of range</h2>
+<p>
+If you get the following error
+</p>
+<pre class="wiki">scons  test_suite=heart/test/bidomain/TestBidomainProblem.hpp 
+IndexError: string index out of range:
+  File "/usr/lib/scons/SCons/Script/Main.py", line 1171:
+    _exec_main(parser, values)
+  File "/usr/lib/scons/SCons/Script/Main.py", line 1144:
+    _main(parser)
+  File "/usr/lib/scons/SCons/Script/Main.py", line 880:
+    if a[0] == '-':
+</pre><p>
+it could be because of the two spaces (!!!) between "<tt>scons</tt>" and "<tt>test_suite=</tt>" in "<tt>scons  test_suite=heart/test/bidomain/TestBidomainProblem.hpp</tt>" (only an issue if running scons through eclipse).
+</p>
+<h2 id="Founddependencycycles">"Found dependency cycle(s)"</h2>
+<pre class="wiki">scons: done building targets.
+
+scons: *** Found dependency cycle(s):
+  Internal Error: no cycle found for node global/build/debug/src/Version.o (&lt;SCons.Node.FS.File instance at 0xdacc20&gt;) in state executed
+
+File "/usr/lib64/python2.5/site-packages/SCons/Taskmaster.py", line 797, in cleanup
+</pre><p>
+If <tt>scons</tt> throws an error saying it has found a <i>dependency cycle</i> it probably has conflicting versions of things lying around and a clean build (<strong><tt>scons -c</tt></strong>) seems to sort it out.
+</p>
+<h1 id="PyCmlerrors">PyCml errors</h1>
+<h2 id="ConfigurationError:Notransmembranepotentialfoundcheckyourconfiguration">ConfigurationError: No transmembrane potential found; check your configuration</h2>
+<p>
+This occurs when PyCml cannot determine which variable in the model represents the transmembrane potential.  You can either add a <tt>for_model</tt> stanza to the PyCml config file or, better, annotate the CellML file to specify the variable.  See <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on how to do this, in particular the section on <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">Model annotation with RDF</a>.
+</p>
+<h2 id="ConfigurationError:NostimuluscurrentfoundyoullhavetroublegeneratingChastecode">ConfigurationError: No stimulus current found; you'll have trouble generating Chaste code</h2>
+<p>
+PyCml needs to know which variable in the model represents the stimulus current in order to replace the model's stimulus with the one defined by Chaste.  You should <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.  If the model doesn't have a stimulus (e.g. a sino-atrial node model) then <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html#Self-excitatorymodels">annotate the model itself</a> accordingly.
+</p>
+<h2 id="TranslationError:CannotconvertioniccurrentfromampstouAcm2withoutknowingwhichvariableinthecellmodelrepresentsthemembranecapacitance">TranslationError: Cannot convert ionic current from amps to uA/cm<sup>2</sup> without knowing which variable in the cell model represents the membrane capacitance</h2>
+<p>
+Some cell models give ionic currents in units of amps (or microamps etc.) whereas Chaste expects amps normalised by area (microamps per centimetre squared).  In order to convert between the two, PyCml needs to use the membrane capacitance from the model, and hence needs to know which variable represents this.  You should <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.
+</p>
+<h1 id="Compilationandlinkingerrors">Compilation and linking errors</h1>
+<h2 id="Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it clearly has been, in a base class</h2>
+<p>
+If class <tt>A</tt> and class <tt>B</tt> are both templated, and <tt>B&lt;DIM&gt;</tt> inherits from <tt>A&lt;DIM&gt;</tt>, then the compiler won't be able to locate variables defined in the base class if used in the child unless the base is specified. The solution is to write <tt>this-&gt;</tt> before the variable in question. i.e.
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">A</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+  <span class="kt">double</span> x<span class="p">;</span>
+<span class="p">};</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">B</span> <span class="o">:</span> <span class="k">public</span> A<span class="o">&lt;</span>DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+  <span class="kt">void</span> run<span class="p">()</span>
+  <span class="p">{</span>
+    std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> x<span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+won't compile, whereas
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">A</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+  <span class="kt">double</span> x<span class="p">;</span>
+<span class="p">};</span>
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">int</span> DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">B</span> <span class="o">:</span> <span class="k">public</span> A<span class="o">&lt;</span>DIM<span class="o">&gt;</span>
+<span class="p">{</span>
+  <span class="kt">void</span> run<span class="p">()</span>
+  <span class="p">{</span>
+    std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="k">this</span><span class="o">-&gt;</span>x<span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+will do.  See <a class="wiki" href="/trac/wiki/AccessingMemberVariablesInTemplatedSuperclasses">AccessingMemberVariablesInTemplatedSuperclasses</a>.
+</p>
+<h2 id="GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be something to do with Boost (mpl or ublas)</h2>
+<p>
+Try putting
+</p>
+<div class="code"><pre><span class="cp">#include "UblasIncludes.hpp"
+</span></pre></div><p>
+as the <strong>first</strong> include in the source file being compiled (generally either a cpp file or the test being run).
+</p>
+<p>
+It may be that the ublas include needs to come after any serialization include; I'm not sure.
+</p>
+<h2 id="Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</h2>
+<p>
+<strong>Problem</strong>: <i>Undefined reference errors on linking, such as:</i>
+</p>
+<pre class="wiki">undefined reference to `Node&lt;1u&gt;::AddElement(unsigned int)'
+</pre><p>
+This may mean that you are using a templated class which has been written using <i>Explicit Instantiation</i>, and you are using a value for one of the template parameters for which there isn't an instantiation.  Not all classes are instantiated for all dimensions in order to reduce compilation time.  Look at the bottom of the cpp file for the class in question (e.g. Node.cpp in the example above) and check if there is a line like
+</p>
+<pre class="wiki">template class Node&lt;1&gt;;
+</pre><p>
+at the bottom of the file.  Add the missing dimension if not.
+</p>
+<p>
+Note that for some classes (e.g. <tt>BoundaryConditionsContainer</tt>) the situation is more complex, since we don't just template over dimension.  In such cases there should be a file named like <tt>BoundaryConditionsContainerImplementation.hpp</tt> which you can include, either in the hpp file (if you do not provide a cpp) or in your cpp file (and add further explicit instantiations there).  See <a class="wiki" href="/trac/wiki/StaticAndDynamicPolymorphism#Explicitinstantiation">StaticAndDynamicPolymorphism#Explicitinstantiation</a> for more info.
+</p>
+<h2 id="AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error (possibly) in a file in the CxxTest folder</h2>
+<p>
+The following error (or actually, warning, which is then taken as an error)
+</p>
+<pre class="wiki">cxxtest/cxxtest/TestSuite.h: In function 'bool CxxTest::equals(X, Y) [with X = long unsigned int, Y = int]':
+cxxtest/cxxtest/TestSuite.h:58:   instantiated from 'void CxxTest::doAssertEquals(const char*, unsigned int, const char*, X, const char*, Y, const char*) [with X = long unsigned int, Y = int]'
+.&lt;FILE_NAME&gt;:&lt;LINE_NUMBER&gt;   instantiated from here
+cxxtest/cxxtest/TestSuite.h:49: warning: comparison between signed and unsigned integer expressions
+</pre><p>
+is usually due to a comparison between an <tt>unsigned</tt> variable and a hardcoded number (taken as an <tt>int</tt> by the compiler) in a <tt>TS_ASSERT_EQUALS</tt>, for example
+</p>
+<div class="code"><pre><span class="kt">unsigned</span> my_var <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+TS_ASSERT_EQUALS<span class="p">(</span>my_var<span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+</pre></div><p>
+To tell the compiler to treat the (second) 10 as an <tt>unsigned</tt>, do the following
+</p>
+<div class="code"><pre>TS_ASSERT_EQUALS<span class="p">(</span>my_var<span class="p">,</span> <span class="mi">10</span>u<span class="p">);</span>
+</pre></div><h2 id="Error:voidYOUR_TEST_CLASS::YOUR_TEST_METHODisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</h2>
+<p>
+Remember all test methods need to be declared as <tt>public</tt>.
+</p>
+<h2 id="Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingboostnumericublasmatrix.hpp">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if you are including &lt;boost/numeric/ublas/matrix.hpp&gt;)</h2>
+<p>
+These are ublas vectors and matrices. Do
+</p>
+<div class="code"><pre><span class="cp">#include "UblasIncludes.hpp"
+</span></pre></div><p>
+Note that it is not enough to do
+</p>
+<div class="code"><pre><span class="cp">#include &lt;boost/numeric/ublas/matrix.hpp&gt;
+</span></pre></div><p>
+as then you would have to write <tt>boost::numeric::ublas::c_matrix&lt;double,2,2&gt;</tt> instead of <tt>c_matrix&lt;double,2,2&gt;</tt>.
+</p>
+<h2 id="GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</h2>
+<p>
+If the following is printed
+</p>
+<pre class="wiki">global/src/DistributedVector.cpp:47: static void DistributedVector::CheckForPetsc(): Assertion `petsc_is_initialised' failed.
+</pre><p>
+it is probably because you have forgotten to do
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+in your test.
+</p>
+<h2 id="Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  Error message is MPI_COMM_RANK and code is 197"</h2>
+<p>
+You may have included <tt>PetscSetupAndFinalize.hpp</tt> in a source file - it should only be included in test files (and must be included in all tests files that use PETSc).
+</p>
+<h2 id="Boostserializationvector.hpp">Boost/serialization/vector.hpp</h2>
+<p>
+<strong>Note</strong>: this error should no longer occur, as we include a workaround within Chaste.
+</p>
+<p>
+(<a class="missing ticket">#1024</a>) If you see this:
+</p>
+<pre class="wiki">/usr/include/boost/serialization/vector.hpp:126: error: redefinition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long int, std::allocator&lt;long int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: previous definition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long int, std::allocator&lt;long int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: redefinition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long unsigned int, std::allocator&lt;long unsigned int&gt; &gt; &gt;'
+/usr/include/boost/serialization/vector.hpp:126: error: previous definition of 'struct boost::serialization::implementation_level&lt;std::vector&lt;long unsigned int, std::allocator&lt;long unsigned int&gt; &gt; &gt;'
+scons: building terminated because of errors.
+</pre><p>
+put 
+</p>
+<div class="code"><pre><span class="cp">#include &lt;climits&gt;
+</span></pre></div><p>
+before
+</p>
+<div class="code"><pre><span class="cp">#include "boost/serialization/vector.hpp"
+</span></pre></div><h2 id="glibcdetectedfree:invalidpointer">glibc detected free(): invalid pointer</h2>
+<p>
+If you get an error starting something like:
+</p>
+<pre class="wiki">** glibc detected *** heart/build/debug/mechanics/TestCardiacElectroMechanicsProblemRunner: free(): invalid pointer: 0x00000000019ff758 ***
+======= Backtrace: =========
+/lib/libc.so.6[0x7f32485ae08a]
+/lib/libc.so.6(cfree+0x8c)[0x7f32485b1c1c]
+</pre><p>
+then it may be because you haven't included a virtual destructor in the base class of your inheritance hierarchy, and you're deleting a derived class via a pointer of base class type. Another situation that may provoke this error is when you make use of <tt>CellwiseData</tt> but forget to call <tt>ReallocateMemory()</tt>.
+</p>
+<h2 id="Invalidapplicationofsizeoftoincompletetypeboost::STATIC_ASSERTION_FAILUREfalse">Invalid application of 'sizeof' to incomplete type 'boost::STATIC_ASSERTION_FAILURE&lt;false&gt;'</h2>
+<p>
+If you get this error
+</p>
+<pre class="wiki">/usr/include/boost/archive/detail/oserializer.hpp:566: error: invalid application of 'sizeof' to incomplete type 'boost::STATIC_ASSERTION_FAILURE&lt;false&gt;' 
+</pre><p>
+then you need to archive a <i>const</i> pointer to your object instead of just a pointer, e.g. instead of 
+</p>
+<div class="code"><pre>Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> p_electrodes <span class="o">=</span> <span class="k">new</span> Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span>mesh<span class="p">,</span><span class="kc">false</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span>magnitude<span class="p">,</span>duration<span class="p">);</span>
+output_arch <span class="o">&lt;&lt;</span> p_electrodes<span class="p">;</span>
+</pre></div><p>
+put 
+</p>
+<div class="code"><pre>Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> <span class="k">const</span> p_electrodes <span class="o">=</span> <span class="k">new</span> Electrodes<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span>mesh<span class="p">,</span><span class="kc">false</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span>magnitude<span class="p">,</span>duration<span class="p">);</span>
+output_arch <span class="o">&lt;&lt;</span> p_electrodes<span class="p">;</span>
+</pre></div><h2 id="functiondefinitiondoesnotdeclareparameters">"function definition does not declare parameters"</h2>
+<p>
+If you get this sort of error:
+</p>
+<pre class="wiki">cell_based/src/tissue/cell/TissueCell.cpp:172: error: function definition does not declare parameters
+scons: *** [cell_based/build/debug/src/tissue/cell/TissueCell.os] Error 1
+scons: building terminated because of errors.
+</pre><p>
+then the relevant function definition is incorrectly typed. Check you have two colons, e.g. <tt>TissueCell::AddCell()</tt>.
+</p>
+<h2 id="error:expectedprimary-expressionbeforetoken">"error: expected primary-expression before '&gt;' token"</h2>
+<p>
+If you are trying to call a method that is templated, like this:
+</p>
+<div class="code"><pre><span class="k">if</span> <span class="p">(</span>cell_iter<span class="o">-&gt;</span>rGetCellPropertyCollection<span class="p">().</span>HasProperty<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">())</span>
+</pre></div><p>
+but get this sort of error:
+</p>
+<pre class="wiki">error: expected primary-expression before '&gt;' token
+error: expected primary-expression before ')' token
+</pre><p>
+then this may be because the compiler doesn't know that the method is a template itself, and so parses the &lt; character as "less than" and gets confused later on. In this case, you need to explicitly tell the compiler that the method is a template so that it parses &lt; as the opening bracket of a template parameter list, like this:
+</p>
+<div class="code"><pre><span class="k">if</span> <span class="p">(</span>cell_iter<span class="o">-&gt;</span>rGetCellPropertyCollection<span class="p">().</span><span class="k">template</span> HasProperty<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">())</span>
+</pre></div><h2 id="Test...doesnotnameatype">Test... "does not name a type"</h2>
+<p>
+If you get an error like this:
+</p>
+<pre class="wiki">projects/JohnW/build/debug/Sensitivity_Analysis/TestSensitivityAnalysisRunner.cpp:23:8: error: 'TestSensitivityAnalysis' does not name a type
+projects/JohnW/build/debug/Sensitivity_Analysis/TestSensitivityAnalysisRunner.cpp:26:178: error: 'suite_TestSensitivityAnalysis' was not declared in this scope
+projects/JohnW/build/debug/Sensitivity_Analysis/TestSensitivityAnalysisRunner.cpp: In member function 'virtual void TestDescription_TestSensitivityAnalysis_TestSensitivityAnalysisRunner::runTest()':
+projects/JohnW/build/debug/Sensitivity_Analysis/TestSensitivityAnalysisRunner.cpp:31:19: error: 'suite_TestSensitivityAnalysis' was not declared in this scope
+scons: *** [projects/JohnW/build/debug/Sensitivity_Analysis/TestSensitivityAnalysisRunner.o] Error 1
+</pre><p>
+it probably means that the file CxxTest is trying to use is empty. This can happen if, for instance, the whole file is in a block surrounded by
+</p>
+<pre class="wiki">#ifdef CHASTE_CVODE
+
+#endif
+</pre><p>
+and CHASTE_CVODE is false, you will need to change the guard to be true (i.e. enable CVODE in this case in the hostconfig file), or re-write the code so it isn't a problem.
+</p>
+<h2 id="YouaretryingtoincludeaCVODEcardiaccellandtheclassisntrecognised">You are trying to #include a CVODE cardiac cell and the class isn't recognised</h2>
+<p>
+i.e. compilation fails with the usual 'does not name a type' kind of error that happens when you e.g. mis-spell a class name.
+</p>
+<p>
+This will happen if you try to use a CVODE cell and your hostconfig doesn't have CVODE (which is optional) set up. 
+Run <tt>scons ts=global/test/TestChasteBuildInfo.hpp</tt> to see if SUNDIALS has a version number, if so CVODE is installed and linking to Chaste, if not you will need to <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a>.
+</p>
+<h2 id="Compileerrorcomplainingaboutmethodsbeinghidden">Compile error complaining about methods being hidden</h2>
+<p>
+E.g. that <tt>virtual void ParentClass::Foo()</tt> was hidden by <tt>virtual void ChildClass::Foo()</tt>
+</p>
+<p>
+Make sure that the <tt>Foo()</tt>s in each class have exactly the same definition (<tt>reutrn</tt> types, <tt>const</tt>ness, parameters etc.).
+</p>
+<h1 id="Other">Other</h1>
+<h2 id="Arepositoryhookfailederrormessagewhentryingtocommit">'A repository hook failed' error message when trying to commit</h2>
+<p>
+If, when you try to commit changes to the repository, SVN gives the error message
+</p>
+<pre class="wiki">A repository hook failed
+svn: Commit failed (details follow):
+svn: 'pre-commit' hook failed with error output:
+Branch or project commit with no indication in log message
+</pre><p>
+this is because, when committing to your project (or a branch), you must start the commit message with the project (or branch) name in square brackets, eg <tt>[JohnD] implemented ...</tt>
+</p>
+<h2 id="Rollingbackanaccidentalcommit">Rolling back an accidental commit</h2>
+<p>
+Suppose that changeset <a class="changeset" href="/trac/changeset/21486" title=" [dautrebande] ">r21486</a> was committed accidentally, and should be rolled back. This can be done using the commands
+</p>
+<pre class="wiki">svn merge -c -21486 .
+svn ci -m 'Rolling back r21486'
+</pre>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/UserBuildGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Userbuildguide">User build guide</h1>
+<h2 id="UsingSCons">Using SCons</h2>
+<p>
+We use <a class="ext-link" href="http://www.scons.org/"><span class="icon">​</span>SCons</a> to control the build process. The <a class="missing source">source:trunk/SConstruct</a> file configures what needs to be built, and is worth a look if this document leaves unanswered questions.  The file <a class="missing source">source:trunk/python/infra/SConsTools.py</a> also contains much of the build logic.  You need to have <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">set up paths to the libraries that Chaste uses</a> before attempting to build.
+</p>
+<p>
+<tt>scons</tt> can be used to run a single test, or multiple tests, in debug or optimised mode, and with number of other options. This page lists the <tt>scons</tt> commands that users should be aware of. In order to run <tt>scons</tt>, open a terminal, <tt>cd</tt> into the main chaste directory, and run one of the following commands. Or better, create a 'Make target' in eclipse using that given command.
+</p>
+<p>
+This runs <strong>all</strong> the tests
+</p>
+<pre class="wiki">scons
+</pre><p>
+To run a <strong>single test</strong>, say <tt>heart/test/bidomain/TestBidomainProblem.hpp</tt>, do
+</p>
+<pre class="wiki">scons test_suite=heart/test/bidomain/TestBidomainProblem.hpp
+</pre><p>
+The path is relative to the main chaste directory. The <tt>test_suite=</tt> is optional (see examples below).
+</p>
+<p>
+You can also run tests on multiple processors. To do this, use a <em>build type</em> featuring an underscore followed by the number of processes, e.g. for running on 2 cores:
+</p>
+<pre class="wiki">scons build=_2 heart/test/bidomain/TestBidomainProblem.hpp
+</pre><p>
+You can also call scons with the directory to run all of the tests within:
+</p>
+<pre class="wiki">scons          # runs all the tests - will take a while
+scons global   # just runs the tests in the global folder
+scons io       # just runs the tests in the io folder
+scons linalg   # just runs the tests in the linalg (linear algebra) folder
+scons mesh     # just runs the tests in the mesh folder
+scons ode      # just runs the tests in the ode folder
+scons pde      # just runs the tests in the pde folder
+scons heart    # just runs the tests in the heart folder
+scons cell_based crypt   # just runs the tests in the cell_based and crypt folders
+</pre><p>
+By default (for developer builds; releases have this turned on by default) the build does not create library files for the Chaste code, but directly links the object files required by each test.
+To use libraries, which will reduce the compilation time if you are not making frequent changes to core Chaste code, use the <tt>chaste_libs=1</tt> (<tt>cl=1</tt>) option, e.g.
+</p>
+<pre class="wiki">scons chaste_libs=1 ...
+</pre><p>
+This is particularly suited to running whole test packs.
+</p>
+<h2 id="Optimisedbuilds">Optimised builds</h2>
+<p>
+The above all compile with debug flags. <em>If the time it takes to run your code is significantly longer than the time it takes to build then you should probably use an <strong>optimised</strong> build.</em>
+To compile <strong>optimised</strong> code you have to provide a <tt>build</tt> option, for example
+</p>
+<pre class="wiki">scons build=GccOpt heart/test/bidomain/TestBidomainProblem.hpp          # optimised build
+scons build=GccOptNative heart/test/bidomain/TestBidomainProblem.hpp    # optimised build for the machine you are compiling on
+scons build=GccOpt_ndebug heart/test/bidomain/TestBidomainProblem.hpp   # highly optimised with NDEBUG defined, recommended for longer-running simulations
+scons build=GccOptNative_ndebug heart/test/bidomain/TestBidomainProblem.hpp   # highly optimised for that machine with NDEBUG defined, recommended for longer-running simulations
+scons build=IntelProduction heart/test/bidomain/TestBidomainProblem.hpp # (see below)
+</pre><p>
+Building with <tt>IntelProduction</tt> requires an Intel compiler and extra libraries (see <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/IntelCompiler.html">InstallGuides/IntelCompiler</a>). This provides the fastest code but the compilation time can be very long.
+</p>
+<h2 id="Otheroptions">Other options</h2>
+<p>
+Other options that are worth knowing
+</p>
+<ul><li><tt>compile_only=1</tt> - just compile test executables without running them.  This is useful for fixing build failures.
+</li><li><tt>build=_warn</tt> - stop compiler warnings being treated as errors.
+</li><li><tt>scons -c .</tt> - do a clean build (note the '.' - this is necessary to do a full clean).
+</li></ul><p>
+The following abbreviations can be used,
+</p>
+<ul><li><tt>b=</tt> instead of <tt>build=</tt> 
+</li><li><tt>ts=</tt> instead of <tt>test_suite=</tt> (or omit the <tt>test_suite=</tt> entirely, e.g. "<tt>scons global/test/TestCwd.hpp</tt>")
+</li><li><tt>co=1</tt> instead of <tt>compile_only=1</tt>
+</li><li><tt>cl=1</tt> instead of <tt>chaste_libs=1</tt>
+</li></ul><p>
+for example:
+</p>
+<pre class="wiki">scons co=1 b=GccOpt_ndebug ts=heart/test/bidomain/TestBidomainProblem.hpp
+</pre><p>
+See <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for a complete list of options.
+</p>
+<h2 id="Viewingtestresults">Viewing test results</h2>
+<p>
+If the tests compile and run, to check the results, open a web browser and go to the following (local) page:
+</p>
+<pre class="wiki">file:///&lt;CHASTE_CODE_DIRECTORY&gt;/test_summary/&lt;NAME_OF_YOUR_COMPUTER&gt;.default/index.html
+</pre><p>
+The exact path will be printed at the end of the build.
+Note that this is just a file within the Chaste directory.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

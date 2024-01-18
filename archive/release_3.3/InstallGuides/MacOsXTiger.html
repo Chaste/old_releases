@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/MacOsXTiger - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonMacOSX10.4experimental">Installing Chaste on Mac OS X 10.4 (experimental)</h1>
+<p>
+These instructions are based on <a class="missing source">source:tags/release_1/README_INSTALLATION.txt</a>
+</p>
+<p>
+A prerequisite for this installation is to have <strong><em>Xcode</em></strong> installed. It provides <em>gcc</em> and fundamental header files. You can find it in your Mac OS X installation DVD or download it directly from Apple.
+</p>
+<p>
+<strong><em>wget</em></strong> is not available in Mac OS X v10.4. We suggest you to use your web browser or any other download management tool to get the tarballs mentioned in the installation readme. A workaround could be to install <strong><em>wget</em></strong> as in <a class="ext-link" href="http://www.statusq.org/archives/2005/02/22/610/"><span class="icon">​</span>http://www.statusq.org/archives/2005/02/22/610/</a>, do it a your own risk.
+</p>
+<h2 id="BOOST">BOOST</h2>
+<p>
+There's a Mac OS X version of boost-jam 3.1.17. Unfortunately, if I try to use it I get a <em>Bus error</em> message. 
+</p>
+<p>
+Download the platform-independent version of boost-jam 3.1.17 from: <a class="ext-link" href="http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=72941"><span class="icon">​</span>http://sourceforge.net/project/showfiles.php?group_id=7586&amp;package_id=72941</a>
+</p>
+<p>
+Download the platform-independent version of boost 1.34.1 from: <a class="ext-link" href="http://garr.dl.sourceforge.net/sourceforge/boost/boost_1_34_1.tar.gz"><span class="icon">​</span>http://garr.dl.sourceforge.net/sourceforge/boost/boost_1_34_1.tar.gz</a>
+</p>
+<pre class="wiki">cd $CHASTE_LIBS
+tar -xvf boost-jam-3.1.17.tar
+cd boost-jam-3.1.17
+./build.sh
+cd ..
+tar -xvf boost_1_34_1.tar
+cd boost_1_34_1
+../boost-jam-3.1.17/bin.macosxx86/bjam "-sTOOLS=gcc" --prefix=$CHASTE_LIBS/boost install
+cd ..
+rm
+</pre><p>
+I'm getting the following summary:
+</p>
+<pre class="wiki">...failed updating 54 targets...
+...skipped 12 targets...
+...updated 5592 targets...
+</pre><h2 id="MPI">MPI</h2>
+<p>
+MPI configuration is different, since Tiger and the shared memory controller of MPICH doesn't seem to get along very well.
+</p>
+<pre class="wiki">./configure --prefix=$CHASTE_LIBS/mpi --enable-sharedlib --disable-f77 --with-device=ch_p4 -rsh=ssh
+</pre><p>
+If you haven't done it before, you will need to start the Remote Login service in the Sharing section of your Preferences.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

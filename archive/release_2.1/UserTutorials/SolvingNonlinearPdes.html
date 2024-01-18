@@ -1,0 +1,403 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SolvingNonlinearPdes - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_2.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/SolvingNonlinearPdes" href="/chaste/tutorials/release_2.1/UserTutorials/SolvingNonlinearPdes.html">SolvingNonlinearPdes</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/pde/test/TestSolvingNonlinearPdesTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/9856" title="#1063 - merge branch revisions 9725:9855 into trunk.">r9856</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="AnexampleshowinghowtosolveanonlinearellipticPDE.Alsoincludesfunction-basedboundaryconditions">An example showing how to solve a nonlinear elliptic PDE. Also includes function-based boundary conditions</h1>
+<p>
+In this tutorial we show how Chaste can be used to solve a nonlinear elliptic PDEs.
+We will solve the PDE div.(u grad u) + 1 = 0, on a square domain, with boundary
+conditions u=0 on y=0; and Neumann boundary conditions: (u grad u).n = 0 on x=0 and x=1;
+and (u grad u).n = y on y=1.
+</p>
+<p>
+For nonlinear PDEs, the finite element equations are of the form F(U)=0, where
+U=(U<sub>1</sub> , ... , U<sub>N</sub>) is a vector of the unknowns at each node, and F some
+non-linear vector valued function. To solve this, a nonlinear solver is required.
+Chaste can solve this with Newton's method, or (default) Petsc's nonlinear solvers.
+Solvers of such nonlinear problems usually require the Jacobian of the problem, ie the
+matrix A = dF/dU, or at least an approximation of the Jacobian.
+</p>
+<p>
+The following header files need to be included, as in the linear PDEs tutorial
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "UblasCustomFunctions.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "TetrahedralMesh.hpp"
+#include "BoundaryConditionsContainer.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "OutputFileHandler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+This is the solver for nonlinear elliptic PDEs 
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleNonlinearEllipticSolver.hpp"
+</span></pre></div><p>
+In this test we also show how to define Neumman boundary conditions which
+depend on spatial location, for which the following class is needed 
+</p>
+<div class="code"><pre><span class="cp">#include "FunctionalBoundaryCondition.hpp"
+</span></pre></div><p>
+We will choose to use the Chaste newton solver rather than Petsc's nonlinear
+solver 
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleNewtonNonlinearSolver.hpp"
+</span></pre></div><p>
+As in the linear PDEs tutorial, we have to define the PDE class we want to
+solve (assuming one has not already been created). Nonlinear elliptic PDEs
+should inherit from <tt>AbstractNonlinearEllipticPde</tt>, which has five pure
+methods which have to be implemented in this concrete class. Here, we define
+the PDE div.(u grad u) + 1 = 0.
+</p>
+<div class="code"><pre>class MyNonlinearPde <span class="o">:</span> public AbstractNonlinearEllipticPde<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><p>
+The first is the part of the source term that is independent of u 
+</p>
+<div class="code"><pre>    <span class="kt">double</span> <span class="nf">ComputeLinearSourceTerm</span><span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">1.0</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><p>
+The first is the part of the source term that is dependent on u 
+</p>
+<div class="code"><pre>    <span class="kt">double</span> <span class="nf">ComputeNonlinearSourceTerm</span><span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><p>
+The third is the diffusion tensor, which unlike the linear case, can be
+dependent on u. The diffusion tensor should be symmetric and positive definite/ 
+</p>
+<div class="code"><pre>    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> ComputeDiffusionTerm<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> identity_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span>u<span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><p>
+We also need to provide the derivatives with respect to u of the last two methods,
+so that the Jacobian matrix can be assembled. The derivative of the nonlinear source
+term is
+</p>
+<div class="code"><pre>    <span class="kt">double</span> <span class="nf">ComputeNonlinearSourceTermPrime</span><span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> <span class="p">,</span> <span class="kt">double</span> <span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><p>
+And the derivative of the diffusion tensor is just the identity matrix 
+</p>
+<div class="code"><pre>    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> ComputeDiffusionTermPrime<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> identity_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+We also need to define a (global) function that we become the Neumman boundary
+conditions, via the <tt>FunctionalBoundaryCondition</tt> class (see below). This
+function is f(x,y) = y
+</p>
+<div class="code"><pre><span class="kt">double</span> <span class="nf">MyNeummanFunction</span><span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> rX<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div><p>
+Next, we define the test suite, as before 
+</p>
+<div class="code"><pre>class TestSolvingNonlinearPdesTutorial <span class="o">:</span> public CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><p>
+Define a particular test. Note the <tt>throw(Exception)</tt> at the end of the
+declaration. This causes <tt>Exception</tt> messages to be printed out if an
+<tt>Exception</tt> is thrown, rather than just getting the message "terminate
+called after throwing an instance of 'Exception' " 
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSolvingNonlinearEllipticPde</span><span class="p">()</span> throw<span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+As usual, first create a mesh 
+</p>
+<div class="code"><pre>        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"mesh/test/data/square_128_elements"</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+</pre></div><p>
+Next, instantiate the PDE to be solved 
+</p>
+<div class="code"><pre>        MyNonlinearPde pde<span class="p">;</span>
+</pre></div><p>
+Then we have to define the boundary conditions. First, the Dirichlet boundary
+condition, u=0 on x=0, using the boundary node iterator
+</p>
+<div class="code"><pre>        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_zero_bc <span class="o">=</span> new ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+             node_iter<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>node_iter<span class="p">)</span><span class="o">-&gt;</span>GetPoint<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">)</span>
+            <span class="p">{</span>
+                bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_zero_bc<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div><p>
+And then the Neumman conditions. Neumann boundary condition are defined on
+surface elements, and for this problem, the Neumman boundary value depends
+on the position in space, so we make use of the <tt>FunctionalBoundaryCondition</tt>
+object, which contains a pointer to a function, and just returns the value
+of that function for the required point when the <tt>GetValue</tt> method is called.
+</p>
+<div class="code"><pre>        FunctionalBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_functional_bc
+          <span class="o">=</span> new FunctionalBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span> <span class="o">&amp;</span>MyNeummanFunction <span class="p">);</span>
+</pre></div><p>
+Next, loop over surface elements 
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator elt_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             elt_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             elt_iter<span class="o">++</span> <span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+Get the y value of any node (here, the zero-th) 
+</p>
+<div class="code"><pre>            <span class="kt">double</span> y <span class="o">=</span> <span class="p">(</span><span class="o">*</span>elt_iter<span class="p">)</span><span class="o">-&gt;</span>GetNodeLocation<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+</pre></div><p>
+If y=1.. 
+</p>
+<div class="code"><pre>            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>y<span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">)</span>
+            <span class="p">{</span>
+</pre></div><p>
+.. then associate the functional boundary condition, (Dgradu).n = y,
+with the surface element 
+</p>
+<div class="code"><pre>                bcc<span class="p">.</span>AddNeumannBoundaryCondition<span class="p">(</span><span class="o">*</span>elt_iter<span class="p">,</span> p_functional_bc<span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+</pre></div><p>
+else associate the zero boundary condition (ie zero flux) with this
+element 
+</p>
+<div class="code"><pre>                bcc<span class="p">.</span>AddNeumannBoundaryCondition<span class="p">(</span><span class="o">*</span>elt_iter<span class="p">,</span> p_zero_bc<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div><p>
+Note that in the above loop, the zero Neumman boundary condition was applied
+to all surface elements for which y!=1, which included the Dirichlet surface
+y=0. This is OK, as Dirichlet boundary conditions are applied to the finite
+element matrix after Neumman boundary conditions, where the appropriate rows
+in the matrix are overwritten
+</p>
+<p>
+This is the solver for solving nonlinear problems, which, as usual,
+takes in the mesh, the PDE, and the boundary conditions 
+</p>
+<div class="code"><pre>        SimpleNonlinearEllipticSolver<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span> <span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bcc<span class="p">);</span>
+</pre></div><p>
+The solver also needs to be given an initial guess, which will be
+a Petsc vector. We can make use of a helper method to create it.
+</p>
+<div class="code"><pre>        Vec initial_guess <span class="o">=</span> PetscTools<span class="o">::</span>CreateAndSetVec<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> <span class="mf">0.25</span><span class="p">);</span>
+</pre></div><p>
+<strong>Optional:</strong> To use Chaste's Newton solver to solve nonlinear vector equations that are
+assembled, rather than the default Petsc nonlinear solvers, we can
+do the following: 
+</p>
+<div class="code"><pre>        SimpleNewtonNonlinearSolver newton_solver<span class="p">;</span>
+        solver<span class="p">.</span>SetNonlinearSolver<span class="p">(</span><span class="o">&amp;</span>newton_solver<span class="p">);</span>
+</pre></div><p>
+<strong>Optional:</strong> We can also manually set tolerances, and whether to print statistics, with
+this nonlinear vector equation solver 
+</p>
+<div class="code"><pre>        newton_solver<span class="p">.</span>SetTolerance<span class="p">(</span><span class="mf">1e-10</span><span class="p">);</span>
+        newton_solver<span class="p">.</span>SetWriteStats<span class="p">();</span>
+</pre></div><p>
+Now call <tt>Solve</tt>, passing in the initial guess 
+</p>
+<div class="code"><pre>        Vec answer <span class="o">=</span> solver<span class="p">.</span>Solve<span class="p">(</span>initial_guess<span class="p">);</span>
+</pre></div><p>
+Note that we could have got the solver to not use an analytical Jacobian
+and use a numerically-calculated Jacobian instead, by passing in false as a second
+parameter
+</p>
+<div class="code"><pre>        <span class="c">//Vec answer = solver.Solve(initial_guess, false);
+</span></pre></div><p>
+Once solved, we can check the obtained solution against the analytical
+solution 
+</p>
+<div class="code"><pre>        ReplicatableVector answer_repl<span class="p">(</span>answer<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>answer_repl<span class="p">.</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> y <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>GetPoint<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="kt">double</span> exact_u <span class="o">=</span> sqrt<span class="p">(</span>y<span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span>y<span class="p">));</span>
+            TS_ASSERT_DELTA<span class="p">(</span>answer_repl<span class="p">[</span>i<span class="p">],</span> exact_u<span class="p">,</span> <span class="mf">0.15</span><span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+Finally, we have to remember to destroy the Petsc <tt>Vec</tt>s 
+</p>
+<div class="code"><pre>        VecDestroy<span class="p">(</span>initial_guess<span class="p">);</span>
+        VecDestroy<span class="p">(</span>answer<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "UblasCustomFunctions.hpp"
+#include "TrianglesMeshReader.hpp"
+#include "TetrahedralMesh.hpp"
+#include "BoundaryConditionsContainer.hpp"
+#include "ConstBoundaryCondition.hpp"
+#include "OutputFileHandler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "SimpleNonlinearEllipticSolver.hpp"
+#include "FunctionalBoundaryCondition.hpp"
+#include "SimpleNewtonNonlinearSolver.hpp"
+</span>
+class MyNonlinearPde <span class="o">:</span> public AbstractNonlinearEllipticPde<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">double</span> ComputeLinearSourceTerm<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">1.0</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">double</span> ComputeNonlinearSourceTerm<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> ComputeDiffusionTerm<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> identity_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span>u<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">double</span> ComputeNonlinearSourceTermPrime<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> <span class="p">,</span> <span class="kt">double</span> <span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> ComputeDiffusionTermPrime<span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> u<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> identity_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kt">double</span> <span class="nf">MyNeummanFunction</span><span class="p">(</span><span class="k">const</span> ChastePoint<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> rX<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span>
+
+class TestSolvingNonlinearPdesTutorial <span class="o">:</span> public CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSolvingNonlinearEllipticPde<span class="p">()</span> throw<span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"mesh/test/data/square_128_elements"</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+
+        MyNonlinearPde pde<span class="p">;</span>
+
+        BoundaryConditionsContainer<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span> bcc<span class="p">;</span>
+        ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_zero_bc <span class="o">=</span> new ConstBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+             node_iter<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>node_iter<span class="p">)</span><span class="o">-&gt;</span>GetPoint<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">)</span>
+            <span class="p">{</span>
+                bcc<span class="p">.</span>AddDirichletBoundaryCondition<span class="p">(</span><span class="o">*</span>node_iter<span class="p">,</span> p_zero_bc<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        FunctionalBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_functional_bc
+          <span class="o">=</span> new FunctionalBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span> <span class="o">&amp;</span>MyNeummanFunction <span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator elt_iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             elt_iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             elt_iter<span class="o">++</span> <span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> y <span class="o">=</span> <span class="p">(</span><span class="o">*</span>elt_iter<span class="p">)</span><span class="o">-&gt;</span>GetNodeLocation<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>y<span class="o">-</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">)</span>
+            <span class="p">{</span>
+                bcc<span class="p">.</span>AddNeumannBoundaryCondition<span class="p">(</span><span class="o">*</span>elt_iter<span class="p">,</span> p_functional_bc<span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                bcc<span class="p">.</span>AddNeumannBoundaryCondition<span class="p">(</span><span class="o">*</span>elt_iter<span class="p">,</span> p_zero_bc<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        SimpleNonlinearEllipticSolver<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">,</span> <span class="o">&amp;</span>pde<span class="p">,</span> <span class="o">&amp;</span>bcc<span class="p">);</span>
+
+        Vec initial_guess <span class="o">=</span> PetscTools<span class="o">::</span>CreateAndSetVec<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> <span class="mf">0.25</span><span class="p">);</span>
+
+        SimpleNewtonNonlinearSolver newton_solver<span class="p">;</span>
+        solver<span class="p">.</span>SetNonlinearSolver<span class="p">(</span><span class="o">&amp;</span>newton_solver<span class="p">);</span>
+        newton_solver<span class="p">.</span>SetTolerance<span class="p">(</span><span class="mf">1e-10</span><span class="p">);</span>
+        newton_solver<span class="p">.</span>SetWriteStats<span class="p">();</span>
+
+        Vec answer <span class="o">=</span> solver<span class="p">.</span>Solve<span class="p">(</span>initial_guess<span class="p">);</span>
+
+        <span class="c">//Vec answer = solver.Solve(initial_guess, false);
+</span>
+        ReplicatableVector answer_repl<span class="p">(</span>answer<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>answer_repl<span class="p">.</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> y <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>GetPoint<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="kt">double</span> exact_u <span class="o">=</span> sqrt<span class="p">(</span>y<span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span>y<span class="p">));</span>
+            TS_ASSERT_DELTA<span class="p">(</span>answer_repl<span class="p">[</span>i<span class="p">],</span> exact_u<span class="p">,</span> <span class="mf">0.15</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        VecDestroy<span class="p">(</span>initial_guess<span class="p">);</span>
+        VecDestroy<span class="p">(</span>answer<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

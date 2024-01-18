@@ -1,0 +1,386 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningBidomainSimulations - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file heart/test/tutorials/TestRunningBidomainSimulationsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/196f6e705993/git_repo" title="Copyright Mayhem!
+">196f6e705993/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtorunbidomainsimulations">An example showing how to run bidomain simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste is used to run a standard bidomain simulation.
+Note that monodomain simulations are run very similarly.
+</p>
+<p>
+The first thing that needs to be done, when writing any Chaste test,
+is to include the following header.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+The main class to be used for running bidomain simulations is <tt>BidomainProblem</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "BidomainProblem.hpp"
+</span></pre></div><p>
+The type of intracellular stimulus we'll apply.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleStimulus.hpp"
+</span></pre></div><p>
+All tests which run cardiac simulations (which use Petsc) should include
+<tt>PetscSetupAndFinalize.hpp</tt>.  This class ensures that <tt>PetscInitialise()</tt>
+is called with the appropriate arguments before any tests in the suite are run.
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+The above files are contained in the source release and can be located and studied. Cardiac cell
+models are different: the C++ code is automatically generated from CellML files. To use a particular
+CellML file, place it in <tt>heart/src/odes/cellml</tt> (there are several in here already). If the CellML
+is called <tt>&lt;CELLMODEL&gt;.cellml</tt>, a file <tt>&lt;CELLMODEL&gt;.hpp</tt> will be automatically generated, which will define
+a class called <tt>Cell&lt;CELLMODEL&gt;FromCellML</tt>. So to use a particular cell model in a tissue simulation,
+given the CellML, you just have to do two things: include this <tt>.hpp</tt> file, and then use the class.
+For example, we will use the !LuoRudy1991 model, so we have to include the following, and
+later on use <tt>CellLuoRudy1991FromCellML</tt> as the cell model class.
+See <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on this process.
+</p>
+<div class="code"><pre><span class="cp">#include "LuoRudy1991.hpp"
+</span>
+</pre></div><h2 id="Definingacellfactory">Defining a cell factory</h2>
+<p>
+All mono/bidomain simulations need a <em>cell factory</em> as input. This is a class
+which tells the problem class what type of cardiac cells to create. The cell-factory
+class has to inherit from <tt>AbstractCardiacCellFactory&lt;DIM&gt;</tt>, which means it must
+implement the method <tt>CreateCardiacCellForTissueNode(Node&lt;DIM&gt;*)</tt>, which returns
+a pointer to an <tt>AbstractCardiacCell</tt>. Note, some concrete cell factories have
+been defined, such as the <tt>PlaneStimulusCellFactory</tt> (see later tutorials), which
+could be used in the simulation, but for completeness we create our own cell factory in
+this test. For complicated problems with, say, heterogeneous cell types or particular stimuli,
+a new cell factory will have to be defined by the user for their particular problem.
+</p>
+<p>
+This cell factory is a simple cell factory where every cell is a Luo-Rudy 91 cell,
+and only the cell at position (0,0) is given a non-zero stimulus.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">PointStimulus2dCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+</pre></div><p>
+Declare (smart) pointer to a <tt>SimpleStimulus</tt> for the cell which is stimulated.
+Note that <tt>AbstractCardiacCellFactory</tt> also has as protected members: <tt>mpZeroStimulus</tt>
+of type <tt>boost::shared_ptr&lt;ZeroStimulus&gt;</tt>; <tt>mpMesh</tt>, a pointer to the mesh used (the problem
+class will set this before it calls <tt>CreateCardiacCellForTissueNode</tt>, so it can be used
+in that method); <tt>mTimestep</tt>, a double (see below); and <tt>boost::shared_ptr&lt;mpSolver&gt;</tt>
+a forward euler ode solver (see below).
+</p>
+<div class="code"><pre><span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+</pre></div><p>
+Our contructor takes in nothing. It calls the constructor of <tt>AbstractCardiacCellFactory</tt>
+and we also initialise the stimulus to have magnitude -500000 uA/cm<sup>3 and duration 0.5 ms.
+</sup></p>
+<div class="code"><pre>    PointStimulus2dCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">5e5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Now we implement the pure method which needs to be implemented. We return
+a LR91 cell for each node, with the nodes in a 0.2mm block given the non-zero stimulus,
+and all other nodes given the zero stimulus. Note that we use <tt>mpMesh</tt>,
+<tt>mTimestep</tt>, <tt>mpZeroStimulus</tt> and <tt>mpSolver</tt> which are all
+members of the base class. The timestep and solver are defined in the base
+class just so that the user doesn't have to create them here.
+</p>
+<div class="code"><pre>    AbstractCardiacCell<span class="o">*</span> <span class="nf">CreateCardiacCellForTissueNode</span><span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span> <span class="o">&amp;&amp;</span> y<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="c1">// ie if x&lt;=0.02 and y&lt;=0.02 (and we are assuming here x,y&gt;=0).
+</span>        <span class="p">{</span>
+</pre></div><p>
+Create a LR91 cell with the non-zero stimulus. This is a volume stimulus, ie
+the function on the right-hand side of the first of the two bidomain equations.
+An equal and opposite extra-cellular stimulus is implicitly enforced by the code,
+which corresponds to having zero on the right-hand side of the second of the
+bidomain equations.
+</p>
+<div class="code"><pre>            <span class="k">return</span> <span class="k">new</span> <span class="nf">CellLuoRudy1991FromCellML</span><span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+</pre></div><p>
+The other cells have zero stimuli.
+</p>
+<div class="code"><pre>            <span class="k">return</span> <span class="k">new</span> <span class="nf">CellLuoRudy1991FromCellML</span><span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+We have no need for a destructor, since the problem class deals with deleting the cells.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h2 id="Runningthebidomainsimulation">Running the bidomain simulation</h2>
+<p>
+Now we can define the test class, which must inherit from <tt>CxxTest::TestSuite</tt>
+as described in the writing basic tests tutorial.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+</pre></div><p>
+Tests should be public...
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+</pre></div><p>
+Define the test. Note the <tt></tt> - without this exception messages
+might not get printed out.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSimpleSimulation</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides.html">ChasteGuides</a> page
+for information on default parameter values. Parameters in this file can be re-set
+with <tt>HeartConfig</tt> if the user wishes, and other parameters such as end time must be set
+using <tt>HeartConfig</tt>. Let us begin by setting the end time (in ms), the mesh to use, and the
+output directory and filename-prefix. Note that the spatial units in cardiac Chaste is CENTIMETRES,
+so that mesh 2D_0_to_1mm_800_elements is a mesh over [0,0.1]x[0,0.1].
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+</pre></div><p>
+There is an alternate method of loading a mesh that can be seen in <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a>,
+using <tt>DistributedTetrahedralMesh</tt>.
+</p>
+<p>
+It is possible to over-ride the default visualisation output (which is done during simulation
+post-processing).
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithMeshalyzer<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithCmgui<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithVtk<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div><p>
+If the mesh is a <a class="missing wiki">DistributedTetrahedralMesh?</a> then we can use parallel VTK files (.pvtu)
+</p>
+<div class="code"><pre>        <span class="c1">//HeartConfig::Instance()-&gt;SetVisualizeWithParallelVtk(true);
+</span>
+</pre></div><p>
+Next, we have to create a cell factory of the type we defined above.
+</p>
+<div class="code"><pre>        PointStimulus2dCellFactory cell_factory<span class="p">;</span>
+
+</pre></div><p>
+Now we create a problem class using (a pointer to) the cell factory.
+</p>
+<div class="code"><pre>        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+</pre></div><p>
+This is enough setup to run a simulation: we could now call <tt>Initialise()</tt>
+and <tt>Solve()</tt> to run...
+</p>
+<div class="code"><pre>        <span class="c1">// bidomain_problem.Initialise();
+</span>        <span class="c1">// bidomain_problem.Solve();
+</span>
+</pre></div><p>
+..however, instead we show how to set a few more parameters. To set the conductivity values
+in the principal fibre, sheet and normal directions do the following.
+Note that <tt>Create_c_vector</tt> is just a helper method for creating a <tt>c_vector&lt;double,DIM&gt;</tt>
+of the correct size (2, in this case). Make sure these methods are called before
+<tt>Initialise()</tt>.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">6.2</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">));</span>
+
+</pre></div><p>
+This is how to reset the surface-area-to-volume ratio and the capacitance.
+(Here, we are actually just resetting them to their default values).
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSurfaceAreaToVolumeRatio<span class="p">(</span><span class="mi">1400</span><span class="p">);</span> <span class="c1">// 1/cm
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCapacitance<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span> <span class="c1">// uF/cm^2
+</span>
+</pre></div><p>
+This is how to set the ode timestep (the timestep used to solve the cell models)
+the pde timestep (the timestep used in solving the bidomain PDE), and the
+printing timestep (how often the output is written to file). The defaults are
+all 0.01, here we increase the printing timestep.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+Now we call <tt>Initialise()</tt>...
+</p>
+<div class="code"><pre>        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+
+</pre></div><p>
+Now we call Solve() to run the simulation. The output will be written to
+<tt>/tmp/$USER/testoutput/BidomainTutorial</tt> in HDF5 format.  The
+output will also be converted to selected visualiser formats at the end of the simulation.
+Note that if you want to view the progress of longer simulations
+go to the the output directory and look at the file
+<tt>progress_status.txt</tt>, which will say the percentage of the
+simulation run.
+</p>
+<div class="code"><pre>        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><h2 id="Examiningtheoutput">Examining the output</h2>
+<p>
+In order to visualise the results, go to one of the sub-folders
+</p>
+<ul><li><tt>/tmp/$USER/testoutput/BidomainTutorial/output</tt> for Meshalyzer
+</li><li><tt>/tmp/$USER/testoutput/BidomainTutorial/cmgui_output</tt> for Cmgui
+</li><li><tt>/tmp/$USER/testoutput/BidomainTutorial/vtk_output</tt> for Paraview (VTK)
+where you should find the geometric mesh data and simulation output.
+</li></ul><p>
+ 
+Please see <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/VisualisationGuides.html">ChasteGuides/VisualisationGuides</a> for details of using Meshalyzer/Cmgui/Paraview.
+</p>
+<p>
+Note: the easiest way to look at the resultant voltage values from the code
+(for the last timestep - the data for the previous timesteps is written to file
+but not retained) is to use a <tt>ReplicatableVector</tt>.
+<tt>bidomain_problem.GetSolution())</tt> returns a PetSc vector
+of the form (V_0, phi_0, V_1, phi_e_1, ... V_n, phi_e_n), and we can create a
+<tt>ReplicatableVector</tt> for easy access to this PetSc vector's data.
+(This won't be very efficient with huge problems in parallel - the next tutorial
+will mention how to do parallel access).
+</p>
+<div class="code"><pre>        ReplicatableVector <span class="nf">res_repl</span><span class="p">(</span>bidomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>res_repl<span class="p">.</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="c1">//    std::cout &lt;&lt; res_repl[i] &lt;&lt; "\n";
+</span>        <span class="p">}</span>
+
+</pre></div><p>
+Behind the scenes there are some logging routines which find out how much time
+has been spent in the major parts of the code (solving ODEs, assembling matrices etc.)
+The logging routines are in <tt>HeartEventHandler</tt> which is enabled by default.
+If you think this is getting in the way, you can turn it off at the top of your test with
+<tt>HeartEventHandler::Disable()</tt>.
+In this test, we want to get information out of the <tt>HeartEventHandler</tt>.
+</p>
+<p>
+<tt>Headings()</tt> prints a single (very long) line reminding us what catagories of events are being instrumented.
+</p>
+<div class="code"><pre>        HeartEventHandler<span class="o">::</span>Headings<span class="p">();</span>
+</pre></div><p>
+<tt>Report()</tt> prints a single line with times spent in each catagory.  When run in parallel it prints one line of times per process and also lines for average
+and maximum times.  (This can be useful if you need to identify a load imbalance.)
+</p>
+<div class="code"><pre>        HeartEventHandler<span class="o">::</span>Report<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningBidomainSimulationsTutorial.hpp">File name <tt>TestRunningBidomainSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "SimpleStimulus.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="cp">#include "LuoRudy1991.hpp"
+</span>
+<span class="k">class</span> <span class="nc">PointStimulus2dCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    PointStimulus2dCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">5e5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span>x<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span> <span class="o">&amp;&amp;</span> y<span class="o">&lt;</span><span class="mf">0.02</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="c1">// ie if x&lt;=0.02 and y&lt;=0.02 (and we are assuming here x,y&gt;=0).
+</span>        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+<span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSimpleSimulation<span class="p">()</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithMeshalyzer<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithCmgui<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetVisualizeWithVtk<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        <span class="c1">//HeartConfig::Instance()-&gt;SetVisualizeWithParallelVtk(true);
+</span>
+        PointStimulus2dCellFactory cell_factory<span class="p">;</span>
+
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        <span class="c1">// bidomain_problem.Initialise();
+</span>        <span class="c1">// bidomain_problem.Solve();
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">6.2</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">));</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSurfaceAreaToVolumeRatio<span class="p">(</span><span class="mi">1400</span><span class="p">);</span> <span class="c1">// 1/cm
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetCapacitance<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span> <span class="c1">// uF/cm^2
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        ReplicatableVector <span class="nf">res_repl</span><span class="p">(</span>bidomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>res_repl<span class="p">.</span>GetSize<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="c1">//    std::cout &lt;&lt; res_repl[i] &lt;&lt; "\n";
+</span>        <span class="p">}</span>
+
+        HeartEventHandler<span class="o">::</span>Headings<span class="p">();</span>
+        HeartEventHandler<span class="o">::</span>Report<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

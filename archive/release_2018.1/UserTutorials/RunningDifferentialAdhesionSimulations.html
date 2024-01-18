@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningDifferentialAdhesionSimulations - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestRunningDifferentialAdhesionSimulationsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/4f69b9f/git_repo" title="Copyright Mayhem!
+">4f69b9f/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtosimulatecellsortingduetodifferentialadhesioninavertex-basedmodel">An example showing how to simulate cell sorting due to differential adhesion in a vertex-based model</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to simulate a growing cell monolayer culture
+comprising two distinct cell types, which exhibit differential adhesion. We encountered a
+similar implementation in the second test in the <a class="missing wiki">TestRunningPottsBasedSimulationsTutorial?</a>,
+which used a cellular Potts model of cell interactions; here we use a vertex-based model.
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous tutorials, we begin by including the necessary header files. We have
+encountered these files already. Recall that often, either <tt>CheckpointArchiveTypes.hpp</tt>
+or <tt>CellBasedSimulationArchiver.hpp</tt> must be included the first Chaste header.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "CellLabel.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "CellAgesWriter.hpp"
+#include "CellVolumesWriter.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellProliferativePhasesWriter.hpp"
+#include "CellProliferativeTypesCountWriter.hpp"
+#include "CellProliferativePhasesCountWriter.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+</pre></div><p>
+The next header file defines a force law for describing the mechanical interactions
+between neighbouring cells in the cell population, subject to each vertex. This force
+law is a subclass of <tt>NagaiHondaForce</tt>, which we encountered in the <tt>TestRunningVertexBasedSimulationsTutorial</tt>,
+that allows for different adhesion energy parameter values depending on the types of
+interacting cells.
+</p>
+<div class="code"><pre><span class="cp">#include "NagaiHondaDifferentialAdhesionForce.hpp"
+</span>
+</pre></div><p>
+Similar to the <tt>NagaiHondaForce</tt>, this force law requires a child class of <tt>AbstractTargetAreaModifier</tt> which
+assigns target areas to each cell and updates this information in each time step. Here, we use the <tt>SimpleTargetAreaModifier</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleTargetAreaModifier.hpp"
+</span>
+</pre></div><p>
+Having included all the necessary header files, we proceed by defining the test class.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningDifferentialAdhesionSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><p>
+In this test, we demonstrate how to simulate a heterotypic monolayer that incorporates
+differential adhesion, using a vertex-based approach. This may be compared with the
+second test in the <a class="missing wiki">TestRunningPottsBasedSimulationsTutorial?</a>, which implements a similar
+simulation using a cellular Potts model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedDifferentialAdhesionSimulation</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+First we create a regular vertex mesh. Here we choose to set the value of the cell rearrangement threshold.
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        p_mesh<span class="o">-&gt;</span>SetCellRearrangementThreshold<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+We then create some cells using the helper class <tt>CellsGenerator</tt>. Note that in this simulation
+the cells are all differentiated, and thus no cell division occurs; if we wished, we could modify
+the three lines below in a straightforward manner to incorporate cell proliferation and investigate
+the effect of this on the cell sorting process.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> p_diff_type<span class="p">);</span>
+
+</pre></div><p>
+Using the vertex mesh and cells, we create a cell-based population object, and specify which results to
+output to file.
+</p>
+<div class="code"><pre>        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellProliferativePhasesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellVolumesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+We randomly label some cells using the cell property <tt>CellLabel</tt>. We begin by creating a shared pointer to
+this cell property using the helper singleton <tt>CellPropertyRegistry</tt>. We then loop over the cells and label
+each cell independently with probability 0.5. Note that since the cells have been passed to the
+<tt>VertexBasedCellPopulation</tt> object, the vector <tt>cells</tt> above is now empty, so we must use the
+<tt>Iterator</tt> to loop over cells.
+</p>
+<div class="code"><pre>         boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCellProperty<span class="o">&gt;</span> p_label<span class="p">(</span>CellPropertyRegistry<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Get<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="p">{</span>
+                cell_iter<span class="o">-&gt;</span>AddCellProperty<span class="p">(</span>p_label<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+We are now in a position to create and configure the cell-based simulation object.
+We can make the simulation run for longer to see more cell sorting by increasing the end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexBasedDifferentialAdhesionSimulation"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+</pre></div><p>
+Next we create the differential adhesion force law. This builds upon the model of Nagai, Honda and co-workers
+encounted in the <a class="missing wiki">TestRunningVertexBasedSimulationsTutorial?</a> by allowing different values of the adhesion
+energy parameters depending on the types of two neighbouring cells. Here we interpret the 'type' of a cell
+as whether or not it has the cell property <tt>CellLabel</tt>; it would be straightforward to create a similar
+force law that took account of a cell's mutation state, for example. Having created the force law, we set the
+values of the parameters. If the adhesion energy for two neighbouring homotypic cells is less than that of two
+heterotypic cells, then we may expect cell sorting to occur, in which the cells of each type will tend to locally
+aggregate over time.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaDifferentialAdhesionForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaDeformationEnergyParameter<span class="p">(</span><span class="mf">55.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaMembraneSurfaceEnergyParameter<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaCellCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">6.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellLabelledCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaCellBoundaryAdhesionEnergyParameter<span class="p">(</span><span class="mf">12.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellBoundaryAdhesionEnergyParameter<span class="p">(</span><span class="mf">40.0</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+A <tt>NagaiHondaForceDifferentialAdhesionForce</tt> assumes that each cell has been assigned a target area.
+The <tt>SimpleTargetAreaModifier</tt> will assign and update the target areas of all cells.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+</pre></div><p>
+Finally, we run the simulation.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_2018.1/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/TestVertexBasedDifferentialAdhesionSimulation/results_from_time_0/results.pvd</tt>.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningDifferentialAdhesionSimulationsTutorial.hpp">File name <tt>TestRunningDifferentialAdhesionSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "CellLabel.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "CellAgesWriter.hpp"
+#include "CellVolumesWriter.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellProliferativePhasesWriter.hpp"
+#include "CellProliferativeTypesCountWriter.hpp"
+#include "CellProliferativePhasesCountWriter.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+<span class="cp">#include "NagaiHondaDifferentialAdhesionForce.hpp"
+</span>
+<span class="cp">#include "SimpleTargetAreaModifier.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningDifferentialAdhesionSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestVertexBasedDifferentialAdhesionSimulation<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        p_mesh<span class="o">-&gt;</span>SetCellRearrangementThreshold<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>DifferentiatedCellProliferativeType<span class="p">,</span> p_diff_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">(),</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span><span class="p">(),</span> p_diff_type<span class="p">);</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativeTypesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellProliferativePhasesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellProliferativePhasesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellAgesWriter<span class="o">&gt;</span><span class="p">();</span>
+        cell_population<span class="p">.</span>AddCellWriter<span class="o">&lt;</span>CellVolumesWriter<span class="o">&gt;</span><span class="p">();</span>
+
+         boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>AbstractCellProperty<span class="o">&gt;</span> p_label<span class="p">(</span>CellPropertyRegistry<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Get<span class="o">&lt;</span>CellLabel<span class="o">&gt;</span><span class="p">());</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> cell_population<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> cell_population<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="p">{</span>
+                cell_iter<span class="o">-&gt;</span>AddCellProperty<span class="p">(</span>p_label<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexBasedDifferentialAdhesionSimulation"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaDifferentialAdhesionForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaDeformationEnergyParameter<span class="p">(</span><span class="mf">55.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaMembraneSurfaceEnergyParameter<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaCellCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">6.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellLabelledCellAdhesionEnergyParameter<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaCellBoundaryAdhesionEnergyParameter<span class="p">(</span><span class="mf">12.0</span><span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetNagaiHondaLabelledCellBoundaryAdhesionEnergyParameter<span class="p">(</span><span class="mf">40.0</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

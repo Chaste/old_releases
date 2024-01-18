@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/BestPracticeGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="BestpracticesforChastedevelopers">Best practices for Chaste developers</h1>
+<p>
+This page enumerates some best practices that have developed over the lifetime of Chaste, and help to make all developers' lives happier.  They are similar to <a class="wiki" href="/trac/wiki/ChasteStrategies">ChasteStrategies</a>, but less formal.
+</p>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#BestpracticesforChastedevelopers">Best practices for Chaste developers</a>
+    <ol>
+      <li>
+        <a href="#Writingnewcode">Writing new code</a>
+      </li>
+      <li>
+        <a href="#Writingtests">Writing tests</a>
+      </li>
+      <li>
+        <a href="#Notannoyingyourfellowdevelopers">Not annoying your fellow developers</a>
+      </li>
+      <li>
+        <a href="#Keepingupwithwhatshappening">Keeping up with what's happening</a>
+      </li>
+      <li>
+        <a href="#Writingtutorials">Writing tutorials</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h2 id="Writingnewcode">Writing new code</h2>
+<p>
+Much information on coding style can be found in the <a class="wiki" href="/trac/wiki/ChasteStrategies">ChasteStrategies</a>, in particular <a class="wiki" href="/trac/wiki/CodingStandardsStrategy">CodingStandardsStrategy</a> and <a class="wiki" href="/trac/wiki/CodeStructureStrategy">CodeStructureStrategy</a>.
+</p>
+<p>
+Two important features of Chaste code is that it should be <strong>well documented</strong> and <strong><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/BestPracticeGuide.html#Writingtests">well tested</a></strong>.  We use <a class="ext-link" href="http://www.stack.nl/~dimitri/doxygen/"><span class="icon">​</span>Doxygen</a> to generate <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.4/">hyperlinked documentation for Chaste</a> automatically.  Remember to add Doxygen comments to all your member variables and methods, and make them as informative as possible without being overly verbose.  The <a class="ext-link" href="http://www.stack.nl/~dimitri/doxygen/manual.html"><span class="icon">​</span>Doxygen manual</a> is a helpful resource for syntax, in particular the <a class="ext-link" href="http://www.stack.nl/~dimitri/doxygen/commands.html"><span class="icon">​</span>list of special commands</a>.  When documenting a whole class, try to give some higher level information on how the class can be useful.  Consider whether a <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/BestPracticeGuide.html#Writingtutorials">tutorial</a> might also be helpful.
+</p>
+<p>
+The <tt>DoxygenCoverage</tt> nightly build will show up any missing documentation or incorrect syntax; see <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html#Doxygencoverage">ChasteGuides/AutomatedBuildGuide#Doxygencoverage</a> for more information.
+</p>
+<h2 id="Writingtests">Writing tests</h2>
+<p>
+All functionality in Chaste must be tested; see also the <a class="wiki" href="/trac/wiki/TestingStrategy">TestingStrategy</a>.  Writing good tests is an art, but well worth practising.  A test suite will generally consist of many small unit tests that check specific methods, rather than one huge test.
+</p>
+<p>
+One point to note is that tests shouldn't just cover the trivial case.  Try to consider what 'corner' or 'edge' cases might arise, and check for those.  If a numerical algorithm should have particular error or convergence properties, check this.  You should also test that code throws appropriate exceptions for error conditions.
+</p>
+<p>
+Tests must cover every line of Chaste source code wherever possible.  This is checked by the <tt>Coverage</tt> nightly build - see <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html#Coverage">ChasteGuides/AutomatedBuildGuide#Coverage</a>.
+</p>
+<p>
+Make sure that continuous tests are as short as possible, since these are run frequently, and will be killed if too long (see <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html#Testskilledoff">ChasteGuides/AutomatedBuildGuide#Testskilledoff</a>).  Longer tests, when required, should go in the Nightly or Weekly test packs.
+</p>
+<h2 id="Notannoyingyourfellowdevelopers">Not annoying your fellow developers</h2>
+<p>
+Chaste is developed collaboratively.  However, due to the nature of academic life, not all development on the Chaste trunk occurs in iterations, and so there are occasions when you may have to commit to trunk individually.  When you do so, it is still important to consider your fellow developers.  For example,
+</p>
+<ul><li>Run tests before committing to check you haven't broken anything.
+</li><li>Try not to commit major changes late on Friday afternoon or before going on holiday, just in case something breaks.  Note that even if a default build passes, there could be other errors that only appear in a nightly or weekly build.
+<ul><li>Of course, before making massive changes it's good to consult with other Chaste developers to get a second opinion!
+</li></ul></li><li>The automated continuous builds will send an email if a commit breaks the build or any tests.  Please respond to these promptly; see <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AutomatedBuildGuide.html">ChasteGuides/AutomatedBuildGuide</a> for more information on the kinds of problems that arise and how to fix them.
+</li><li>When you have committed to trunk, check the <a href="/tests.py/recent?type=nightly">nightly tests results</a> each morning over the following week, especially the following day, to see if you broke any of these tests.  (Note that some nightly tests, in particular those on 'lofty' that check compatibility with different library versions, only run once per week with each configuration.)
+<ul><li><span style="color: red">If you won't have time to do these checks or fix problems,  then you should wait until the next joint session to make the changes.</span>
+</li></ul></li></ul><h2 id="Keepingupwithwhatshappening">Keeping up with what's happening</h2>
+<p>
+The <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a> wiki page is used to update other developers on changes that might affect their work, for example changes to an interface that mean user projects would have to be modified to match, or the addition of useful new functionality.  This helps those who don't have time to view every commit made.  Please keep it up-to-date, and keep track of changes.
+</p>
+<p>
+Also, significant changes that should be highlighted when the next release is made should be recorded in <a class="wiki" href="/chaste/tutorials/release_3.4/ReleaseNotes.html">ReleaseNotes</a>.  Note that you don't need to edit both <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a> and <a class="wiki" href="/chaste/tutorials/release_3.4/ReleaseNotes.html">ReleaseNotes</a> for minor changes; the content will be copied across when a release is made.
+</p>
+<h2 id="Writingtutorials">Writing tutorials</h2>
+<p>
+Tutorials are special tests designed to help new developers get familiar with the code.  They therefore need special care when being written!
+</p>
+<ul><li>Tutorials are tests with a name of the form "<tt>TestWhateverTutorial.hpp</tt>"
+</li><li>As well as being compiled and run automatically as for normal tests, these are processed by a script and uploaded to the wiki under <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials.html">UserTutorials</a>, with a page name derived from the file name.
+</li><li>Since new users will typically work their way through several tutorials in sequence, they should be written with this in mind.  When adding a new tutorial, edit the <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials.html">UserTutorials</a> page to link to it at an appropriate location.  Also, don't copy'n'paste content from other tutorials that users are likely to have already read.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

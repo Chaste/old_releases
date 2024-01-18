@@ -1,0 +1,572 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> CreatingAndUsingANewCellKiller tutorial file </h1>      </div>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/cgi-bin/trac.cgi/wiki/UserTutorials">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CreatingAndUsingANewCellKiller" href="/cgi-bin/trac.cgi/wiki/UserTutorials/CreatingAndUsingANewCellKiller">CreatingAndUsingANewCellKiller</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingAndUsingANewCellKillerTutorial.hpp at revision <a class="missing changeset">r8279</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcellkilleranduseitinatissuesimulation">An example showing how to create a new cell killer and use it in a tissue simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how to create a new cell killer class and how this
+can be used in a tissue simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+The first thing to do is include the following header, which allows us
+to use certain methods in our test (this header file should be included
+in any Chaste test):
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+</pre></div><p>
+The next two headers are used in archiving, and only need to be included
+if you want to be able to archive (save or load) the new cell killer object
+in a tissue simulation (in this case, these headers must be included before
+any other serialisation headers). 
+</p>
+<div class="code"><pre>#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+</pre></div><p>
+The next header defines a base class for cell killers, from which the new
+cell killer class will inherit. 
+</p>
+<div class="code"><pre>#include "AbstractCellKiller.hpp"
+</pre></div><p>
+The remaining header files define classes that will be used in the tissue
+simulation test: <tt>HoneycombMeshGenerator</tt> defines a helper class for
+generating a suitable mesh; <tt>CellsGenerator</tt>
+defines a helper class for generating a vector of cells and
+<tt>FixedDurationGenerationBasedCellCycleModel</tt> makes them have fixed cell
+cycle models; <tt>GeneralisedLinearSpringForce</tt> defines a force law for
+describing the mechanical interactions between neighbouring cells in the
+tissue; and <tt>TissueSimulation</tt> defines the class that simulates the
+evolution of a tissue. 
+</p>
+<div class="code"><pre>#include "HoneycombMeshGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "TissueSimulation.hpp"
+#include "CellsGenerator.hpp"
+</pre></div><h2 id="Definingthecellkillerclass">Defining the cell killer class</h2>
+<p>
+As an example, let us consider a cell killer which labels any cells in a
+two-dimensional tissue which lie outside the elliptical domain given in
+Cartesian coordinates by the equation (x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1. To
+implement this we define a new cell killer class, <tt>MyCellKiller</tt>,
+which inherits from <tt>AbstractCellKiller</tt> and overrides the
+<tt>TestAndLabelCellsForApoptosisOrDeath()</tt> method.
+</p>
+<div class="code"><pre>class MyCellKiller : public AbstractCellKiller&lt;2&gt;
+{
+private:
+</pre></div><p>
+You only need to include the next block of code if you want to be able
+to archive (save or load) the cell killer object in a tissue simulation.
+The code consists of a serialize method, which in this case just archives
+the cell killer using the serialization code defined in the base class
+<tt>AbstractCellKiller</tt>. 
+</p>
+<div class="code"><pre>    friend class boost::serialization::access;
+    template&lt;class Archive&gt;
+    void serialize(Archive &amp; archive, const unsigned int version)
+    {
+        archive &amp; boost::serialization::base_object&lt;AbstractCellKiller&lt;2&gt; &gt;(*this);
+    }
+</pre></div><p>
+The first public method is a default constructor, which just calls the base
+constructor. 
+</p>
+<div class="code"><pre>public:
+    MyCellKiller(AbstractTissue&lt;2&gt;* pTissue)
+        : AbstractCellKiller&lt;2&gt;(pTissue)
+    {}
+</pre></div><p>
+The second public method overrides <tt>TestAndLabelCellsForApoptosisOrDeath()</tt>.
+This method iterates over all cells in the tissue, and calls <tt>Kill()</tt> on
+any cell whose centre is located outside the ellipse (x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1. 
+</p>
+<div class="code"><pre>    void TestAndLabelCellsForApoptosisOrDeath()
+    {
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = this-&gt;mpTissue-&gt;Begin();
+            cell_iter != this-&gt;mpTissue-&gt;End();
+            ++cell_iter)
+        {
+            c_vector&lt;double, 2&gt; location = this-&gt;mpTissue-&gt;GetLocationOfCellCentre(*cell_iter);
+            if ( pow(location[0]/20, 2) + pow(location[1]/10, 2) &gt; 1.0 )
+            {
+                cell_iter-&gt;Kill();
+            }
+        }
+    }
+};
+</pre></div><p>
+You only need to include the next block of code if you want to be able to
+archive (save or load) the cell killer object in a tissue simulation. We
+start by including a serialization header, then define <tt>save_construct_data</tt>
+and <tt>load_construct_data</tt> methods, which archive the cell killer
+constructor input argument(s) (in this case, a <tt>Tissue</tt>). 
+</p>
+<div class="code"><pre>#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyCellKiller)
+namespace boost
+{
+    namespace serialization
+    {
+        template&lt;class Archive&gt;
+        inline void save_construct_data(
+            Archive &amp; ar, const MyCellKiller * t, const BOOST_PFTO unsigned int file_version)
+        {
+            // Save data required to construct instance
+            const AbstractTissue&lt;2&gt;* const p_tissue = t-&gt;GetTissue();
+            ar &lt;&lt; p_tissue;
+        }
+        template&lt;class Archive&gt;
+        inline void load_construct_data(
+            Archive &amp; ar, MyCellKiller * t, const unsigned int file_version)
+        {
+            // Retrieve data from archive required to construct new instance
+            AbstractTissue&lt;2&gt;* p_tissue;
+            ar &gt;&gt; p_tissue;
+            // Invoke inplace constructor to initialise instance
+            ::new(t)MyCellKiller(p_tissue);
+        }
+    }
+}
+</pre></div><p>
+This completes the code for <tt>MyCellKiller</tt>. Note that usually this code
+would be separated out into a separate declaration in a .hpp file and definition
+in a .cpp file.  In this case, serialization has to be handled slightly more
+carefully; see <a class="wiki" href="/cgi-bin/trac.cgi/wiki/BoostSerialization">BoostSerialization</a> for details.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre>class TestCreatingAndUsingANewCellKillerTutorial : public CxxTest::TestSuite
+{
+public:
+</pre></div><h2 id="Testingthecellkiller">Testing the cell killer</h2>
+<p>
+We begin by testing that our new cell cycle model is implemented correctly.
+</p>
+<div class="code"><pre>    void TestMyCellKiller() throw(Exception)
+    {
+</pre></div><p>
+The first thing to do is to set up the start time and reset the model
+parameters. 
+</p>
+<div class="code"><pre>        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh. 
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator(20, 20, 0, false);
+</pre></div><p>
+Get the mesh using the <tt>GetMesh()</tt> method. 
+</p>
+<div class="code"><pre>        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>TissueCell</tt>s.
+To do this, we can use a static method on the <tt>CellsGenerator</tt> helper class.
+The <tt>&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt;</tt> defines the
+cell-cycle model and that it is in 2d. We create an empty vector of cells
+and pass this into the method along with the mesh. The <tt>cells</tt> vector is
+populated once the method <tt>GenerateBasic</tt> is called. 
+</p>
+<div class="code"><pre>        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the tissue. The
+constructor takes in the mesh and the cells vector. 
+</p>
+<div class="code"><pre>        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+</pre></div><p>
+We now use the tissue to construct a cell killer object. 
+</p>
+<div class="code"><pre>        MyCellKiller my_cell_killer(&amp;tissue);
+</pre></div><p>
+To test that we have implemented the cell killer correctly, we call the
+overridden method <tt>TestAndLabelCellsForApoptosisOrDeath</tt>... 
+</p>
+<div class="code"><pre>        my_cell_killer.TestAndLabelCellsForApoptosisOrDeath();
+</pre></div><p>
+... and check that any cell whose centre is located outside the ellipse
+(x/20)<sup>2</sup> + (y/10)<sup>2</sup> &lt; 1 has indeed been labelled as dead. 
+</p>
+<div class="code"><pre>        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = tissue.Begin();
+             cell_iter != tissue.End();
+             ++cell_iter)
+        {
+            double x = tissue.GetLocationOfCellCentre(*cell_iter)[0];
+            double y = tissue.GetLocationOfCellCentre(*cell_iter)[1];
+            if ( pow(x/20, 2) + pow(y/10, 2) &gt; 1.0 )
+            {
+                TS_ASSERT_EQUALS(cell_iter-&gt;IsDead(), true);
+            }
+            else
+            {
+                TS_ASSERT_EQUALS(cell_iter-&gt;IsDead(), false);
+            }
+        }
+</pre></div><p>
+As an extra test, we now remove any dead cells and check that all
+remaining cells are indeed located within the ellipse. 
+</p>
+<div class="code"><pre>        tissue.RemoveDeadCells();
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = tissue.Begin();
+             cell_iter != tissue.End();
+             ++cell_iter)
+        {
+            double x = tissue.GetLocationOfCellCentre(*cell_iter)[0];
+            double y = tissue.GetLocationOfCellCentre(*cell_iter)[1];
+            TS_ASSERT_LESS_THAN_EQUALS(pow(x/20, 2) + pow(y/10, 2) &gt; 1.0, 1.0);
+        }
+</pre></div><p>
+The last chunk of code provides an archiving test for the cell killer.
+We create an output archive, save the existing cell killer object via
+a pointer, then create an input archive and load the cell killer. If
+the cell killer had any member variables, then we would test that these
+were correctly initialised when the cell killer is loaded. 
+</p>
+<div class="code"><pre>        OutputFileHandler handler("archive", false);    // don't erase contents of folder
+        std::string archive_filename = handler.GetOutputDirectoryFullPath() + "my_cell_killer.arch";
+        {
+            // Create an output archive
+            MyCellKiller my_cell_killer(NULL);
+            std::ofstream ofs(archive_filename.c_str());
+            boost::archive::text_oarchive output_arch(ofs);
+            // Serialize via pointer
+            MyCellKiller* const p_cell_killer = &amp;my_cell_killer;
+            output_arch &lt;&lt; p_cell_killer;
+        }
+        {
+            // Create an input archive
+            std::ifstream ifs(archive_filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive input_arch(ifs);
+            MyCellKiller* p_cell_killer;
+            // Restore from the archive
+            input_arch &gt;&gt; p_cell_killer;
+            delete p_cell_killer;
+        }
+</pre></div><p>
+We conclude the test by calling <tt>Destroy()</tt> on any singleton classes. 
+</p>
+<div class="code"><pre>        SimulationTime::Destroy();
+    }
+</pre></div><h2 id="Usingthecellkillerinatissuesimulation">Using the cell killer in a tissue simulation</h2>
+<p>
+We now provide a test demonstrating how <tt>MyCellKiller</tt> can be used
+in a tissue simulation.
+</p>
+<div class="code"><pre>    void TestTissueSimulationWithMyCellKiller() throw(Exception)
+    {
+</pre></div><p>
+The first thing to do, as before, is to set up the start time and
+reset the parameters. 
+</p>
+<div class="code"><pre>        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh. 
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator(20, 20, 0, false);
+</pre></div><p>
+Get the mesh using the <tt>GetMesh()</tt> method. 
+</p>
+<div class="code"><pre>        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>TissueCell</tt>s.
+To do this, we can use a static method on the <tt>CellsGenerator</tt> helper class.
+The <tt>&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt;</tt> defines the
+cell-cycle model and that it is in 2d. We create an empty vector of cells
+and pass this into the method along with the mesh. The <tt>cells</tt> vector is
+populated once the method <tt>GenerateBasic</tt> is called. 
+</p>
+<div class="code"><pre>        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the tissue. The
+constructor takes in the mesh and the cells vector. 
+</p>
+<div class="code"><pre>        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+</pre></div><p>
+We now use the tissue to construct a cell killer object. 
+</p>
+<div class="code"><pre>        MyCellKiller my_cell_killer(&amp;tissue);
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of
+the tissue. For this test, we assume that a cell experiences a force from each
+neighbour that can be represented as a linear overdamped spring, and so use
+a <tt>GeneralisedLinearSpringForce</tt> object. We pass a pointer to this force
+into a vector. Note that we have called the method <tt>UseCutoffPoint</tt> on the
+<tt>GeneralisedLinearSpringForce</tt> before passing it into the collection of force
+laws - this modifies the force law so that two neighbouring cells do not impose
+a force on each other if they are located more than 3 units (=3 cell widths)
+away from each other. This modification is necessary when no ghost nodes are used,
+for example to avoid artificially large forces between cells that lie close together
+on the tissue boundary.
+</p>
+<div class="code"><pre>        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+</pre></div><p>
+We pass in the tissue and the mechanics system into a <tt>TissueSimulation</tt>. 
+</p>
+<div class="code"><pre>        TissueSimulation&lt;2&gt; simulator(tissue, force_collection);
+</pre></div><p>
+We set the output directory and end time. 
+</p>
+<div class="code"><pre>        simulator.SetOutputDirectory("TestTissueSimulationWithMyCellKiller");
+        simulator.SetEndTime(10.0);
+</pre></div><p>
+We now pass the cell killer into the tissue simulation. 
+</p>
+<div class="code"><pre>        MyCellKiller* p_killer = new MyCellKiller(&amp;tissue);
+        simulator.AddCellKiller(p_killer);
+</pre></div><p>
+Test that the Solve() method does not throw any exceptions. 
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+</pre></div><p>
+We conclude the test by calling <tt>Destroy()</tt> on any singleton classes. 
+</p>
+<div class="code"><pre>        SimulationTime::Destroy();
+    }
+};
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre>#include &lt;cxxtest/TestSuite.h&gt;
+
+#include &lt;boost/archive/text_oarchive.hpp&gt;
+#include &lt;boost/archive/text_iarchive.hpp&gt;
+
+#include "AbstractCellKiller.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "TissueSimulation.hpp"
+#include "CellsGenerator.hpp"
+class MyCellKiller : public AbstractCellKiller&lt;2&gt;
+{
+private:
+
+    friend class boost::serialization::access;
+    template&lt;class Archive&gt;
+    void serialize(Archive &amp; archive, const unsigned int version)
+    {
+        archive &amp; boost::serialization::base_object&lt;AbstractCellKiller&lt;2&gt; &gt;(*this);
+    }
+
+public:
+
+    MyCellKiller(AbstractTissue&lt;2&gt;* pTissue)
+        : AbstractCellKiller&lt;2&gt;(pTissue)
+    {}
+
+    void TestAndLabelCellsForApoptosisOrDeath()
+    {
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = this-&gt;mpTissue-&gt;Begin();
+            cell_iter != this-&gt;mpTissue-&gt;End();
+            ++cell_iter)
+        {
+            c_vector&lt;double, 2&gt; location = this-&gt;mpTissue-&gt;GetLocationOfCellCentre(*cell_iter);
+
+            if ( pow(location[0]/20, 2) + pow(location[1]/10, 2) &gt; 1.0 )
+            {
+                cell_iter-&gt;Kill();
+            }
+        }
+    }
+};
+
+#include "SerializationExportWrapper.hpp"
+CHASTE_CLASS_EXPORT(MyCellKiller)
+
+namespace boost
+{
+    namespace serialization
+    {
+        template&lt;class Archive&gt;
+        inline void save_construct_data(
+            Archive &amp; ar, const MyCellKiller * t, const BOOST_PFTO unsigned int file_version)
+        {
+            // Save data required to construct instance
+            const AbstractTissue&lt;2&gt;* const p_tissue = t-&gt;GetTissue();
+            ar &lt;&lt; p_tissue;
+        }
+
+        template&lt;class Archive&gt;
+        inline void load_construct_data(
+            Archive &amp; ar, MyCellKiller * t, const unsigned int file_version)
+        {
+            // Retrieve data from archive required to construct new instance
+            AbstractTissue&lt;2&gt;* p_tissue;
+            ar &gt;&gt; p_tissue;
+
+            // Invoke inplace constructor to initialise instance
+            ::new(t)MyCellKiller(p_tissue);
+        }
+    }
+}
+
+class TestCreatingAndUsingANewCellKillerTutorial : public CxxTest::TestSuite
+{
+public:
+
+    void TestMyCellKiller() throw(Exception)
+    {
+        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+
+        HoneycombMeshGenerator generator(20, 20, 0, false);
+        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+
+        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+
+        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+
+        MyCellKiller my_cell_killer(&amp;tissue);
+
+        my_cell_killer.TestAndLabelCellsForApoptosisOrDeath();
+
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = tissue.Begin();
+             cell_iter != tissue.End();
+             ++cell_iter)
+        {
+            double x = tissue.GetLocationOfCellCentre(*cell_iter)[0];
+            double y = tissue.GetLocationOfCellCentre(*cell_iter)[1];
+
+            if ( pow(x/20, 2) + pow(y/10, 2) &gt; 1.0 )
+            {
+                TS_ASSERT_EQUALS(cell_iter-&gt;IsDead(), true);
+            }
+            else
+            {
+                TS_ASSERT_EQUALS(cell_iter-&gt;IsDead(), false);
+            }
+        }
+
+        tissue.RemoveDeadCells();
+
+        for (AbstractTissue&lt;2&gt;::Iterator cell_iter = tissue.Begin();
+             cell_iter != tissue.End();
+             ++cell_iter)
+        {
+            double x = tissue.GetLocationOfCellCentre(*cell_iter)[0];
+            double y = tissue.GetLocationOfCellCentre(*cell_iter)[1];
+
+            TS_ASSERT_LESS_THAN_EQUALS(pow(x/20, 2) + pow(y/10, 2) &gt; 1.0, 1.0);
+        }
+
+        OutputFileHandler handler("archive", false);    // don't erase contents of folder
+        std::string archive_filename = handler.GetOutputDirectoryFullPath() + "my_cell_killer.arch";
+
+        {
+            // Create an output archive
+            MyCellKiller my_cell_killer(NULL);
+
+            std::ofstream ofs(archive_filename.c_str());
+            boost::archive::text_oarchive output_arch(ofs);
+
+            // Serialize via pointer
+            MyCellKiller* const p_cell_killer = &amp;my_cell_killer;
+            output_arch &lt;&lt; p_cell_killer;
+        }
+
+        {
+            // Create an input archive
+            std::ifstream ifs(archive_filename.c_str(), std::ios::binary);
+            boost::archive::text_iarchive input_arch(ifs);
+
+            MyCellKiller* p_cell_killer;
+
+            // Restore from the archive
+            input_arch &gt;&gt; p_cell_killer;
+
+            delete p_cell_killer;
+        }
+
+        SimulationTime::Destroy();
+    }
+
+    void TestTissueSimulationWithMyCellKiller() throw(Exception)
+    {
+        SimulationTime::Instance()-&gt;SetStartTime(0.0);
+        TissueConfig::Instance()-&gt;Reset();
+
+        HoneycombMeshGenerator generator(20, 20, 0, false);
+        MutableMesh&lt;2,2&gt;* p_mesh = generator.GetMesh();
+
+        std::vector&lt;TissueCell&gt; cells;
+        CellsGenerator&lt;FixedDurationGenerationBasedCellCycleModel, 2&gt; cells_generator;
+        cells_generator.GenerateBasic(cells, p_mesh-&gt;GetNumNodes());
+
+        MeshBasedTissue&lt;2&gt; tissue(*p_mesh, cells);
+
+        MyCellKiller my_cell_killer(&amp;tissue);
+
+        GeneralisedLinearSpringForce&lt;2&gt; linear_force;
+        linear_force.UseCutoffPoint(3);
+        std::vector&lt;AbstractForce&lt;2&gt;*&gt; force_collection;
+        force_collection.push_back(&amp;linear_force);
+
+        TissueSimulation&lt;2&gt; simulator(tissue, force_collection);
+
+        simulator.SetOutputDirectory("TestTissueSimulationWithMyCellKiller");
+        simulator.SetEndTime(10.0);
+
+        MyCellKiller* p_killer = new MyCellKiller(&amp;tissue);
+        simulator.AddCellKiller(p_killer);
+
+        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+        SimulationTime::Destroy();
+    }
+};
+
+</pre></div>
+        
+        
+      </div>

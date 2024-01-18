@@ -1,0 +1,714 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewCellCycleModel - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingAndUsingANewCellCycleModelTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcell-cyclemodelanduseitinacell-basedsimulation">An example showing how to create a new cell-cycle model and use it in a cell-based simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In the previous cell-based Chaste tutorials, we used existing cell-cycle models to define how cells
+proliferate. In this tutorial, we show how to create a new cell-cycle model class, and how this
+can be used in a cell-based simulation.
+</p>
+<h2 id="Includingheaderfiles">Including header files</h2>
+<p>
+We begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The next header includes the Boost shared_ptr smart pointer, and defines some useful
+macros to save typing when using it.
+</p>
+<div class="code"><pre><span class="cp">#include "SmartPointers.hpp"
+</span></pre></div><p>
+The next header includes the NEVER_REACHED macro, used in one of the methods below.
+</p>
+<div class="code"><pre><span class="cp">#include "Exception.hpp"
+</span>
+</pre></div><p>
+The next header defines a base class for simple generation-based cell-cycle models.
+A cell-cycle model is defined as <em>simple</em> if the duration of each phase of the cell
+cycle is determined when the cell-cycle model is created, rather than
+evaluated on the fly (e.g. by solving a system of ordinary differential
+equations for the concentrations of key cell cycle proteins), and may
+depend on the cell type. A simple cell-cycle model is defined as <em>generation-based</em> if it keeps track of the
+generation of the corresponding cell, and sets the cell type according
+to this. Our new cell-cycle model will inherit from this abstract class.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractSimpleGenerationBasedCellCycleModel.hpp"
+</span>
+</pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based Chaste
+tutorials, except for <tt>CheckReadyToDivideAndPhaseIsUpdated</tt>, which defines a helper
+class for testing a cell-cycle model.
+</p>
+<div class="code"><pre><span class="cp">#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "StemCellProliferativeType.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+</span><span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><h2 id="Definingthecell-cyclemodelclass">Defining the cell-cycle model class</h2>
+<p>
+As an example, let us consider a cell-cycle model in which the durations
+of S, G2 and M phases are fixed, but the duration of G1 phase is an exponential
+random variable with rate parameter λ. This rate parameter is a constant, dependent on cell type, whose value is
+chosen such that the mean of the distribution, 1/λ, equals the mean
+G1 duration as defined in the <tt>AbstractCellCycleModel</tt> class. We will also assume that
+cells divide a certain number of generations before becoming differentiated. To implement this model we define a new cell-cycle model, <tt>MyCellCycleModel</tt>,
+which inherits from <tt>AbstractSimpleGenerationBasedCellCycleModel</tt> and
+overrides the <tt>SetG1Duration()</tt> method.
+</p>
+<p>
+Note that usually this code would be separated out into a separate declaration in
+a .hpp file and definition in a .cpp file.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">MyCellCycleModel</span> <span class="o">:</span> <span class="k">public</span> AbstractSimpleGenerationBasedCellCycleModel
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+</pre></div><p>
+We only need to include the next block of code if we wish to be able
+to archive (save or load) the cell-cycle model object in a cell-based simulation.
+The code consists of a serialize method, in which we first archive the cell
+cycle model using the serialization code defined in the base class
+<tt>AbstractSimpleGenerationBasedCellCycleModel</tt>. We then archive an instance
+of the <tt>RandomNumberGenerator</tt> singleton class, which is used in the
+<tt>SetG1Duration()</tt> method. Note that serialization of singleton objects
+must be done with care. Before the object is serialized via a pointer, it must
+be serialized directly, or an assertion will trip when a second instance of the
+class is created on de-serialization.
+</p>
+<div class="code"><pre>    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractSimpleGenerationBasedCellCycleModel<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        RandomNumberGenerator<span class="o">*</span> p_gen <span class="o">=</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">();</span>
+        archive <span class="o">&amp;</span> <span class="o">*</span>p_gen<span class="p">;</span>
+        archive <span class="o">&amp;</span> p_gen<span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+We override the <tt>SetG1Duration()</tt> method as follows.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">SetG1Duration</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+As we will access the cell type of the cell associated with this cell
+cycle model, we should assert that this cell exists.
+</p>
+<div class="code"><pre>        assert<span class="p">(</span>mpCell <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+
+</pre></div><p>
+We now set the G1 duration based on cell type. For stem and transit cells, we use the <tt>RandomNumberGenerator</tt>
+singleton class to generate a random number U drawn from U[0,1], and
+transform this into a random number T drawn from Exp(λ) using
+the transformation T = -log(U)/λ. For differentiated cells, which do not progress through the
+cell cycle, we set the G1 duration to <tt>DBL_MAX</tt>.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> uniform_random_number <span class="o">=</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>StemCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> <span class="o">-</span>log<span class="p">(</span>uniform_random_number<span class="p">)</span><span class="o">*</span>GetStemCellG1Duration<span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>TransitCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> <span class="o">-</span>log<span class="p">(</span>uniform_random_number<span class="p">)</span><span class="o">*</span>GetTransitCellG1Duration<span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>DifferentiatedCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> DBL_MAX<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            NEVER_REACHED<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The first public method is a default constructor, which just calls the base
+constructor.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+
+    MyCellCycleModel<span class="p">()</span>
+    <span class="p">{}</span>
+
+</pre></div><p>
+The second public method overrides <tt>CreateCellCycleModel()</tt>. This is a
+builder method to create new copies of the cell-cycle model. We first create
+a new cell-cycle model, then set each member variable of the new cell-cycle
+model that inherits its value from the parent.
+</p>
+<p>
+There are a number of things to mention regarding the <tt>CreateCellCycleModel()</tt>
+method: these are quite technical, but are worth stating here for the sake of
+completeness. If we look at which member variables
+<tt>MyCellCycleModel</tt> inherits from its base class, we will find that some of
+these member variables are not set here. This is for two main reasons. First, some
+of the new cell-cycle model's member variables (namely <tt>mBirthTime</tt>,
+<tt>mCurrentCellCyclePhase</tt>, <tt>mReadyToDivide</tt>) will already have been
+correctly initialized in the new cell-cycle model's constructor. Second, the
+member variable <tt>mDimension</tt> remains unset, since this cell-cycle
+model does not need to know the spatial dimension, so if we were to call
+<tt>SetDimension()</tt> on the new cell-cycle model an exception would be triggered;
+hence we do not set this member variable. It is also worth noting that in a simulation,
+one or more of the new cell-cycle model's member variables
+may be set/overwritten as soon as <tt>InitialiseDaughterCell()</tt> is called on
+the new cell-cycle model; this occurs when the associated cell has called its
+<tt>Divide()</tt> method.
+</p>
+<div class="code"><pre>    AbstractCellCycleModel<span class="o">*</span> <span class="nf">CreateCellCycleModel</span><span class="p">()</span>
+    <span class="p">{</span>
+        MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">();</span>
+
+        p_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>mBirthTime<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMinimumGapDuration<span class="p">(</span>mMinimumGapDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span>mStemCellG1Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetTransitCellG1Duration<span class="p">(</span>mTransitCellG1Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetSDuration<span class="p">(</span>mSDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetG2Duration<span class="p">(</span>mG2Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMDuration<span class="p">(</span>mMDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetGeneration<span class="p">(</span>mGeneration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMaxTransitGenerations<span class="p">(</span>mMaxTransitGenerations<span class="p">);</span>
+
+        <span class="k">return</span> p_model<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+We need to include the next block of code if you want to be able to archive (save or load)
+the cell-cycle model object in a cell-based simulation. It is also required for writing out
+the parameters file describing the settings for a simulation - it provides the unique
+identifier for our new cell-cycle model. Thus every cell-cycle model class must provide this,
+or you'll get errors when running simulations.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellCycleModel<span class="p">)</span>
+
+</pre></div><p>
+Since we're defining the new cell-cycle model within the test file, we need to include the
+following stanza as well, to make the code work with newer versions of the Boost libraries.
+Normally the above export declaration would occur in the cell-cycle model's .hpp file, and
+the following lines would appear in the .cpp file.  See <a class="wiki" href="/chaste/tutorials/release_3.3/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a> for
+more information.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellCycleModel<span class="p">)</span>
+
+</pre></div><p>
+This completes the code for <tt>MyCellCycleModel</tt>. Note that usually this code would
+be separated out into a separate declaration in a .hpp file and definition in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellCycleModelTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Testingthecell-cyclemodel">Testing the cell-cycle model</h2>
+<p>
+We begin by testing that our new cell-cycle model is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestMyCellCycleModel</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Test that we can construct a <tt>MyCellCycleModel</tt> object:
+</p>
+<div class="code"><pre>        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>MyCellCycleModel cell_model3<span class="p">);</span>
+
+</pre></div><p>
+Now we construct and initialise a large number of <tt>MyCellCycleModel</tt>s and
+associated cells:
+</p>
+<div class="code"><pre>        <span class="kt">unsigned</span> num_cells <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span> <span class="mf">1e5</span><span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_cells<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            MyCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Find the mean G1 duration and test that it is within some tolerance of
+the expected value:
+</p>
+<div class="code"><pre>        <span class="kt">double</span> expected_mean_g1_duration <span class="o">=</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">();</span>
+        <span class="kt">double</span> sample_mean_g1_duration <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_cells<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            sample_mean_g1_duration <span class="o">+=</span> cells<span class="p">[</span>i<span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetG1Duration<span class="p">()</span><span class="o">/</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span> num_cells<span class="p">;</span>
+        <span class="p">}</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>sample_mean_g1_duration<span class="p">,</span> expected_mean_g1_duration<span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+Now construct another <tt>MyCellCycleModel</tt> and associated cell.
+</p>
+<div class="code"><pre>        MyCellCycleModel<span class="o">*</span> p_my_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+        CellPtr <span class="nf">p_my_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_my_model<span class="p">));</span>
+        p_my_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+        p_my_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+</pre></div><p>
+Use the helper method <tt>CheckReadyToDivideAndPhaseIsUpdated()</tt> to
+test that this cell progresses correctly through the cell cycle.
+</p>
+<div class="code"><pre>        <span class="kt">unsigned</span> num_steps <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+        <span class="kt">double</span> mean_cell_cycle_time <span class="o">=</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span>
+                                        <span class="o">+</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetSG2MDuration<span class="p">();</span>
+
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span>mean_cell_cycle_time<span class="p">,</span> num_steps<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_steps<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+</pre></div><p>
+The numbers for the G1 duration below is taken from the first
+random number generated:
+</p>
+<div class="code"><pre>            CheckReadyToDivideAndPhaseIsUpdated<span class="p">(</span>p_my_model<span class="p">,</span> <span class="mf">2.35762</span><span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Lastly, we briefly test that archiving of <tt>MyCellCycleModel</tt> has
+been implemented correctly. Create an <tt>OutputFileHandler</tt> and use
+this to define a filename for the archive.
+</p>
+<div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_cell_cycle_model.arch"</span><span class="p">;</span>
+
+</pre></div><p>
+Create an output archive.
+</p>
+<div class="code"><pre>        <span class="p">{</span>
+</pre></div><p>
+Destroy the current instance of <tt>SimulationTime</tt> and create another instance.
+Set the start time, end time and number of time steps.
+</p>
+<div class="code"><pre>            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+</pre></div><p>
+Create a cell with associated cell-cycle model.
+</p>
+<div class="code"><pre>            MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+</pre></div><p>
+Move forward two time steps.
+</p>
+<div class="code"><pre>            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+</pre></div><p>
+Set the birth time of the cell and update the cell cycle phase.
+</p>
+<div class="code"><pre>            p_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">);</span>
+            p_model<span class="o">-&gt;</span>ReadyToDivide<span class="p">();</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_model<span class="o">-&gt;</span>GetCurrentCellCyclePhase<span class="p">(),</span> S_PHASE<span class="p">);</span>
+
+</pre></div><p>
+Now archive the cell-cycle model through its cell.
+</p>
+<div class="code"><pre>            CellPtr <span class="k">const</span> p_const_cell <span class="o">=</span> p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_const_cell<span class="p">;</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Now create an input archive. Begin by again destroying the current
+instance of <tt>SimulationTime</tt> and creating another instance. Set
+the start time, end time and number of time steps.
+</p>
+<div class="code"><pre>        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+</pre></div><p>
+Create a pointer to a cell.
+</p>
+<div class="code"><pre>            CellPtr p_cell<span class="p">;</span>
+
+</pre></div><p>
+Create an input archive and restore the cell from the archive.
+</p>
+<div class="code"><pre>            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            input_arch <span class="o">&gt;&gt;</span> p_cell<span class="p">;</span>
+
+</pre></div><p>
+Test that the private data has been restored correctly.
+</p>
+<div class="code"><pre>            AbstractCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> p_cell<span class="o">-&gt;</span>GetCellCycleModel<span class="p">();</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span>p_model<span class="o">-&gt;</span>GetBirthTime<span class="p">(),</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_model<span class="o">-&gt;</span>GetAge<span class="p">(),</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>p_model<span class="o">-&gt;</span>GetCurrentCellCyclePhase<span class="p">(),</span> S_PHASE<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="Usingthecell-cyclemodelinacell-basedsimulation">Using the cell-cycle model in a cell-based simulation</h2>
+<p>
+We conclude with a brief test demonstrating how <tt>MyCellCycleModel</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOffLatticeSimulationWithMyCellCycleModel</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh covering a
+circular domain of given radius.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</pre></div><p>
+Get the mesh using the <tt>GetCircularMesh()</tt> method.
+</p>
+<div class="code"><pre>        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+</pre></div><p>
+Next, we create some cells. First, define the cells vector.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+</pre></div><p>
+We must create a shared_ptr to a <tt>CellMutationState</tt> with which to bestow the cells.
+We make use of the macro MAKE_PTR to do this: the first argument is the class and
+the second argument is the name of the shared_ptr.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+</pre></div><p>
+Then we loop over the nodes.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+For each node we create a cell with our cell-cycle model.
+</p>
+<div class="code"><pre>            MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">();</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+
+</pre></div><p>
+Now, we define a random birth time, chosen from [-T,0], where
+T = t<sub>1</sub> + t<sub>2</sub>, where t<sub>1</sub> is a parameter representing the G<sub>1</sub> duration
+of a stem cell, and t<sub>2</sub> is the basic S+G<sub>2</sub>+M phases duration.
+</p>
+<div class="code"><pre>            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span> <span class="p">(</span>p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span> <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">());</span>
+</pre></div><p>
+We then set the birth time and push the cell back into the vector of cells.
+</p>
+<div class="code"><pre>            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the cell population. The constructor
+takes in the mesh and the cells vector.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyCellCycleModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+We create a force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewCellCycleModelTutorial.hpp">File name <tt>TestCreatingAndUsingANewCellCycleModelTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "SmartPointers.hpp"
+#include "Exception.hpp"
+</span>
+<span class="cp">#include "AbstractSimpleGenerationBasedCellCycleModel.hpp"
+</span>
+<span class="cp">#include "CheckReadyToDivideAndPhaseIsUpdated.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "StemCellProliferativeType.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "DifferentiatedCellProliferativeType.hpp"
+</span><span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MyCellCycleModel</span> <span class="o">:</span> <span class="k">public</span> AbstractSimpleGenerationBasedCellCycleModel
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractSimpleGenerationBasedCellCycleModel<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+        RandomNumberGenerator<span class="o">*</span> p_gen <span class="o">=</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">();</span>
+        archive <span class="o">&amp;</span> <span class="o">*</span>p_gen<span class="p">;</span>
+        archive <span class="o">&amp;</span> p_gen<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> SetG1Duration<span class="p">()</span>
+    <span class="p">{</span>
+        assert<span class="p">(</span>mpCell <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+
+        <span class="kt">double</span> uniform_random_number <span class="o">=</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>StemCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> <span class="o">-</span>log<span class="p">(</span>uniform_random_number<span class="p">)</span><span class="o">*</span>GetStemCellG1Duration<span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>TransitCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> <span class="o">-</span>log<span class="p">(</span>uniform_random_number<span class="p">)</span><span class="o">*</span>GetTransitCellG1Duration<span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>mpCell<span class="o">-&gt;</span>GetCellProliferativeType<span class="p">()</span><span class="o">-&gt;</span>IsType<span class="o">&lt;</span>DifferentiatedCellProliferativeType<span class="o">&gt;</span><span class="p">())</span>
+        <span class="p">{</span>
+            mG1Duration <span class="o">=</span> DBL_MAX<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            NEVER_REACHED<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    MyCellCycleModel<span class="p">()</span>
+    <span class="p">{}</span>
+
+    AbstractCellCycleModel<span class="o">*</span> CreateCellCycleModel<span class="p">()</span>
+    <span class="p">{</span>
+        MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">();</span>
+
+        p_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>mBirthTime<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMinimumGapDuration<span class="p">(</span>mMinimumGapDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span>mStemCellG1Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetTransitCellG1Duration<span class="p">(</span>mTransitCellG1Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetSDuration<span class="p">(</span>mSDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetG2Duration<span class="p">(</span>mG2Duration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMDuration<span class="p">(</span>mMDuration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetGeneration<span class="p">(</span>mGeneration<span class="p">);</span>
+        p_model<span class="o">-&gt;</span>SetMaxTransitGenerations<span class="p">(</span>mMaxTransitGenerations<span class="p">);</span>
+
+        <span class="k">return</span> p_model<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellCycleModel<span class="p">)</span>
+
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyCellCycleModel<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellCycleModelTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestMyCellCycleModel<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>MyCellCycleModel cell_model3<span class="p">);</span>
+
+        <span class="kt">unsigned</span> num_cells <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span> <span class="mf">1e5</span><span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_cells<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            MyCellCycleModel<span class="o">*</span> p_cell_cycle_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cell_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="kt">double</span> expected_mean_g1_duration <span class="o">=</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">();</span>
+        <span class="kt">double</span> sample_mean_g1_duration <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_cells<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            sample_mean_g1_duration <span class="o">+=</span> cells<span class="p">[</span>i<span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetG1Duration<span class="p">()</span><span class="o">/</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span> num_cells<span class="p">;</span>
+        <span class="p">}</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>sample_mean_g1_duration<span class="p">,</span> expected_mean_g1_duration<span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        MyCellCycleModel<span class="o">*</span> p_my_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+        CellPtr <span class="nf">p_my_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_my_model<span class="p">));</span>
+        p_my_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+        p_my_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+        <span class="kt">unsigned</span> num_steps <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+        <span class="kt">double</span> mean_cell_cycle_time <span class="o">=</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span>
+                                        <span class="o">+</span> cells<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span>GetCellCycleModel<span class="p">()</span><span class="o">-&gt;</span>GetSG2MDuration<span class="p">();</span>
+
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span>mean_cell_cycle_time<span class="p">,</span> num_steps<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>num_steps<span class="p">;</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+            CheckReadyToDivideAndPhaseIsUpdated<span class="p">(</span>p_my_model<span class="p">,</span> <span class="mf">2.35762</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_cell_cycle_model.arch"</span><span class="p">;</span>
+
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+            MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">;</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>IncrementTimeOneStep<span class="p">();</span>
+
+            p_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">);</span>
+            p_model<span class="o">-&gt;</span>ReadyToDivide<span class="p">();</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_model<span class="o">-&gt;</span>GetCurrentCellCyclePhase<span class="p">(),</span> S_PHASE<span class="p">);</span>
+
+            CellPtr <span class="k">const</span> p_const_cell <span class="o">=</span> p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_const_cell<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">{</span>
+            SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+            SimulationTime<span class="o">*</span> p_simulation_time <span class="o">=</span> SimulationTime<span class="o">::</span>Instance<span class="p">();</span>
+            p_simulation_time<span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+            p_simulation_time<span class="o">-&gt;</span>SetEndTimeAndNumberOfTimeSteps<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">;</span>
+
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            input_arch <span class="o">&gt;&gt;</span> p_cell<span class="p">;</span>
+
+            AbstractCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> p_cell<span class="o">-&gt;</span>GetCellCycleModel<span class="p">();</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span>p_model<span class="o">-&gt;</span>GetBirthTime<span class="p">(),</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+            TS_ASSERT_DELTA<span class="p">(</span>p_model<span class="o">-&gt;</span>GetAge<span class="p">(),</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>p_model<span class="o">-&gt;</span>GetCurrentCellCyclePhase<span class="p">(),</span> S_PHASE<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMyCellCycleModel<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            MyCellCycleModel<span class="o">*</span> p_model <span class="o">=</span> <span class="k">new</span> MyCellCycleModel<span class="p">();</span>
+            CellPtr <span class="nf">p_cell</span><span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+
+            <span class="kt">double</span> birth_time <span class="o">=</span> <span class="o">-</span> RandomNumberGenerator<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>ranf<span class="p">()</span> <span class="o">*</span> <span class="p">(</span>p_model<span class="o">-&gt;</span>GetStemCellG1Duration<span class="p">()</span> <span class="o">+</span> p_model<span class="o">-&gt;</span>GetSG2MDuration<span class="p">());</span>
+            p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span>birth_time<span class="p">);</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyCellCycleModel"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

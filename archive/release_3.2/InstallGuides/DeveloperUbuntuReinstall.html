@@ -1,0 +1,120 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/DeveloperUbuntuReinstall - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/DeveloperUbuntuReinstall" href="/chaste/tutorials/release_3.2/InstallGuides/DeveloperUbuntuReinstall.html">DeveloperUbuntuReinstall</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="InstallingorreinstallingwithUbuntu">Installing (or reinstalling) with Ubuntu</h1>
+<p>
+<strong>NB: this page is obseleted by the <a class="wiki" href="/chaste/tutorials/release_3.2/InstallGuides/UbuntuPackage.html">InstallGuides/UbuntuPackage</a>.</strong>
+</p>
+<ul><li>If necessary, save the home area somewhere temporarily
+<pre class="wiki"># scp -r -C /home/ chaste@userpc58:home_userpc44
+# rsync -avz /home/ chaste@userpc58:home_userpc44
+[root@userpc59 ~]# rsync -avz /home/ chaste@chaste-bob:home_userpc59
+[root@userpc60 ~]# rsync -avz /home/ chaste@chaste-bob:home_userpc60
+
+</pre></li></ul><ul><li>Install from CD (Ubuntu 8.04 LTS i386 or x86_64).  I thought about putting /home on a separate partition to facilitate future re-installs, but decided that this was more effort than the potential benefit warranted.
+</li><li>Put in network setting for fixed IP
+</li><li>Create <tt>bob</tt> Unprivileged user (on userpc44) with random password
+<ul><li>Copy bob's <tt>.ssh/authorized_keys2</tt> from the server and check that <tt>svn@chaste.comlab</tt> is able to log in with no password
+</li><li>Copy bob's home area
+<pre class="wiki">bob@chaste-bob:~$  rsync -avz /home/bob/ bob@userpc44
+</pre></li></ul></li><li>Changes to software repositories (via System-&gt;Administration-&gt;Software Sources)
+<ul><li>Add 3rd party software
+</li></ul></li><li>Add Medibuntu (for acroread)
+<pre class="wiki"> echo "deb http://packages.medibuntu.org/ hardy free non-free" | sudo tee -a /etc/apt/sources.list
+ wget -q http://packages.medibuntu.org/medibuntu-key.gpg -O- | sudo apt-key add - &amp;&amp; sudo apt-get update
+</pre></li></ul><ul><li>Things to possibly install
+<pre class="wiki">sudo aptitude install xorg-driver-fglrx #For ATI graphics card
+# Then do System-&gt;Administration-&gt;Hardware Drivers
+</pre></li><li>Things to install
+<pre class="wiki">sudo aptitude -y install acroread #PDFs
+sudo aptitude -y install openssh-server xauth      #Logging in and x-forwarding
+sudo aptitude -y install eclipse-cdt               #Eclipse and C++ IDE
+sudo aptitude -y install subversion scons          #Subversion and Scons
+sudo aptitude install joe                          #Simple editor "jmacs"
+sudo aptitude -y install libsvn-javahl             #javahl for subclipse
+sudo aptitude -y install sun-java5-jdk             #Decent Java for using javahl
+sudo aptitude install libmozillainterfaces-java    #For Eclipse's lightweight integrated browser
+sudo aptitude install g++                          #Gnu C++ compiler - needs to be there before build MPI
+sudo aptitude -y install g++-4.1                   #For Intel compiler back-compatibility
+sudo aptitude -y install libboost-serialization-dev  libxerces27-dev # For libraries and headers
+sudo aptitude install ia32-libs                    #So we can run 32-bit binaries (like tetgen/triangle)
+sudo aptitude install screen                       #Helpful for running long command-line stuff over ssh
+sudo aptitude -y install lapack3-dev atlas3-base-dev # Lapack and blas
+sudo aptitude -y install libgoogle-perftools-dev graphviz # Google profiler
+sudo aptitude install gdb                          #Debugger
+sudo aptitude install gawk                         #For mpi/sbin/cleanipcs
+sudo aptitude install valgrind                     #For memcheck
+sudo aptitude -y install meld terminator           #Graphical diff and split-screen terminal
+sudo aptitude install xtightvncviewer              #Useful for logging into remote machines
+sudo aptitude install libstdc++5                   #Needed for tetgen runtime
+sudo aptitude install libgmp3c2                    #Needed for ndiff runtime
+sudo aptitude -y install emacs gnuplot octave3.0   #Useful tools
+sudo aptitude install libglu1-mesa-dev libfltk1.1-dev libpng12-dev #Needed to recompile meshalyzer
+sudo aptitude install mencoder mplayer             #mplayer movie player
+sudo aptitude install lib32g2c0                    #for tetview to run on a 64bit machine
+sudo aptitude -y install gfortran                  #Fortran compiler for use with libraries linked to Imperial adaptivity library
+</pre></li></ul><ul><li>Edit /etc/hostname to userpcxx.comlab.ox.ac.uk (for Scons and Intel checks)
+</li><li>Things like icc don't like /bin/sh -&gt; dash, they prefer bash
+<pre class="wiki">sudo dpkg-reconfigure dash
+</pre></li></ul><ul><li>Copying things back (not to the home area, but somewhere where they can be read)
+<pre class="wiki">chaste@userpc44:~$ rsync -avz chaste@userpc58:home_userpc44 old_home_areas
+chaste@userpc59:~$ rsync -avz chaste@chaste-bob:home_userpc59 old_home_areas
+chaste@userpc60:~$ rsync -avz chaste@chaste-bob:home_userpc60 old_home_areas
+</pre></li></ul><ul><li>Note: if you are using the cell_based visualiser (written in java) and it doesn't compile, compiles with warnings or doesn't run, it may be because the Sun java compiler is not installed or not being used. See <a class="missing ticket">#752</a>. 
+<pre class="wiki">sudo aptitude install sun-java5-jdk
+sudo update-java-alternatives -s java-1.5.0-sun
+</pre></li></ul><p>
+* For PyCml (see <a class="wiki" href="/trac/wiki/InstallPyCml">InstallPyCml</a>) 
+</p>
+<pre class="wiki">sudo aptitude install python-dev
+sudo aptitude install expat libexpat1-dev
+sudo aptitude -y install python-setuptools
+sudo easy_install "Amara==1.2.0.2"
+sudo aptitude -y install python-librdf
+</pre>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

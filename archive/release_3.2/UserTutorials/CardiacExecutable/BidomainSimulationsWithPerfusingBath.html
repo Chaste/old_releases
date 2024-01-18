@@ -1,0 +1,94 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/BidomainSimulationsWithPerfusingBath - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CardiacExecutable" href="/chaste/tutorials/release_3.2/UserTutorials/CardiacExecutable.html">CardiacExecutable</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CardiacExecutable/BidomainSimulationsWithPerfusingBath" href="/chaste/tutorials/release_3.2/UserTutorials/CardiacExecutable/BidomainSimulationsWithPerfusingBath.html">BidomainSimulationsWithPerfusingBath</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Runningabidomainsimulationofcardiactissuecontainedinaperfusingbath">Running a bidomain simulation of cardiac tissue contained in a perfusing bath</h1>
+<p>
+<i>This tutorial is based on a nightly acceptance test apps/texttest/chaste/bidomain_with_bath</i>
+</p>
+<p>
+To run a bidomain simulation of cardiac tissue contained in a perfusing bath, we need to make three additions.
+</p>
+<p>
+Firstly, we have to define the <tt>domain</tt> field to be <tt>BiWithBath</tt>, rather than <tt>Mono</tt> or <tt>Bi</tt>.
+</p>
+<div class="code"><pre><span class="nt">&lt;Domain&gt;</span>BiWithBath<span class="nt">&lt;/Domain&gt;</span>
+</pre></div><p>
+Second, our mesh elements file has to label each element as either being tissue or bath. The mesh definition in the parameters file defines the following mesh
+</p>
+<div class="code"><pre><span class="nt">&lt;Mesh</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;LoadMesh</span> <span class="na">name=</span><span class="s">"2D_0_to_1mm_400_elements_with_bath"</span> <span class="na">conductivity_media=</span><span class="s">"NoFibreOrientation"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/Mesh&gt;</span>
+</pre></div><p>
+for which the .ele file now has an extra column, which takes the value 0 for tissue and 1 for bath (see attached, and file formats documentation). Currently, the full overall mesh ought to be cuboid-shaped (see below).
+</p>
+<p>
+Finally, the XML file can define electrodes, which are used to apply an extracellular (surface) stimulus, ie shocks
+</p>
+<div class="code"><pre><span class="nt">&lt;Electrodes&gt;</span>
+    <span class="nt">&lt;GroundSecondElectrode&gt;</span>yes<span class="nt">&lt;/GroundSecondElectrode&gt;</span>
+    <span class="nt">&lt;PerpendicularToAxis&gt;</span>x<span class="nt">&lt;/PerpendicularToAxis&gt;</span>
+    <span class="nt">&lt;Strength</span> <span class="na">unit=</span><span class="s">"uA/cm^2"</span><span class="nt">&gt;</span>-11000<span class="nt">&lt;/Strength&gt;</span>
+    <span class="nt">&lt;StartTime</span> <span class="na">unit=</span><span class="s">"ms"</span><span class="nt">&gt;</span>0.0<span class="nt">&lt;/StartTime&gt;</span>
+    <span class="nt">&lt;Duration</span> <span class="na">unit=</span><span class="s">"ms"</span><span class="nt">&gt;</span>2.0<span class="nt">&lt;/Duration&gt;</span>
+<span class="nt">&lt;/Electrodes&gt;</span>
+</pre></div><p>
+This says that the shocks are applied to the surfaces x=xmin and x=xmax (xmin and xmax will be computed), hence the reason for the mesh needing to be a cuboid shape, so that the points satisfying x=xmin belong to a surface. The strength refers to the strength of the first electrode (the one on x=xmin). The second electrode (x=xmax) can be either be grounded or not, if not the strength is chosen so that input-stimulus is precisely equal to output-stimulus.
+</p>
+<p>
+To visualise, load the results in meshalyzer. Note that phi_e is defined throughout the domain (tissue and bath). The voltage is technically only defined in the tissue. However for computational reasons and to simplify visualisation, a 'dummy' voltage with a value of 0 is given for each bath node. This should be clear when visualising the voltage.
+</p>
+
+        
+        
+      </div>
+          <h3>Attachments</h3>
+          <ul>
+              <li>
+      <a href="/chaste/tutorials/release_3.2/UserTutorials/CardiacExecutable/BidomainSimulationsWithPerfusingBath/BidomainSimulationsWithPerfusingBath.tgz" title="View attachment">BidomainSimulationsWithPerfusingBath.tgz</a>
+      (<span title="14528 bytes">14.2 KB</span>)
+                <q>Simulation files for <tt>BidomainSimulationsWithPerfusingBath</tt> tutorial</q>
+              </li>
+          </ul>
+
+    </div>
+  </body>
+</html>

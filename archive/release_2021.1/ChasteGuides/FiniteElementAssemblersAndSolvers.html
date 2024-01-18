@@ -1,0 +1,332 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/FiniteElementAssemblersAndSolvers - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="FEMassemblersandsolvers">FEM assemblers and solvers</h1>
+<p>
+<strong>Important notes</strong>
+</p>
+<ul><li>new users should read the tutorial on solving linear PDEs before reading this; this page is more on how the assemblers and solvers work internally.
+</li><li>this page only refers to the main assemblers and solvers, which use linear basis functions, ie <strong>those in the pde folder</strong>. The continuum mechanics assemblers (in the <tt>continuum_mechanics</tt> folder) use quadratic basis functions and are outside this hierarchy, although they are going towards a similar design.
+</li><li>the lecture notes linked <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/NmoodLectureNotes.html">here</a> may also be useful
+</li></ul><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#FEMassemblersandsolvers">FEM assemblers and solvers</a>
+  </li>
+  <li>
+    <a href="#QuickSummary">Quick Summary</a>
+  </li>
+  <li>
+    <a href="#FullDescription">Full Description</a>
+    <ol>
+      <li>
+        <a href="#AbstractFeVolumeIntegralAssembler">AbstractFeVolumeIntegralAssembler</a>
+        <ol>
+          <li>
+            <a href="#Introduction">Introduction</a>
+          </li>
+          <li>
+            <a href="#ComputeMatrixTermComputeVectorTerm">ComputeMatrixTerm(), ComputeVectorTerm()</a>
+          </li>
+          <li>
+            <a href="#InterpolationLevel">InterpolationLevel</a>
+          </li>
+          <li>
+            <a href="#AbstractFeSurfaceIntegralAssembler-surfaceintegrals"><tt>AbstractFeSurfaceIntegralAssembler</tt> - surface integrals</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#ThesolversoflinearPDEs">The solvers of linear PDEs</a>
+        <ol>
+          <li>
+            <a href="#Introduction1">Introduction</a>
+          </li>
+          <li>
+            <a href="#AbstractAssemblerSolverHybrid">AbstractAssemblerSolverHybrid</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Concretesolvers">Concrete solvers</a>
+        <ol>
+          <li>
+            <a href="#Non-heart">Non-heart</a>
+          </li>
+          <li>
+            <a href="#Cardiacassemblersandsolvers">Cardiac assemblers and solvers</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="QuickSummary">Quick Summary</h1>
+<p>
+The old design involved classes that were both assemblers (of finite element matrices/vectors), and solvers. Assemblers and solvers are now completely seperate. See also the diagram at the bottom of this page.
+</p>
+<p>
+<strong>Assemblers</strong>
+</p>
+<p>
+The class <tt>AbstractFeVolumeIntegralAssembler</tt> is a generic assembler class (linear bases only) and provides the basic functionality for assembling finite element matrices (for example, a stiffness matrix, or mass matrix, or the matrix A in Ax=b), or vectors (eg b in Ax=b) based on volume integrals. Concrete classes which inherit from <tt>AbstractFeVolumeIntegralAssembler</tt> say whether they want to assemble a matrix or vector (or both); and if they are assembling a matrix, implement the pure-like method <tt>ComputeMatrixTerm()</tt> which says exactly what the matrix to be assembled should be. Similarly concrete assemblers that assemble vectors implement <tt>ComputeVectorTerm()</tt>.
+</p>
+<p>
+<strong>Solvers</strong>
+</p>
+<p>
+The main solvers now only solve linear PDEs. There is an abstract static an abstract dynamic solver, defining the following interfaces:
+</p>
+<p>
+<tt>AbstractStaticLinearPdeSolver</tt> has 
+</p>
+<ul><li>a <tt>Solve()</tt> method
+</li></ul><p>
+<tt>AbstractDynamicLinearPdeSolver</tt> has 
+</p>
+<ul><li>a <tt>SetTimes()</tt> method
+</li><li>a <tt>SetInitialCondition()</tt> method
+</li><li>a <tt>Solve()</tt> method
+</li></ul><p>
+Concrete classes need to implement the pure method <tt>SetupLinearSystem()</tt>, which should completely setup the linear system to be solved (each timestep). How they set it up will depend on both the PDE solved and the precise numerical scheme used. They can now make use of as many assemblers as they want.
+</p>
+<p>
+<strong>Hybrid</strong>
+</p>
+<p>
+The class <tt>AbstractAssemblerSolverHybrid</tt> is a useful class for allowing concrete classes of the old design: classes that are both assemblers and solvers. <tt>AbstractAssemblerSolverHybrid</tt> inherits from <tt>AbstractFeVolumeIntegralAssembler</tt>, and has a method for constructing a linear system using its parent assembler. Concrete classes should inherit from it <em>and</em> the static/dynamic solver (as appropriate). See below for more details.
+</p>
+<p>
+<strong>Cardiac assemblers and solvers</strong>
+</p>
+<p>
+See section in full description (more or less self-contained).
+</p>
+<h1 id="FullDescription">Full Description</h1>
+<p>
+Finite element solution of PDEs involves solving a linear system, whether it is (i) the single linear system solved in the FEM discretisation of a static linear problem; or (ii) the linear system solved each timestep of a FEM discretisation of a time-dependent linear problem; or (iii) the linear system solved each newton iteration of a nonlinear problem.
+</p>
+<p>
+The previous assembler hierachy was actually an assembler-solver hierachy, and based on the notion that every problem involved defining how to do the <em>finite element assembly</em> of the left-hand-side (LHS) matrix and how to do the finite element assembly of the right-hand side (RHS) vector, ie the matrix A and vector b in the linear system Ax=b. Here, <em>finite element assembly</em> means looping over elements, doing numerical integration on each element, and adding small matrices/vectors to A or b. This led to the solver-assembler hierachy, where the concrete solver-assemblers were partly a PDE solver interface and partly an assembler of LHS matrix A and RHS vector b. 
+</p>
+<p>
+This worked fine for simple FEM implementations. However, for more advanced implementations, such as monodomain problems with matrix-based-RHS, where the linear system is of the form Ax=Mz, where A and M (mass matrix) need to be assembled in a finite element manner, but not z, this doesn't fit in very well. An even worse example is monodomain with a 'correction' term, where the linear system is Ax=Mz+c, where A,M and c need to be assembled in a finite element manner.
+</p>
+<p>
+This led to the new assemblers and solvers, which is no longer a complex assembler-solver hierachy, but a simple assembler hierarchy, and a separate solver hierarchy.
+</p>
+<h2 id="AbstractFeVolumeIntegralAssembler">AbstractFeVolumeIntegralAssembler</h2>
+<h3 id="Introduction">Introduction</h3>
+<p>
+This class is used for creating <em>any</em> matrix or vector which needs to be assembled in a finite element manner via volume integrals, ie, the matrix A or vector b in Ax=b; or A or M or c in Ax=Mz+c. It currently uses linear basis functions only.
+</p>
+<p>
+The class is templated over element, spatial and problem dimensions as usual, but also on two booleans, <tt>CAN_ASSEMBLE_VECTOR</tt> and <tt>CAN_ASSEMBLE_MATRIX</tt>:
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEM_DIM<span class="p">,</span><span class="kt">unsigned</span> SPACE_DIM<span class="p">,</span><span class="kt">unsigned</span> PROBLEM_DIM<span class="p">,</span><span class="kt">bool</span> CAN_ASSEMBLE_VECTOR<span class="p">,</span> <span class="kt">bool</span> CAN_ASSEMBLE_MATRIX<span class="p">,</span> InterpolationLevel INTERPOLATION_LEVEL<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">AbstractFeVolumeIntegralAssembler</span>
+</pre></div><p>
+The methods which need to be implemented by the concrete classes are:
+</p>
+<div class="code"><pre>ComputeMatrixTerm<span class="p">();</span>
+ComputeVectorTerm<span class="p">();</span>
+ComputeVectorSurfaceTerm<span class="p">();</span>
+</pre></div><p>
+These methods are essentially the pure methods which need to be implemented by the concrete class. Technically, though, they are not pure: they have a default implementation (which is to throw an error), so that the concrete classes just need to implement the ones that will be needed. 
+</p>
+<p>
+<strong>For example:</strong> To create a concrete class which is to be used for assembling the mass matrix M in 1d, the user has to write a concrete class inheriting from <tt>AbstractFeVolumeIntegralAssembler&lt;1,1,1,false,true,NORMAL&gt;</tt>, and then implement the <tt>ComputeMatrixTerm()</tt> methods (the other two methods don't need overloading as no vectors are assembled). Similarly, to create a concrete class for assembling a vector, we inherit from <tt>AbstractFeVolumeIntegralAssembler&lt;1,1,1,true,false,NORMAL&gt;</tt> and implement <tt>ComputeVectorTerm()</tt>. The calling code then needs to provide a constructed <tt>Mat</tt> or <tt>Vec</tt>, and the assembler will assemble them. See <tt>pde/test/TestAbstractFeVolumeIntegralAssembler.hpp</tt> for examples of concrete classes and usage.
+</p>
+<h3 id="ComputeMatrixTermComputeVectorTerm">ComputeMatrixTerm(), ComputeVectorTerm()</h3>
+<p>
+These are the methods the concrete assembler has to implement. They need to provide the <em>integrand</em> of the intregral being evaluated at the current quadrature point, which will be a vector/matrix of size <tt>num_nodes_in_element</tt>
+</p>
+<p>
+<strong>For example:</strong> Suppose we are in 2d, and want to set up the vector b, where
+</p>
+<pre class="wiki">b_i = \integral_{\Omega} f(x) \phi_i(x) dV
+</pre><p>
+which is the RHS vector needed to solve linear elliptic equations with source term f.
+</p>
+<p>
+We inherit from <tt>AbstractFeVolumeIntegralAssembler&lt;1,1,1,true,false,NORMAL&gt;</tt> and implement <tt>ComputeVectorTerm()</tt>. This has parameters which include the quadrature point <tt>rX</tt>, and the vector of basis functions evaluated at that quad point <tt>rPhi</tt> ( = <tt>[\phi_1(x), \phi_2(x), \phi_3(x)]</tt>):
+</p>
+<div class="code"><pre>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeVectorTerm<span class="p">(</span>
+                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rGradPhi<span class="p">,</span>
+                ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">,</span>
+                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span>PROBLEM_DIM<span class="o">&gt;&amp;</span> rU<span class="p">,</span>
+                c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> PROBLEM_DIM<span class="p">,</span> SPACE_DIM<span class="o">&gt;&amp;</span> rGradU<span class="p">,</span>
+                Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+</pre></div><p>
+This implementation needs to return the vector <tt>[f(x)phi_1(x), f(x)phi_2(x), f(x) phi_3(x)]</tt>. It will therefore use <tt>rX</tt> and <tt>rPhi</tt> from the parameters, but not any of the others.
+</p>
+<p>
+<tt>ComputeMatrixTerm()</tt> is similar.
+</p>
+<h3 id="InterpolationLevel">InterpolationLevel</h3>
+<p>
+In the above example the parameters <tt>rU</tt>, <tt>rGradPhi</tt>, <tt>rGradU</tt> are not needed by the concrete class, and therefore didn't need interpolating onto the current quadrature points. Some control is available over which quantities are interpolated through the final template parameter of the abstract class
+</p>
+<div class="code"><pre><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEM_DIM<span class="p">,</span><span class="kt">unsigned</span> SPACE_DIM<span class="p">,</span><span class="kt">unsigned</span> PROBLEM_DIM<span class="p">,</span><span class="kt">bool</span> CAN_ASSEMBLE_VECTOR<span class="p">,</span> <span class="kt">bool</span> CAN_ASSEMBLE_MATRIX<span class="p">,</span> InterpolationLevel INTERPOLATION_LEVEL<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">AbstractFeVolumeIntegralAssembler</span>
+</pre></div><p>
+For example if <tt>InterpolationLevel</tt> is <em>not</em> equal to <tt>NONLINEAR</tt>, <tt>rGradPhi</tt> is not computed for vectors. See class documentation for available options. Non-interpolated parameters are just passed in which zeroed values, so choosing an incorrect <tt>InterpolationLevel</tt> will lead to the solver <em>silently giving completely incorrect answers</em> if a quantity is used when it hasn't been interpolated.
+</p>
+<h3 id="AbstractFeSurfaceIntegralAssembler-surfaceintegrals"><tt>AbstractFeSurfaceIntegralAssembler</tt> - surface integrals</h3>
+<p>
+For integrals over surface elements (ie the terms coming from Neumann boundary conditions), there is a similar abstract class <tt>AbstractFeSurfaceIntegralAssembler</tt> which the same interface. For assembling surface-integral contributions to a vector, the concrete class needs to provide a <tt>ComputeVectorSurfaceTerm()</tt>. There is a concrete <tt>NaturalNeumannSurfaceTermAssembler</tt> which is used in most problems.
+</p>
+<h2 id="ThesolversoflinearPDEs">The solvers of linear PDEs</h2>
+<h3 id="Introduction1">Introduction</h3>
+<p>
+There are three relatively simple solver classes for linear PDEs: <tt>AbstractStaticLinearPdeSolver</tt> for solving linear time-independent problems, 
+<tt>AbstractDynamicLinearPdeSolver</tt> for solving linear time-dependent problems, and a parent which includes some common functionality
+</p>
+<pre class="wiki">                    AbstractLinearPdeSolver 
+                        ^            ^
+                        |            |
+                        |            |
+AbstractStaticLinearPdeSolver     AbstractDynamicLinearPdeSolver
+</pre><p>
+<tt>AbstractStaticLinearPdeSolver</tt> has 
+</p>
+<ul><li>a <tt>Solve()</tt> method
+</li></ul><p>
+<tt>AbstractDynamicLinearPdeSolver</tt> has 
+</p>
+<ul><li>a <tt>SetTimes()</tt> method (for setting start time, end time and timestep).
+</li><li>a <tt>SetInitialCondition()</tt> method
+</li><li>a <tt>Solve()</tt> method
+</li></ul><p>
+The three classes are abstract because of the following pure method in <tt>AbstractLinearPdeSolver</tt> 
+</p>
+<ul><li><tt>void SetupLinearSystem()=0;</tt>
+</li></ul><p>
+This is the method that needs to be implemented by a concrete solver. It is called by the two <tt>Solve</tt> methods, and should completely set up the linear system to be solved (that timestep), using whichever assemblers it needs and applying boundary conditions if necessary.
+</p>
+<h3 id="AbstractAssemblerSolverHybrid">AbstractAssemblerSolverHybrid</h3>
+<p>
+Now, in principle, to solve a particular PDE, we need to create a concrete assembler, <tt>MyAssembler</tt>, for that PDE, and then create a concrete solver, <tt>MySolver</tt>, which implements <tt>SetupLinearSystem</tt> using <tt>MyAssembler</tt>. This would be a "has-a" solver-assembler relationship ("solver has an assembler"), and is the new design. 
+</p>
+<p>
+For convenience, the old "is-a" relationship ("solver is also an assembler") is still allowed, through the class <tt>AbstractAssemblerSolverHybrid</tt>. This can be used when an assembler will be written which will define the <strong>whole</strong> of the LHS matrix A, and the <strong>whole</strong> of the RHS vector b. 
+</p>
+<p>
+<tt>AbstractAssemblerSolverHybrid</tt> inherits from
+</p>
+<div class="code"><pre>AbstractFeVolumeIntegralAssembler<span class="o">&lt;</span><span class="p">..,</span><span class="nb">true</span><span class="p">,</span><span class="nb">true</span><span class="p">,..</span><span class="o">&gt;</span>
+</pre></div><p>
+and has a method <tt>SetupGivenLinearSystem(..,..,LinearSystem*)</tt> which sets up the given linear system using the parent-assembler part of the class. 
+</p>
+<p>
+Concrete classes should inherit from this and <strong>one of</strong> <tt>AbstractStaticLinearPdeSolver</tt> or <tt>AbstractDynamicLinearPdeSolver</tt>. They would then have the following pure methods
+</p>
+<ul><li><tt>ComputeMatrixTerm()</tt>
+</li><li><tt>ComputeVectorTerm()</tt>
+</li><li><tt>SetupLinearSystem</tt> (inherited from the parent solver)
+</li></ul><p>
+The concrete class then has to implement the <tt>Compute*Term</tt> methods as appropriate for its particular PDE. For <tt>SetupLinearSystem</tt> it simply has to have a one-line function which just calls <tt>SetupGivenLinearSystem</tt>. See <tt>SimpleLinearEllipticSolver</tt> as an example.
+</p>
+<h2 id="Concretesolvers">Concrete solvers</h2>
+<h3 id="Non-heart">Non-heart</h3>
+<ul><li><tt>SimpleLinearEllipticSolver</tt>: inherits from <tt>AbstractAssemblerSolverHybrid</tt> and <tt>AbstractStaticLinearPdeSolver</tt> and implements <tt>Compute*Term</tt> methods appropriately.
+</li><li><tt>SimpleLinearParabolicSolver</tt>: inherits from <tt>AbstractAssemblerSolverHybrid</tt> and <tt>AbstractDynamicLinearPdeSolver</tt> and implements <tt>Compute*Term</tt> methods appropriately.
+</li><li><tt>SimpleNonlinearEllipticSolver</tt>:  inherits from ("is-a") <tt>AbstractFeVolumeIntegralAssembler</tt> but is outside the solver hierarchy. See class documentation.
+</li></ul><h3 id="Cardiacassemblersandsolvers">Cardiac assemblers and solvers</h3>
+<p>
+See the <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations being set up and solved in the cardiac electro-physiology solvers.
+For both monodomain and bidomain the linear system can be written as Ax=Mz, where A and M require assembling (looping over elements) but z does not, or as Ax=Mz+c, where c also has to be assembled. The "is-a" solver-assembler approach therefore cannot be used and the "has-a" design is used.
+</p>
+<p>
+<strong>Monodomain</strong>
+</p>
+<p>
+The assembler classes
+</p>
+<ul><li><tt>MonodomainAssembler</tt>
+<ul><li>the main monodomain assembler: can construct both the matrix A, and the vector arising from surface stimuli contributions
+</li></ul></li><li><tt>MassMatrixAssembler</tt> 
+<ul><li>for assembling the mass matrix, M
+</li></ul></li><li>a <tt>NaturalNeumannSurfaceTermAssembler</tt> for Neumann BCs
+</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
+</li></ul><p>
+The solver is:
+</p>
+<ul><li><tt>MonodomainSolver</tt>
+<ul><li>inherits from <tt>AbstractDynamicLinearPdeSolver</tt>
+</li><li>owns a <tt>MonodomainAssembler</tt> and a <tt>MassMatrixAssembler</tt> (and if needed an assembler for the SVI term)
+</li><li>uses these assemblers to set up the linear system in <tt>SetupLinearSystem()</tt>
+</li></ul></li></ul><p>
+<strong>Bidomain</strong>
+</p>
+<p>
+Bidomain is a bit more complicated, due to the possibility of a bath and extra bidomain specific functions. See the <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations. The basic ideas here are the same as with monodomain though.
+</p>
+<p>
+Assemblers:
+</p>
+<ul><li><tt>BidomainAssembler</tt>
+<ul><li>the main bidomain assembler: can construct both the matrix A
+</li></ul></li><li><tt>BidomainMassMatrixAssembler</tt> 
+<ul><li>A normal <tt>MassMatrixAssembler</tt> can't be used
+</li><li>can deal with both bath/non-bath problems.
+</li></ul></li><li><tt>BidomainWithBathAssembler</tt>
+<ul><li>inherits from <tt>BidomainAssembler</tt>, overloaded method to take into account the bath when computing the LHS matrix A.
+</li></ul></li><li><tt>BidomainNeumannSurfaceTermAssembler</tt>, for the vector arising from surface stimuli contributions
+</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
+</li></ul><p>
+Solvers:
+</p>
+<ul><li><tt>AbstractBidomainSolver</tt>
+<ul><li>inherits from <tt>AbstractDynamicLinearPdeSolver</tt> 
+</li><li>contains a lot of common bidomain functionality (null-space; setting average phi=0; bath finalisation)
+</li></ul></li><li><tt>BidomainSolver</tt>
+<ul><li>inherits from <tt>AbstractBidomainSolver</tt>
+</li><li>owns a <tt>BidomainAssembler</tt> or <tt>BidomainWithBathAssembler</tt> as appropriate, and a <tt>BidomainMassMatrixAssembler</tt>, etc
+</li><li> uses these assemblers to set up the linear system in <tt>SetupLinearSystem()</tt>
+</li></ul></li></ul><div class="code"><pre>                                                AbstractLinearPdeSolver <span class="cm">/* pure SetUpLinearSystem() method */</span>
+                                                    <span class="o">^</span>            <span class="o">^</span>
+                                                    <span class="o">|</span>            <span class="o">|</span>
+                                                    <span class="o">|</span>            <span class="o">|</span>
+                            AbstractStaticLinearPdeSolver     AbstractDynamicLinearPdeSolver <span class="cm">/* SetTimes(), SetInitCondition(), Solve() methods */</span>
+                                    <span class="o">^</span>  <span class="cm">/* Solve() method */</span>      <span class="o">^</span>                 <span class="o">^</span>     <span class="o">^</span>
+                                    <span class="o">|</span>                            <span class="o">|</span>                 <span class="o">|</span>     <span class="o">|</span>
+ SimpleLinearEllipticSolver ________<span class="o">|</span>                            <span class="o">|</span>                 <span class="o">|</span>     <span class="o">|</span>__________________ SimpleLinearParabolicSolver
+   <span class="cm">/* is a assembler, ie also */</span>                                 <span class="o">|</span>                 <span class="o">|</span>                           <span class="cm">/* is a assembler, ie also */</span> 
+   <span class="cm">/* inherits from hybrid    */</span>                                 <span class="o">|</span>                 <span class="o">|</span>                           <span class="cm">/* inherits from hybrid    */</span> 
+                                                                 <span class="o">|</span>                 <span class="o">|</span>
+                                                                 <span class="o">|</span>              AbstractBidomainSolver
+                                                                 <span class="o">|</span>                       <span class="o">^</span>             
+                                                                 <span class="o">|</span>                       <span class="o">|</span>            
+                                                                 <span class="o">|</span>                       <span class="o">|</span>   
+                                                    MonodomainSolver               BidomainSolver   <span class="cm">/* both implement SetUpLinearSystem() */</span>
+                                                    <span class="c1">//uses severals assemblers     // uses several assemblers 
+</span></pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

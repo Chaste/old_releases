@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/InstallCvode - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#InstallingCvode">Installing Cvode</a>
+    <ol>
+      <li>
+        <a href="#Newerinstructionsusingcmake">Newer instructions (using cmake)</a>
+        <ol>
+          <li>
+            <a href="#Highlyoptimisedbuild">Highly optimised build</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Olderinstructionsusingautotools">Older instructions (using autotools)</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="InstallingCvode">Installing Cvode</h1>
+<p>
+Cvode is still an optional dependency, but extremely recommended for anyone wanting to perform simulations based on solving ODEs.
+</p>
+<p>
+These instructions are mostly redundant if you are using the <a class="wiki" href="/chaste/tutorials/release_2021.1/InstallGuides/UbuntuPackage.html">UbuntuPackage</a>, as this will install Cvode for you, but read on for some optional optimisation by compiling it yourself.
+</p>
+<p>
+<strong>NB:</strong> PETSc 3.2 onwards can be configured with the flag <tt>--download-sundials</tt> which will download, compile and install CVODE for you, in which case these instructions can be ignored.
+</p>
+<p>
+For simulations with intensive ODE solving, it can make sense to compile CVODE with highly optimised settings. We've found a roughly 20% speedup for cardiac action potential models using the intel compiler with the settings below, rather than optimised <tt>gcc</tt> (which seems to be the one shipped with Ubuntu - see <a class="closed ticket" href="/trac/ticket/2479" title="user story: Consider rolling out CVODE compiled with intel (closed: fixed)">#2479</a> for detailed timings). The PETSc-install route will probably use intel for cvode, if you use intel for PETSc (I haven't checked!).
+</p>
+<h2 id="Newerinstructionsusingcmake">Newer instructions (using cmake)</h2>
+<p>
+Download the source code from <a class="ext-link" href="https://computation.llnl.gov/casc/sundials/download/download.html"><span class="icon">​</span>https://computation.llnl.gov/casc/sundials/download/download.html</a>
+(at time of writing, the latest version was cvode-2.7.0). A registration form will probably need to be filled in.
+</p>
+<ul><li>Download latest CVODE, extract tarball somewhere.
+<pre class="wiki">tar -zxf cvode-2.7.0.tar.gz
+cd cvode-2.7.0
+</pre></li><li>There's a bug that makes it think it is part of Sundials 2.4 instead of 2.5, so change lines 31 &amp; 33 of <tt>CMakeLists.txt</tt> to read 2.5.0 instead of 2.4.0.
+</li><li>Make a new 'build' folder somewhere outside cvode source.
+<pre class="wiki">mkdir ~/cvode_build_dir
+# Go to the new 'build' folder 
+cd ~/cvode_build_dir
+# and type the following to do a graphical cmake configuration
+ccmake ../&lt;path to cvode-2.7.0 source folder&gt;
+</pre></li><li>Change the following settings (press 'c' a few times and eventually 'g'):
+<pre class="wiki">BUILD_SHARED_LIBS ON
+CMAKE_BUILD_TYPE Release
+CMAKE_INSTALL_PREFIX &lt;wherever you want the includes and libraries to end up - e.g. $CHASTE_LIBS&gt;
+</pre></li><li>exit the configuration tool, then type 
+<pre class="wiki">make
+make install
+</pre></li><li><strong>New:</strong> cmake, configure cmake to recognise the CVODE libraries <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">ChasteGuides/CmakeBuildGuide#ConfigureStep</a>
+</li><li><strong>Old:</strong> scons, adjust your scons hostconfig to pick up the new cvode includes and libraries, see <a class="wiki" href="/trac/wiki/SconsArchive/HostconfigSystem">SconsArchive/HostconfigSystem</a>.
+</li><li>If running an executable, make sure the new libraries are included at the start of <tt>LD_LIBRARY_PATH</tt>.
+</li></ul><h3 id="Highlyoptimisedbuild">Highly optimised build</h3>
+<p>
+If you have the intel installer present (see if typing <tt>icc</tt> is recognised), then at the configure step it is worth changing these settings too (in addition to the ones above)
+</p>
+<pre class="wiki">CMAKE_C_COMPILER icc
+CMAKE_C_FLAGS_RELEASE -O3 -ip -ipo1 -DNDEBUG
+</pre><h2 id="Olderinstructionsusingautotools">Older instructions (using autotools)</h2>
+<p>
+These instructions are for Cvode 2.5.0 using the attached files.
+</p>
+<p>
+If you will be running memory testing, and if dealing with a standard CVODE source, you'll need to use the attached patch to avoid memory test failures.
+</p>
+<p>
+Unpack, configure, build, and install:
+</p>
+<pre class="wiki">tar -zxf cvode-2.5.0.tar.gz
+cd cvode-2.5.0
+patch -p0 &lt; ../cvode.patch
+./configure --prefix=$HOME/cvode --with-cflags=-O3 --with-fflags=-O3 --disable-mpi
+make
+make install
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

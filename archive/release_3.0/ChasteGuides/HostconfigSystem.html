@@ -1,0 +1,153 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/HostconfigSystem - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.0/">Release 3.0</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.0/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/HostconfigSystem" href="/chaste/tutorials/release_3.0/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Thehostconfigsystem">The hostconfig system</h1>
+<p>
+The source release of Chaste relies on many libraries for core functionality.  These can be found in different locations on different systems, and several different versions are supported.  The hostconfig system, consisting of the files in <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig">python/hostconfig</a>, is used to specify the settings for the current system.
+</p>
+<p>
+The file used by the build system is <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/hostconfig.py">hostconfig.py</a>.  This is not intended for user editing however, but loads a settings file.  For core developers, it will try loading stored settings from the <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/machines">machines</a> folder (see <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/HostconfigSystem.html#Themachinesfolder">below</a>).  For other users, it will first try to find settings for your Linux distribution (currently only Ubuntu is supported, for the benefit of users installing the Ubuntu package), and if that files, will use the file <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/default.py">default.py</a>.
+</p>
+<p>
+If you're not seeing expected behaviour from your hostconfig, it's worth running scons with hostconfig debugging turned on to see what settings Chaste is actually picking up.  Use (e.g.) "<tt>scons debug=1</tt>" to do this.
+</p>
+<h2 id="Configuringthehostconfigsystem">Configuring the hostconfig system</h2>
+<p>
+The configuration file is actually a small Python program providing certain variables specifying where to find libraries and tools, along with some additional settings.
+</p>
+<p>
+Several variables are used to specify which PETSc installation to use.  Four variables give paths to different versions of PETSc:
+</p>
+<ul><li><tt>petsc_2_2_path</tt> - path to PETSc 2.2 install
+</li><li><tt>petsc_2_3_path</tt> - path to PETSc 2.3 install
+</li><li><tt>petsc_3_0_path</tt> - path to PETSc 3.0 install
+</li><li><tt>petsc_path</tt>     - path to PETSc install of a different version
+</li></ul><p>
+At least one of these must be defined.  If you specify more than one, Chaste will by default attempt to use the newest version of PETSc it can find.  If none of these variables specifies a usable PETSc installation, an error message will be given.
+</p>
+<p>
+A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/DeveloperBuildGuide.html">build types</a>:
+</p>
+<ul><li><tt>petsc_build_name_production</tt> - for the <tt>IntelProduction</tt> build
+</li><li><tt>petsc_build_name_optimized</tt> - for <tt>GccOpt</tt> and <tt>Intel</tt> (and other optimized builds)
+</li><li><tt>petsc_build_name_profile</tt> - for <tt>Profile</tt> and <tt>GoogleProfile</tt>
+</li><li><tt>petsc_build_name</tt> - for other builds.  This variable is also used as a default if any of the above variables are not specified.
+</li></ul><p>
+The following variables are flags which indicate whether to use certain optional external libraries.
+If the variable is not present, it will default to False.  If the variable is set to True, then the appropriate include and library paths (see below) should be specified, too.
+</p>
+<ul><li><tt>use_cvode</tt> - whether to use CVODE
+</li><li><tt>use_vtk</tt> - whether to use VTK development libraries
+</li><li><tt>use_adaptivity</tt> - whether to use the adaptivity library
+</li></ul><p>
+For all libraries used except for PETSc and MPI, the paths to the folders containing the compiled libraries, and their header files, must be set, and the names of the libraries.  The <tt>default.py</tt> file included with Chaste should give an indication of which libraries to use, but some systems will require additional libraries; consult your system administrator.  These should be given in the following variables:
+</p>
+<ul><li><tt>other_includepaths</tt> - list of paths containing other header files
+</li><li><tt>other_libpaths</tt>     - list of paths containing other libraries, including parmetis, xsd, and boost
+</li><li><tt>other_libraries</tt>    - list of other libraries to link against
+</li></ul><p>
+The blas and lapack library names are set separately, in the <tt>blas_lapack</tt> variable.  Lapack must appear before blas in this list.
+</p>
+<p>
+Other variables that may be set include:
+</p>
+<ul><li><tt>ccflags</tt> - any extra compiler flags needed, as a string.
+</li><li><tt>ldflags</tt> - any extra linked flags needed, as a string.
+</li><li><tt>tools</tt> - a dictionary mapping executable names to their full absolute paths, for tools not found on the <tt>PATH</tt> environment variable.
+</li></ul><p>
+Particularly important tools that may need to be given here are <tt>mpicxx</tt>, <tt>mpirun</tt> and <tt>xsd</tt>.
+</p>
+<p>
+Chaste can make use of the Intel compilers if they are available.  There are a few variables that affect this.
+</p>
+<ul><li><tt>intel_path</tt> - path to Intel compiler installation (the folder containing <tt>lib</tt> and <tt>bin</tt> subfolders)
+</li><li><tt>icpc</tt> - this allows you to change the Intel compiler command, e.g. to add flags specific to 64-bit machines or specify the gcc libraries that the compiler should use.
+</li><li><tt>blas_lapack_production</tt> - the names of blas &amp; lapack to use in an <tt>IntelProduction</tt> build.  We use <tt>blas_lapack_production = ['mkl_lapack', 'mkl', 'svml']</tt> to link against Intel's MKL libraries which provide the same functionality.
+</li></ul><p>
+Any non-absolute paths will be considered relative to the root of the Chaste install.
+</p>
+<h2 id="Advancedusage">Advanced usage</h2>
+<p>
+Since the settings file is a Python program, it may define functions.  Three functions in particular have special meaning to the build system, and will allow advanced functionality if they are defined.
+</p>
+<p>
+The first is <tt>ModifyBuild</tt>, which if defined will be called at the end of the configuration step.  It is passed a single argument: the <tt>BuildType</tt> instance (see <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/BuildTypes.py">source:trunk/python/BuildTypes.py</a>) for this build.  This allows arbitrary modification of that object.
+</p>
+<p>
+The other two functions allow easy switching between different versions of the libraries Chaste uses.  As described briefly <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/DeveloperBuildGuide.html">here</a>, a <tt>hostconfig</tt> option may be appended to the build type, something like <tt>build=default_hostconfig,boost=1-37,petsc=3-0,hdf5=1-8,xsd=3-2,use-cvode=1,use-vtk=0</tt>.
+</p>
+<p>
+For this build type option to work, one of the functions <tt>Configure</tt> or <tt>SetPreferedVersions</tt> must be defined in the hostconfig settings file.  They differ in their signature and when they are called, but have a very similar purpose, and typically at most one will be defined.  Both, if defined, will be called <i>before</i> attempting to read any of the variables described above, and thus can set those variables to appropriate values.
+</p>
+<ul><li><tt>Configure(prefs, build)</tt> is called regardless of whether the <tt>hostconfig</tt> build option was used, and is passed a prefs dictionary (described below) and <tt>BuildType</tt> instance.
+</li><li><tt>SetPreferedVersions(prefs)</tt> is called only if the <tt>hostconfig</tt> build option was used, and is passed a prefs dictionary.
+</li></ul><p>
+The <tt>prefs</tt> dictionary contains the settings specified in the <tt>hostconfig</tt> build option.  The option must follow the form <tt>hostconfig,name1=value1,name2=value2</tt>, and the name/value pairs are stored in the prefs dictionary.  Due to restrictions on the allowed characters in build type names, the option string cannot include the '.' character, and so '-' is used instead; any dashes in the values will be converted to dots before being passed to the functions above.
+</p>
+<p>
+Several functions are also pre-defined (in <tt>hostconfig.py</tt>) and made available to the settings program for use by the above functions if desired:
+</p>
+<ul><li><tt>ConfigError(message)</tt> - print an error message and quit
+</li><li><tt>CheckPathExists(path, component)</tt> - check that a path exists, and quit if not
+</li><li><tt>RemoveFromPath(pathList, searchString)</tt> - remove path entries from <tt>pathList</tt> that contain <tt>searchString</tt>
+</li><li><tt>TryRemove(pathGlob)</tt> - try to remove files matching the given glob pattern, ignoring errors
+</li><li>Also a family of functions for adding library details to the <tt>other_*</tt> variables:
+<ul><li><tt>AddBoost(basePath, version)</tt>
+</li><li><tt>AddHdf5(basePath)</tt>
+</li><li><tt>AddXerces(basePath)</tt>
+</li><li><tt>AddParMetis(basePath)</tt>
+</li><li><tt>AddXsd(basePath)</tt>
+</li></ul></li></ul><h2 id="Themachinesfolder">The machines folder</h2>
+<p>
+The file <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/machines/__init__.py">source:trunk/python/hostconfig/machines/__init__.py</a> determines which configuration file to use based on the hostname of the machine running Chaste, and so must be edited if adding a new settings file.
+</p>
+<p>
+If you want to maintain local settings not committed to the repository, place them in a file <tt>python/hostconfig/machines/local.py</tt>.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

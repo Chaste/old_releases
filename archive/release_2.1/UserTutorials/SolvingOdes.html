@@ -1,0 +1,489 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SolvingOdes - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_2.1/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/SolvingOdes" href="/chaste/tutorials/release_2.1/UserTutorials/SolvingOdes.html">SolvingOdes</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/ode/test/TestSolvingOdesTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/8128" title="Doxygen, coverage, and fixing bug in tutorial noticed by Francesco S. ...">r8128</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="InthistutorialweshowhowChastecanbeusedtosolveanODEsystem">In this tutorial we show how Chaste can be used to solve an ODE system</h1>
+<p>
+The following header files need to be included.
+First we include the header needed to define this class as a test suite. 
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+We will use a simple forward euler solver to solve the ODE, so the following
+needs to be included
+</p>
+<div class="code"><pre><span class="cp">#include "EulerIvpOdeSolver.hpp"
+</span></pre></div><p>
+All the ODE solvers take in a concrete ODE system class, which is user-defined
+and must inherit from the following class, which defines an ODE interface.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractOdeSystem.hpp"
+</span></pre></div><p>
+In order to convenient define useful information about the ODE system, such
+as the names and units of variables, and suggested initial conditions, we
+need the following header.
+</p>
+<div class="code"><pre><span class="cp">#include "OdeSystemInformation.hpp"
+</span></pre></div><h2 id="DefiningtheODEclasses">Defining the ODE classes</h2>
+<p>
+Let us solve the ODE dy/dt = y<sup>2</sup>+t<sup>2</sup>, with y(0) = 1. To do so, we have to define
+our own ODE class, inheriting from <tt>AbstractOdeSystem</tt>, which implements that
+<tt>EvaluateYDerivatives()</tt> method.
+</p>
+<div class="code"><pre>class MyOde <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><p>
+The constructor does very little.
+It calls the base constructor, passing the number of state variables in the
+ODE system (here, 1, i.e. y is a 1d vector).
+It also sets the object to use to retrieve system information (see later).
+</p>
+<div class="code"><pre>    MyOde<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOde<span class="o">&gt;::</span>Instance<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+The ODE solvers will repeatedly call a method called EvaluateYDerivatives(), which needs
+to be implemented in this concrete class. This takes in the time, a <tt>std::vector</tt> of
+y values (in this case, of size 1), and a reference to a <tt>std::vector</tt> in which the
+derivative(s) should be filled in by the method..
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">EvaluateYDerivatives</span><span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+..so we set <tt>rDY[0]</tt> to be y<sup>2</sup> + t<sup>2</sup>. 
+</p>
+<div class="code"><pre>        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> time<span class="o">*</span>time<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+The following <i>template specialisation</i> defines the information for this
+ODE system.  Note that we use the ODE system class that we have just defined
+as a template parameter
+</p>
+<div class="code"><pre>template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOde<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div><p>
+That would be all that is needed to solve this ODE. However, rather
+than solving up to a fixed time, suppose we wanted to solve until some function
+of y (and t) reached a certain value, e.g. let's say we wanted to solve the ODE until
+y reached 2.5. To do this, we have to define a stopping event, by implementing
+the method <tt>CalculateStoppingEvent()</tt> in <tt>AbstractOdeSystem</tt>. For this, let us
+define a new class, inheriting from the above class (i.e. representing the same ODE)
+but with a stopping event defined.
+</p>
+<div class="code"><pre>class MyOdeWithStoppingEvent <span class="o">:</span> public MyOde
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><p>
+All we have to do is implement the following function. This is defined in
+the base class (<tt>AbstractOdeSystem</tt>), where it always returns false, and here we override it
+to return true if y&gt;=2.5
+</p>
+<div class="code"><pre>    bool <span class="nf">CalculateStoppingEvent</span><span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="p">(</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;=</span><span class="mf">2.5</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+(Ignore the following class until solving with state variables is discussed).
+This is another ODE class which sets up a 'state variable'. Note that this is done in the
+constructor, and the <tt>EvaluateYDerivatives</tt> is identical to before 
+</p>
+<div class="code"><pre>class MyOdeUsingStateVariables <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+    MyOdeUsingStateVariables<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeUsingStateVariables<span class="o">&gt;::</span>Instance<span class="p">();</span>
+        mStateVariables<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> time<span class="o">*</span>time<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+Again we need to define the ODE system information.
+</p>
+<div class="code"><pre>template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeUsingStateVariables<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div><p>
+This class is another simple ODE class, just as an example of how a 2d ODE is solved. Here
+we solve the ODE dy<sub>1</sub>/dt = y<sub>2</sub>, dy<sub>2</sub>/dt = (y<sub>1</sub>)<sup>2</sup> (which represents the second-order ODE d<sup>2</sup>y/dt<sup>2</sup> = y<sup>2</sup>
+</p>
+<div class="code"><pre>class My2dOde <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+    My2dOde<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>My2dOde<span class="o">&gt;::</span>Instance<span class="p">();</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        rDY<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+Again we need to define the ODE system information.
+</p>
+<div class="code"><pre>template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>My2dOde<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"ydot"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div><h2 id="TheTests">The Tests</h2>
+<h3 id="StandardODESolving">Standard ODE Solving</h3>
+<p>
+Now we can define the test, where the ODEs are solved. 
+</p>
+<div class="code"><pre>class <span class="nl">TestSolvingOdesTutorial:</span> public CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSolvingOdes<span class="p">()</span> throw<span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+First, create an instance of the ODE class to be solved. 
+</p>
+<div class="code"><pre>        MyOde my_ode<span class="p">;</span>
+</pre></div><p>
+Next, create a solver. 
+</p>
+<div class="code"><pre>        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+</pre></div><p>
+We will need to provide an initial condition, which needs to
+be a <tt>std::vector</tt>.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_condition<span class="p">;</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+Then, just call Solve(), passing in a pointer to the ODE, the
+initial condition, the start time, end time, the solving timestep,
+and sampling timestep (how often we want the returned solution).
+Here we solve from 0 to 1, with a timestep of 0.01 but a <i>sampling
+timestep</i> (how often the results are stored) of 0.1. The return value is an object of type <tt>OdeSolution</tt>
+(which is basically just a list of times and solutions).
+</p>
+<div class="code"><pre>        OdeSolution solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_ode<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+</pre></div><p>
+Let's look at the results, which can be obtained from the <tt>OdeSolutions</tt>
+object using the methods <tt>rGetTimes()</tt> and <tt>rGetSolutions()</tt>, which
+return a <tt>std::vector</tt> and a <tt>std::vector</tt> of <tt>std::vector</tt>s
+respectively. 
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+the <tt>[0]</tt> here is because getting the zeroth component of y (a 1-dimensional vector) 
+</p>
+<div class="code"><pre>            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetTimes<span class="p">()[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span> <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        <span class="p">}</span>
+</pre></div><p>
+Alternatively, we can print the solution directly to a file, using the <tt>WriteToFile</tt>
+method on the <tt>OdeSolution</tt> class. 
+</p>
+<div class="code"><pre>        solutions<span class="p">.</span>WriteToFile<span class="p">(</span><span class="s">"SolvingOdesTutorial"</span><span class="p">,</span> <span class="s">"ode1.txt"</span><span class="p">,</span> <span class="s">"sec"</span><span class="p">);</span>
+</pre></div><p>
+We can see from the printed out results that y goes above 2.5 somewhere just
+before 0.6. To solve only up until y=2.5, we can solve the ODE that has the
+stopping event defined, using the same solver as before. 
+</p>
+<div class="code"><pre>        MyOdeWithStoppingEvent my_ode_stopping<span class="p">;</span>
+</pre></div><p>
+<strong>Note:</strong> <i>when a <tt>std::vector</tt> is passed in as an initial condition
+to a <tt>Solve</tt> call, it gets updated as the solve takes place</i>. Therefore, if
+we want to use the same initial condition again, we have to reset it back to 1.0 
+</p>
+<div class="code"><pre>        initial_condition<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_ode_stopping<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+</pre></div><p>
+We can check with the solver that it stopped because of the stopping event, rather than because
+it reached to end time. 
+</p>
+<div class="code"><pre>        assert<span class="p">(</span>euler_solver<span class="p">.</span>StoppingEventOccurred<span class="p">()</span><span class="o">==</span><span class="nb">true</span><span class="p">);</span>
+</pre></div><p>
+Finally, let's print the time of the stopping event (to the nearest dt or so). 
+</p>
+<div class="code"><pre>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Stopping event occurred at t="</span><span class="o">&lt;&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>back<span class="p">()</span><span class="o">&lt;&lt;</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><h3 id="ODESolvingUsingtheStateVariable">ODE Solving Using the State Variable</h3>
+<p>
+In this second test, we show how to do an alternative version of ODE solving, which
+does not involve passing in initial conditions and returning a <tt>OdeSolution</tt>.
+The <tt>AbstractOdeSystem</tt> has a variable called the <i>state variable</i>, which can
+be used to hold the solution, and will be updated if a particular version of Solve
+is called. This can be useful for embedding ODE models in a bigger system, since
+the ODE models will then always contain their current solution.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOdeSolvingUsingStateVariable</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+Define an instance of the ODE. See the class definition above.
+Note that this ODE has a variable called <tt>mStateVariables</tt>, which has
+been set to be a vector of size one, containing the value 1.0. 
+</p>
+<div class="code"><pre>        MyOdeUsingStateVariables my_ode_using_state_vars<span class="p">;</span>
+</pre></div><p>
+To solve updating the state variable, just call appropriate method with
+a chosen solver. Note that no initial condition is required, no
+<tt>OdeSolution</tt> is returned, and no sampling timestep is given. 
+</p>
+<div class="code"><pre>        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+        euler_solver<span class="p">.</span>SolveAndUpdateStateVariable<span class="p">(</span><span class="o">&amp;</span>my_ode_using_state_vars<span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">);</span>
+</pre></div><p>
+To see what the solution was at the end, we have to use the state variable. 
+</p>
+<div class="code"><pre>        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Solution at end time = "</span> <span class="o">&lt;&lt;</span> my_ode_using_state_vars<span class="p">.</span>rGetStateVariables<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><h3 id="Solvingn-dimensionalODEs">Solving n-dimensional ODEs</h3>
+<p>
+Finally, here's a simple test showing how to solve a 2d ODE using the first method.
+All that is different is the initial condition has be a 2d vector, and returned
+solution is 2d at every timestep.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestWith2dOde</span><span class="p">()</span>
+    <span class="p">{</span>
+        My2dOde my_2d_ode<span class="p">;</span>
+        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+</pre></div><p>
+Define a 2d initial condition. 
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_condition<span class="p">;</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+Solve, and print the solution as [time, y1, y2]. 
+</p>
+<div class="code"><pre>        OdeSolution solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_2d_ode<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetTimes<span class="p">()[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span>
+                      <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span>
+                      <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "EulerIvpOdeSolver.hpp"
+#include "AbstractOdeSystem.hpp"
+#include "OdeSystemInformation.hpp"
+</span>class MyOde <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+    MyOde<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOde<span class="o">&gt;::</span>Instance<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> time<span class="o">*</span>time<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOde<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+class MyOdeWithStoppingEvent <span class="o">:</span> public MyOde
+<span class="p">{</span>
+<span class="nl">public:</span>
+    bool CalculateStoppingEvent<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="p">(</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;=</span><span class="mf">2.5</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+class MyOdeUsingStateVariables <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+    MyOdeUsingStateVariables<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeUsingStateVariables<span class="o">&gt;::</span>Instance<span class="p">();</span>
+        mStateVariables<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> time<span class="o">*</span>time<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>MyOdeUsingStateVariables<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+class My2dOde <span class="o">:</span> public AbstractOdeSystem
+<span class="p">{</span>
+<span class="nl">public:</span>
+    My2dOde<span class="p">()</span> <span class="o">:</span> AbstractOdeSystem<span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">{</span>
+        mpSystemInfo <span class="o">=</span> OdeSystemInformation<span class="o">&lt;</span>My2dOde<span class="o">&gt;::</span>Instance<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> EvaluateYDerivatives<span class="p">(</span><span class="kt">double</span> time<span class="p">,</span> <span class="k">const</span> std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rY<span class="p">,</span>
+                              std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&amp;</span> rDY<span class="p">)</span>
+    <span class="p">{</span>
+        rDY<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        rDY<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> rY<span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>rY<span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+template<span class="o">&lt;&gt;</span>
+<span class="kt">void</span> OdeSystemInformation<span class="o">&lt;</span>My2dOde<span class="o">&gt;::</span>Initialise<span class="p">()</span>
+<span class="p">{</span>
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"y"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+    this<span class="o">-&gt;</span>mVariableNames<span class="p">.</span>push_back<span class="p">(</span><span class="s">"ydot"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mVariableUnits<span class="p">.</span>push_back<span class="p">(</span><span class="s">"dimensionless"</span><span class="p">);</span>
+    this<span class="o">-&gt;</span>mInitialConditions<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+    this<span class="o">-&gt;</span>mInitialised <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+class <span class="nl">TestSolvingOdesTutorial:</span> public CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSolvingOdes<span class="p">()</span> throw<span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        MyOde my_ode<span class="p">;</span>
+        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_condition<span class="p">;</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        OdeSolution solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_ode<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetTimes<span class="p">()[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span> <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        solutions<span class="p">.</span>WriteToFile<span class="p">(</span><span class="s">"SolvingOdesTutorial"</span><span class="p">,</span> <span class="s">"ode1.txt"</span><span class="p">,</span> <span class="s">"sec"</span><span class="p">);</span>
+
+        MyOdeWithStoppingEvent my_ode_stopping<span class="p">;</span>
+
+        initial_condition<span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_ode_stopping<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+        assert<span class="p">(</span>euler_solver<span class="p">.</span>StoppingEventOccurred<span class="p">()</span><span class="o">==</span><span class="nb">true</span><span class="p">);</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Stopping event occurred at t="</span><span class="o">&lt;&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>back<span class="p">()</span><span class="o">&lt;&lt;</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOdeSolvingUsingStateVariable<span class="p">()</span>
+    <span class="p">{</span>
+        MyOdeUsingStateVariables my_ode_using_state_vars<span class="p">;</span>
+
+        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+        euler_solver<span class="p">.</span>SolveAndUpdateStateVariable<span class="p">(</span><span class="o">&amp;</span>my_ode_using_state_vars<span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">);</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Solution at end time = "</span> <span class="o">&lt;&lt;</span> my_ode_using_state_vars<span class="p">.</span>rGetStateVariables<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestWith2dOde<span class="p">()</span>
+    <span class="p">{</span>
+        My2dOde my_2d_ode<span class="p">;</span>
+        EulerIvpOdeSolver euler_solver<span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> initial_condition<span class="p">;</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        initial_condition<span class="p">.</span>push_back<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        OdeSolution solutions <span class="o">=</span> euler_solver<span class="p">.</span>Solve<span class="p">(</span><span class="o">&amp;</span>my_2d_ode<span class="p">,</span> initial_condition<span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>solutions<span class="p">.</span>rGetTimes<span class="p">().</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetTimes<span class="p">()[</span>i<span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span>
+                      <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">" "</span>
+                      <span class="o">&lt;&lt;</span> solutions<span class="p">.</span>rGetSolutions<span class="p">()[</span>i<span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

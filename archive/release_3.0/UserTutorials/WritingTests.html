@@ -1,0 +1,149 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/WritingTests - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.0/">Release 3.0</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.0/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/WritingTests" href="/chaste/tutorials/release_3.0/UserTutorials/WritingTests.html">WritingTests</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is <strong>not</strong> automatically generated from a file.
+</p>
+<h1 id="Writingtests">Writing tests</h1>
+<p>
+We do not use <tt>int main()</tt> methods in Chaste. Instead, we write <i>tests</i>, which are run using CxxTest. Tests are used both as: (i) part of the testing environment - every class in the source code has an equivalent test file which tests each aspect of its functionality, making use of the <tt>TS_ASSERT</tt>s as described below; and (ii) for experimental work, which involve writing a 'test' as below but generally without <tt>TS_ASSERT</tt>s.
+ 
+This tutorial shows how to write a test using CxxTest. First, the following header file needs to be included.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+Now we have to define a class containing the tests. It is sensible to name the class with the same name as the filename. The class should inherit from <tt>CxxTest::TestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestWritingTestsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+</pre></div><p>
+Now we define some tests, which must be <strong>public</strong>, begin with the word 'Test', return <tt>void</tt>, and take in no parameters.
+</p>
+<div class="code"><pre><span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestOnePlusOneEqualsTwo<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+To test whether two integers are equal, we can use the macro <tt>TS_ASSERT_EQUALS</tt>.
+</p>
+<div class="code"><pre>        <span class="kt">int</span> some_number <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>some_number<span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</pre></div><p>
+To test whether two numbers are equal to within a certain (absolute) tolerance we can use <tt>TS_ASSERT_DELTA</tt>. This should
+almost always be used when comparing two <tt>double</tt>s.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> another_number <span class="o">=</span> <span class="mf">1.000001</span> <span class="o">+</span> <span class="mf">1.0001</span><span class="p">;</span>
+        TS_ASSERT_DELTA<span class="p">(</span>another_number<span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+This second test shows some of the other <tt>TS_ASSERT</tt> macros that are available. 
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestSomeOtherStuff<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT<span class="p">(</span><span class="mi">1</span><span class="o">==</span><span class="mi">1</span><span class="p">);</span> <span class="c">// however, it is better to use TS_ASSERT_EQUALS, below
+</span>        TS_ASSERT_EQUALS<span class="p">((</span><span class="kc">true</span><span class="o">||</span><span class="kc">false</span><span class="p">),</span> <span class="kc">true</span><span class="p">);</span>
+        TS_ASSERT_DIFFERS<span class="p">(</span><span class="mf">1.348329534564385643543957436</span><span class="p">,</span> <span class="mf">1.348329534564395643543957436</span><span class="p">);</span>
+        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">2.71828183</span><span class="p">,</span> <span class="mf">3.14159265</span><span class="p">);</span> <span class="c">// Note: to test if x is greater than y, use TS_ASSERT_LESS_THAN(y,x)
+</span>        TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span><span class="o">-</span><span class="mf">1e100</span><span class="p">,</span> <span class="mf">1e100</span><span class="p">);</span>
+        TS_ASSERT_THROWS_ANYTHING<span class="p">(</span><span class="k">throw</span> <span class="mi">0</span><span class="p">;);</span> <span class="c">// normally you would put a function call inside the brackets
+</span>
+        <span class="kt">double</span> x<span class="p">;</span>
+        TS_ASSERT_THROWS_NOTHING<span class="p">(</span>x<span class="o">=</span><span class="mi">1</span><span class="p">;);</span>  <span class="c">// normally you would put a function call inside the brackets
+</span>    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+Other useful macros include <tt>TS_ASSERT_THROWS_THIS</tt> and <tt>TS_ASSERT_THROWS_CONTAINS</tt> for testing exception messages.
+</p>
+<p>
+Note that methods that don't start with 'Test' are compiled but not run. So, if you want to stop a single test running, just put
+an 'x' or a 'donot' (for instance) before its name.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> donotTestThis<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+To run this code, copy it into a file (<tt>TestWritingTests.hpp</tt>, say, in the directory <tt>global/test/</tt>), and run, either by running 
+</p>
+<div class="code"><pre>scons <span class="nv">test_suite</span><span class="o">=</span>global/test/TestWritingTests.hpp
+</pre></div><p>
+from the command line, or by creating a new make target in Eclipse using the above command.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below:
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span>
+<span class="k">class</span> <span class="nc">TestWritingTestsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestOnePlusOneEqualsTwo<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kt">int</span> some_number <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>some_number<span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="kt">double</span> another_number <span class="o">=</span> <span class="mf">1.000001</span> <span class="o">+</span> <span class="mf">1.0001</span><span class="p">;</span>
+        TS_ASSERT_DELTA<span class="p">(</span>another_number<span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestSomeOtherStuff<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT<span class="p">(</span><span class="mi">1</span><span class="o">==</span><span class="mi">1</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">((</span><span class="kc">true</span><span class="o">||</span><span class="kc">false</span><span class="p">),</span> <span class="kc">true</span><span class="p">);</span>
+        TS_ASSERT_DIFFERS<span class="p">(</span> <span class="mf">1.348329534564385643543957436</span><span class="p">,</span> <span class="mf">1.348329534564395643543957436</span><span class="p">);</span>
+        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">2.71828183</span><span class="p">,</span> <span class="mf">3.14159265</span><span class="p">);</span>
+        TS_ASSERT_LESS_THAN_EQUALS<span class="p">(</span><span class="o">-</span><span class="mf">1e100</span><span class="p">,</span> <span class="mf">1e100</span><span class="p">);</span>
+        TS_ASSERT_THROWS_ANYTHING<span class="p">(</span><span class="k">throw</span> <span class="mi">0</span><span class="p">;);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> donotTestThis<span class="p">()</span>
+    <span class="p">{</span>
+        TS_ASSERT_EQUALS<span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

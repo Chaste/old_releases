@@ -1,0 +1,195 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/RunningCellBasedVisualization - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/RunningCellBasedVisualization" href="/chaste/tutorials/release_3.2/ChasteGuides/RunningCellBasedVisualization.html">RunningCellBasedVisualization</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Runningthecell-basedvisualizer">Running the cell-based visualizer</h1>
+<p>
+<i>Note: this page describes how to use the java visualizers supplied with the source release. The <strong>new, recommended approach is to use Paraview</strong> (see tutorials)</i>
+</p>
+<p>
+To visualize the results of a 2D cell-centre of vertex simulation using Chaste's bespoke visualizers you must 
+</p>
+<ul><li>compile the relevant <tt>.java</tt> file;
+</li><li>run the visualizer from the anim folder.
+</li></ul><h2 id="a1.Compiletherelevant.javafile">1. Compile the relevant <tt>.java</tt> file</h2>
+<p>
+From the Chaste main directory
+</p>
+<pre class="wiki">[chaste@userpc60 Chaste]$ cd anim
+[chaste@userpc60 anim]$ javac Visualize2dCentreCells.java
+[chaste@userpc60 anim]$ javac Visualize2dVertexCells.java
+</pre><p>
+There is a clash between these classes, so you may need to recompile the one you want.
+</p>
+<h2 id="a2.Runthevisualizerfromtheanimfolder">2. Run the visualizer from the anim folder</h2>
+<p>
+To simply visualize cells, use:
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ java Visualize2dCentreCells &lt;data_path_and_prefix&gt; &lt;options&gt;
+[chaste@userpc60 anim]$ java Visualize2dVertexCells &lt;data_path_and_prefix&gt; &lt;options&gt;
+</pre><p>
+The pathname of the input must come first but the additional arguments <tt>output</tt>, <tt>springs</tt>, <tt>nocells</tt>, <tt>ghosts</tt> and <tt>notcylindrical</tt> may appear in any order. The visualizer will warn you if any options are not recognised but will continue running.
+</p>
+<p>
+The pathname probably looks something like
+</p>
+<pre class="wiki">&lt;data_path_and_prefix&gt; = /tmp/YOUR_USERNAME/testoutput/CHASTE_TEST_NAME/results_from_time_0 
+or
+&lt;data_path_and_prefix&gt; = /tmp/YOUR_USERNAME/testoutput/CHASTE_TEST_NAME/results_from_time_1.8333
+</pre><p>
+Note that you don't have to specify separate nodes and elements files, just the folder they live in.
+</p>
+<p>
+The following are command-line options:
+</p>
+<table class="wiki">
+<tr><td> <strong>Command</strong> </td><td> <strong>Default</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> <tt>output</tt> </td><td> Off </td><td> Writes an output to PNG files, which can be converted into an animated GIF (see below) 
+</td></tr><tr><td> <tt>springs</tt> </td><td> Off </td><td> Visualize the springs between the cells 
+</td></tr><tr><td> <tt>nocells</tt> </td><td> Off </td><td> Do not visualize cells 
+</td></tr><tr><td> <tt>ghosts</tt> </td><td> Off </td><td> Visualize ghost nodes and springs (cell-centre only) 
+</td></tr><tr><td> <tt>circles</tt> </td><td> Off </td><td> Visualize cells as overlapping circles of predefined radius 
+</td></tr><tr><td> <tt>PDE</tt> </td><td> Off </td><td> Visualize the solution to a reaction-diffusion PDE associated with the <tt>CellBasedSimulation</tt> (cell-centre only) 
+</td></tr><tr><td> <tt>betacatenin</tt> </td><td> Off </td><td> Displays a 'GFP style' simulation with shading dependent on protein concentrations; this is automatically set to 'On' if <tt>results.vizsetup</tt> has a line which reads <tt>BetaCatenin</tt> (cell-centre only, for use in crypt visualizations) 
+</td></tr><tr><td> <tt>notcylindrical</tt> </td><td> Off </td><td> Supress the cylindrical routine (print to screen exactly what is in the input files). This is automatically set to 'On' if a <tt>results.vizsetup</tt> file with the parameter <tt>MeshWidth</tt> is not supplied. (cell-centre only) 
+</td></tr><tr><td> <tt>axes</tt> </td><td> On </td><td> Visualize <i>x</i> and <i>y</i> axes for the simulation 
+</td></tr><tr><td> <tt>axesequal</tt> </td><td> On </td><td> Visualize <i>x</i> and <i>y</i> axes for the simulation using equal scales 
+</td></tr><tr><td> <tt>ancestors</tt> </td><td> On* </td><td> Visualize the ancestor index of each cell 
+</td></tr><tr><td> <tt>orientation</tt> </td><td> Off </td><td> Visualize cell orientations (cell-centre only) 
+</td></tr><tr><td> <tt>potts</tt> </td><td> Off </td><td> Visualize results as a cellular Potts model (vertex only) 
+</td></tr></table>
+<p>
+* When the appropriate results files are present.
+</p>
+<p>
+For example, to switch off cell visualization but draw ghost nodes and springs, use:
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ java Visualize2dCentreCells &lt;data_path_and_prefix&gt; ghosts springs nocells
+</pre><h3 id="Memory">Memory</h3>
+<p>
+If you get an out of memory error, use
+</p>
+<pre class="wiki">java -Xmn100M -Xms512M -Xmx512M Visualize2dCentreCells &lt;path&gt;
+</pre><p>
+for big simulations (24 hours of big crypts), or even
+</p>
+<pre class="wiki">java -Xmn200M -Xms700M -Xmx700M Visualize2dCentreCells &lt;path&gt;
+</pre><p>
+for really big simulations (50 hours of full sized crypts). See comment 1 in <a class="missing ticket">ticket:293</a>
+</p>
+<h3 id="MakinganMPEGmovie">Making an MPEG movie</h3>
+<p>
+When you have created image0*.png files in the anim folder (by running the visualizer with the <tt>output</tt> argument), go to the anim folder (<tt>cdchaste</tt> then <tt>cd anim</tt>)and simply type
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ ./make_a_movie
+</pre><p>
+This creates an MPEG format movie using MPlayer, and seems to compress it, whatever the length, into a file of about 15MB.
+</p>
+<h3 id="Makingananimatedgif">Making an animated gif</h3>
+<pre class="wiki">[chaste@userpc60 anim]$ convert image*.png my_cool_animation.gif
+</pre><h3 id="Renamingfiles">Renaming files</h3>
+<p>
+You may want to do this so you can show the results from one simulation following on from another, before making your movie.  The following changes the filenames from image0*.png to image2*.png.
+</p>
+<pre class="wiki">[chaste@userpc60 anim]$ for f in image*; do mv $f ${f/image0/image2}; done 
+</pre><hr />
+<h2 id="Dataformats">Data formats</h2>
+<p>
+The cell-centre simulation visualizer <tt>Visualize2dCentreCells</tt> requires two results files. The first required file is the nodes file (<tt>results.viznodes</tt>), where each line should be of the form
+</p>
+<pre class="wiki">    time x_1 y_1 x_2 y_2 ... x_n y_n
+</pre><p>
+where (<i>x_1</i>,<i>y_1</i>),...,(<i>x_n</i>,<i>y_n</i>) are points. The second required file is the cell types file (<tt>results.vizcelltypes</tt>), where each line should be of the form
+</p>
+<pre class="wiki">    time c_1 c_2 ... c_n
+</pre><p>
+where <i>c_1</i>,...,<i>c_n</i> are numbers corresponding to cell types:
+</p>
+<ul><li>0 = stem cell (cyan)
+</li><li>1 = transit cell (yellow) 
+</li><li>2 = differentiated cell (pink) 
+</li><li>3 = early cancer cell (light grey)
+</li><li>4 = late cancer cell (grey)
+</li><li>5 = labelled cell (purple)
+</li><li>6 = apoptosing cell (dark grey)
+</li><li>7 = sloughed cell or ghost node (invisible (silver), with all connecting edges invisible)
+</li></ul><p>
+For cell-centre simulations incorporating a Delaunay mesh, an elements results file (<tt>results.vizelements</tt>) is also required, where each line should be of the form
+</p>
+<pre class="wiki">    time element1_node1 element1_node2 element1_node3 ... elementn_node1 elementn_node2 elementn_node3
+</pre><p>
+The vertex simulation visualizer <tt>Visualize2dVertexCells</tt> requires all three of the above results files.
+</p>
+<p>
+An optional fourth results file is the setup file (<tt>results.vizsetup</tt>), which includes parameters such as
+</p>
+<pre class="wiki">    MeshWidth value
+    Cutoff value
+    PDE
+    BetaCatenin
+    Complete
+</pre><p>
+<tt>Complete</tt> tells the visualizer that this set of results files are finished and it can read the last line safely.
+N.B. A setup file is required for a cylindrical visualization, to tell the visualizer what the crypt width is.
+</p>
+<p>
+Other visualizer results files take the form <tt>results.viz&lt;whatever&gt;</tt>, where <tt>&lt;whatever&gt;</tt> can currently be any of the following:
+</p>
+<ul><li><tt>betacatenin</tt> - for visualizing beta-catenin protein concentrations (cell-centre only, for use in crypt visualizations)
+</li><li><tt>pdesolution</tt> - for visualizing the solution to a reaction-diffusion PDE associated with the cell-based simulation (vertex only)
+</li><li><tt>ancestors</tt> - for visualizing clonal populations, i.e. populations of cells with common ancestors
+</li><li><tt>orientation</tt> - for visualize cell orientations in simulations where cells have preferred orientations (cell-centre only)
+</li><li><tt>stress</tt> - for visualizing the stress experienced by each cell (cell-centre only; see the <tt>DiscreteSystemForceCalculator</tt> class)
+</li><li><tt>vizboundarynodes</tt> - for visualizing which nodes lie on the boundary of the cell population (vertex only)
+</li></ul><p>
+These files should all take the same form as <tt>results.viznodes</tt>: a row for every time step (with time as first item in the row) followed by a number of variables relating to each cell.
+</p>
+<p>
+All the files should all be in a folder called <tt>vis_results/</tt>. The location of this folder is then specified when calling <tt>Visualize2dCentreCells</tt>.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

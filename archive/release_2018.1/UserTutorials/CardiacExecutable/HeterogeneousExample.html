@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/HeterogeneousExample - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Simulationswithheterogeneities">Simulations with heterogeneities</h1>
+<p>
+The two main features of the executable demonstrated in this example are:
+</p>
+<ul><li>Ability to place different cell models in different locations of the mesh.
+</li><li>Ability to 'isolate' a fiber within a 3D geometry by setting heterogeneous orthotropic conductivities.
+</li></ul><h2 id="Background">Background</h2>
+<p>
+Purkinje fibres are part of the conduction system in the heart and responsible for delivering electrical stimuli to the myocardium. Recently, several investigators focused their attention on the study of the Purkinje-myocardial interface (e.g., Huelsing <em>et al</em>, Am J Phys, 2000). Here, we will simulate a Purkinje fiber (Noble-Difrancesco model) exciting a 3D slab of rabbit myocardial cells (Mahajan Shiferaw model). We stimulate the Purkinje cell and they will excite the myocardial tissue. This type of simulation is the first step towards an anatomically-based study of the Purkinje-myocardial electrotonic interface, where the attention will be placed on the conditions under which abnormal electrical phenomena in Purkinje cells (e.g., EAD) can propagate into the myocardium and trigger arrhythmic events.  
+</p>
+<h2 id="Procedure">Procedure</h2>
+<p>
+Study the XML parameters definition given below. The defines a 3 mm by 3 mm by 0.75 mm slab, with Purkinje cells are placed along a fiber running halfway through the slab in the y direction. A default cell model (MahajanShiferaw) is set up, but a different cell model (DifrancescoNoble) is used in a separate cuboid region. Similarly, default conductivities are set up, but different conductivities are specified in another cuboid region.
+</p>
+<p>
+Run using the full xml file from the attachment, although first simulate for only 1 ms of activity (instead of the 150ms defined below) and have a quick look at different cells in different locations. This is possible because the two cell models have slightly different initial resting potential and at t=0 it is therefore possible to visually distinguish the two cell types in meshalyzer. Then we will run a longer simulation (150 ms) and observe the activation pattern along the fiber and into the myocardium. Simulating 240 ms (an entire AP) of activity took 722 seconds on a standard recent desktop. 
+</p>
+<p>
+Further experiments can be run with different conductivities in the myocardial tissue (higher conductivities likely to uncouple the tissue and prevent propagation) and/or different Purkinje geometries of cell models.
+</p>
+<div class="code"><pre>
+    <span class="nt">&lt;Simulation&gt;</span>
+        <span class="c">&lt;!-- Problem definition --&gt;</span>
+        <span class="nt">&lt;SpaceDimension&gt;</span>3<span class="nt">&lt;/SpaceDimension&gt;</span>
+        <span class="nt">&lt;SimulationDuration</span> <span class="na">unit=</span><span class="s">"ms"</span><span class="nt">&gt;</span>150.0<span class="nt">&lt;/SimulationDuration&gt;</span>
+        <span class="nt">&lt;Domain&gt;</span>Mono<span class="nt">&lt;/Domain&gt;</span>
+        <span class="c">&lt;!-- Mesh definition --&gt;</span>
+        <span class="nt">&lt;Mesh</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Slab</span> <span class="na">x=</span><span class="s">"0.3"</span> <span class="na">y=</span><span class="s">"0.3"</span> <span class="na">z=</span><span class="s">"0.075"</span> <span class="na">inter_node_space=</span><span class="s">"0.015"</span><span class="nt">/&gt;</span>    
+        <span class="nt">&lt;/Mesh&gt;</span>
+
+        <span class="nt">&lt;IonicModels&gt;</span>
+            <span class="nt">&lt;Default&gt;</span>
+                <span class="nt">&lt;Hardcoded&gt;</span>MahajanShiferaw<span class="nt">&lt;/Hardcoded&gt;</span>
+            <span class="nt">&lt;/Default&gt;</span>
+            <span class="c">&lt;!-- Cell model heterogeneity --&gt;</span>
+              <span class="nt">&lt;Region&gt;</span>
+                <span class="nt">&lt;IonicModel&gt;</span>
+                   <span class="nt">&lt;Hardcoded&gt;</span>DifrancescoNoble<span class="nt">&lt;/Hardcoded&gt;</span>
+                <span class="nt">&lt;/IonicModel&gt;</span>
+                <span class="nt">&lt;Location</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;Cuboid&gt;</span>
+                        <span class="nt">&lt;LowerCoordinates</span> <span class="na">x=</span><span class="s">"0.13"</span> <span class="na">y=</span><span class="s">"0.0"</span> <span class="na">z=</span><span class="s">"0.03"</span><span class="nt">/&gt;</span>
+                        <span class="nt">&lt;UpperCoordinates</span> <span class="na">x=</span><span class="s">"0.17"</span> <span class="na">y=</span><span class="s">"0.15"</span> <span class="na">z=</span><span class="s">"0.05"</span><span class="nt">/&gt;</span>
+                    <span class="nt">&lt;/Cuboid&gt;</span>
+                <span class="nt">&lt;/Location&gt;</span>
+            <span class="nt">&lt;/Region&gt;</span>
+        <span class="nt">&lt;/IonicModels&gt;</span>
+        
+        <span class="c">&lt;!-- Stimuli (as many &lt;Stimulus&gt; definitions as needed) --&gt;</span>
+        <span class="nt">&lt;Stimuli&gt;</span>
+          <span class="nt">&lt;Stimulus&gt;</span> <span class="c">&lt;!-- #1 --&gt;</span>
+            <span class="nt">&lt;Strength</span> <span class="na">unit=</span><span class="s">"uA/cm^3"</span><span class="nt">&gt;</span>-355000.0<span class="nt">&lt;/Strength&gt;</span>
+            <span class="nt">&lt;Duration</span> <span class="na">unit=</span><span class="s">"ms"</span><span class="nt">&gt;</span>2.0<span class="nt">&lt;/Duration&gt;</span>
+            <span class="nt">&lt;Delay</span> <span class="na">unit=</span><span class="s">"ms"</span><span class="nt">&gt;</span>0<span class="nt">&lt;/Delay&gt;</span>
+            <span class="nt">&lt;Location</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Cuboid&gt;</span>
+                    <span class="nt">&lt;LowerCoordinates</span> <span class="na">x=</span><span class="s">"0.13"</span> <span class="na">y=</span><span class="s">"0.0"</span> <span class="na">z=</span><span class="s">"0.03"</span><span class="nt">/&gt;</span>
+                    <span class="nt">&lt;UpperCoordinates</span> <span class="na">x=</span><span class="s">"0.17"</span> <span class="na">y=</span><span class="s">"0.02"</span> <span class="na">z=</span><span class="s">"0.05"</span><span class="nt">/&gt;</span>
+                <span class="nt">&lt;/Cuboid&gt;</span>
+            <span class="nt">&lt;/Location&gt;</span>
+          <span class="nt">&lt;/Stimulus&gt;</span>    
+        <span class="nt">&lt;/Stimuli&gt;</span>    
+        <span class="c">&lt;!-- 
+             Conductivity heterogeneities 
+         --&gt;</span>
+        <span class="nt">&lt;ConductivityHeterogeneities&gt;</span>
+          <span class="nt">&lt;ConductivityHeterogeneity&gt;</span> <span class="c">&lt;!-- #1 --&gt;</span>
+            <span class="nt">&lt;IntracellularConductivities</span> <span class="na">longi=</span><span class="s">"0.0"</span> <span class="na">trans=</span><span class="s">"2.75"</span> <span class="na">normal=</span><span class="s">"0.0"</span> <span class="na">unit=</span><span class="s">"mS/cm"</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;ExtracellularConductivities</span> <span class="na">longi=</span><span class="s">"0.0"</span>  <span class="na">trans=</span><span class="s">"2.75"</span>  <span class="na">normal=</span><span class="s">"0.0"</span> <span class="na">unit=</span><span class="s">"mS/cm"</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Location</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Cuboid&gt;</span>
+                    <span class="nt">&lt;LowerCoordinates</span> <span class="na">x=</span><span class="s">"0.12"</span> <span class="na">y=</span><span class="s">"0.0"</span> <span class="na">z=</span><span class="s">"0.015"</span><span class="nt">/&gt;</span>
+                    <span class="nt">&lt;UpperCoordinates</span> <span class="na">x=</span><span class="s">"0.18"</span> <span class="na">y=</span><span class="s">"0.14"</span> <span class="na">z=</span><span class="s">"0.065"</span><span class="nt">/&gt;</span>
+                <span class="nt">&lt;/Cuboid&gt;</span>
+            <span class="nt">&lt;/Location&gt;</span>                
+          <span class="nt">&lt;/ConductivityHeterogeneity&gt;</span>                
+          <span class="c">&lt;!-- etc ... --&gt;</span>
+        <span class="nt">&lt;/ConductivityHeterogeneities&gt;</span>    
+    <span class="nt">&lt;/Simulation&gt;</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/BidomainWithConductivityModifier - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/BidomainWithConductivityModifier" href="/chaste/tutorials/release_3.2/UserTutorials/BidomainWithConductivityModifier.html">BidomainWithConductivityModifier</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestBidomainWithConductivityModifierTutorial.hpp at revision <a class="changeset" href="/trac/changeset/21794" title="Fix coverage r21763/#2467">r21794</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Wenowshowhowtorunabidomainsimulationusingconductivitymodifiers.">We now show how to run a bidomain simulation using conductivity modifiers.</h1>
+<p>
+In this tutorial we run another bidomain simulation,
+showing (i) an example using one of the source cell factories,
+(ii) an example of using a conductivity modifier.
+</p>
+<p>
+The first thing to do is to include the headers as before.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "DistributedTetrahedralMesh.hpp"
+#include "AbstractConductivityModifier.hpp"
+#include "ZeroStimulusCellFactory.hpp"
+</span></pre></div><p>
+Here we define our conductivity modifier. It inherits from the abstract class.
+Make sure to use the right element/space dims.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">SimpleConductivityModifier</span> <span class="o">:</span> <span class="k">public</span> AbstractConductivityModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+</pre></div><p>
+mTensor is "working memory" to hold the returned modified tensor.
+This is needed because we return by reference to the problem class, so we need
+to make sure the memory isn't overwritten before it's done with.
+</p>
+<p>
+Most of the time, we will modify the original conductivity tensor,
+but sometimes we want to return some "constant" matrix.
+</p>
+<div class="code"><pre><span class="k">private</span><span class="o">:</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mTensor<span class="p">;</span>
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mSpecialMatrix<span class="p">;</span>
+
+<span class="k">public</span><span class="o">:</span>
+</pre></div><p>
+Constructor. In Chaste, all conductivity tensors are diagonal, so we initialise our "constant matrix"
+to zero so that we only need to set the diagonal entries in the constructor.
+</p>
+<div class="code"><pre>    SimpleConductivityModifier<span class="p">()</span>
+        <span class="o">:</span> AbstractConductivityModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mSpecialMatrix<span class="p">(</span> zero_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+          <span class="p">{</span>
+              mSpecialMatrix<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">3.14</span><span class="p">;</span>
+              mSpecialMatrix<span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.707</span><span class="p">;</span>
+          <span class="p">}</span>
+</pre></div><p>
+<tt>rCalculateModifiedConductivityTensor</tt> returns a reference to the "processed" conductivity tensor.
+</p>
+<div class="code"><pre>    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCalculateModifiedConductivityTensor<span class="p">(</span><span class="kt">unsigned</span> elementIndex<span class="p">,</span> <span class="k">const</span> c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rOriginalConductivity<span class="p">,</span> <span class="kt">unsigned</span> domainIndex<span class="p">)</span>
+    <span class="p">{</span>
+
+        <span class="k">if</span> <span class="p">(</span> elementIndex <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// For element 0 let's return the "special matrix", regardless of intra/extra-cellular.
+</span>            <span class="k">return</span> mSpecialMatrix<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Otherwise, we change the behaviour depending on the `domainIndex` (intra/extra-cellular).
+</span>        <span class="kt">double</span> domain_scaling<span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span> domainIndex <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span>
+        <span class="p">{</span>
+            domain_scaling <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c">// Intracellular, domainIndex==0
+</span>        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            domain_scaling <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span> <span class="c">// Extracellular, domainIndex==1
+</span>        <span class="p">}</span>
+
+        <span class="c">// Modify the current conductivity according to some expression by running along the diagonal,
+</span>        <span class="c">// save to the "working memory", and return.
+</span>        <span class="k">for</span> <span class="p">(</span> <span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span><span class="mi">2</span><span class="p">;</span> i<span class="o">++</span> <span class="p">)</span>
+        <span class="p">{</span>
+            mTensor<span class="p">(</span>i<span class="p">,</span>i<span class="p">)</span> <span class="o">=</span> domain_scaling<span class="o">*</span>elementIndex<span class="o">*</span>rOriginalConductivity<span class="p">(</span>i<span class="p">,</span>i<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">return</span> mTensor<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+Now we define the test class, which must inherit from <tt>CxxTest::TestSuite</tt>
+as usual, and the (public) test method
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestBidomainWithConductivityModifierTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestConductivityModifier<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Generate the mesh.
+</p>
+<div class="code"><pre>        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c">// Mesh has 4 elements
+</span></pre></div><p>
+Usually you'll provide your own cell factory, here we use a trivial one for simplicity.
+Then we set up the problem with the factory as usual.
+</p>
+<div class="code"><pre>        ZeroStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">;</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        bidomain_problem<span class="p">.</span>SetMesh<span class="p">(</span> <span class="o">&amp;</span>mesh <span class="p">);</span>
+</pre></div><p>
+The problem generates the <tt>BidomainTissue</tt>, but only after <tt>Initialise()</tt>, so do that now and get
+the tissue so we can apply the modifier later.
+</p>
+<div class="code"><pre>        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        BidomainTissue<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bidomain_tissue <span class="o">=</span> bidomain_problem<span class="p">.</span>GetBidomainTissue<span class="p">();</span>
+</pre></div><p>
+Get the original conductivity tensor values. We haven't set them using
+<tt>HeartConfig-&gt;SetIntra/ExtracellularConductivities</tt> so they'll just be the defaults.
+</p>
+<p>
+The first argument below is the element ID (we just check the first element we own here). The second accesses
+the diagonal elements. We just do (0,0), as (1,1) should be the same (no fibre orientation).
+Off-diagonal elements will be 0.
+</p>
+<p>
+As we don't have many elements, when we run on more than two processors some processors
+will not own any elements. We only try to access the conductivity tensors if the process
+owns at least one element.
+</p>
+<p>
+We then check that we have the correct (default) conductivity values.
+</p>
+<div class="code"><pre>        <span class="kt">double</span> orig_intra_conductivity_0 <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> orig_extra_conductivity_0 <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span>mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">()</span> <span class="o">!=</span> mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">())</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> first_element <span class="o">=</span> mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">()</span><span class="o">-&gt;</span>GetIndex<span class="p">();</span>
+            orig_intra_conductivity_0 <span class="o">=</span> p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span>first_element<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+            orig_extra_conductivity_0 <span class="o">=</span> p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span>first_element<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span>orig_intra_conductivity_0<span class="p">,</span> <span class="mf">1.75</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span> <span class="c">// hard-coded using default
+</span>            TS_ASSERT_DELTA<span class="p">(</span>orig_extra_conductivity_0<span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span> <span class="c">// hard-coded using default
+</span>        <span class="p">}</span>
+</pre></div><p>
+Now we make the modifier object and set it on the tissue using <tt>SetConductivityModifier</tt>.
+</p>
+<div class="code"><pre>        SimpleConductivityModifier modifier<span class="p">;</span>
+        p_bidomain_tissue<span class="o">-&gt;</span>SetConductivityModifier<span class="p">(</span> <span class="o">&amp;</span>modifier <span class="p">);</span>
+</pre></div><p>
+Check that the conductivities have changed! We iterate over all elements owned by this process
+and check their conductivity.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>ElementIterator elt_iter<span class="o">=</span>mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">();</span>
+             elt_iter<span class="o">!=</span>mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>elt_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> index <span class="o">=</span> elt_iter<span class="o">-&gt;</span>GetIndex<span class="p">();</span>
+            <span class="k">if</span> <span class="p">(</span>index <span class="o">==</span> <span class="mi">0</span>u<span class="p">)</span>
+            <span class="p">{</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">3.14</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">3.14</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.707</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.707</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span>index<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.0</span><span class="o">*</span>index<span class="o">*</span>orig_intra_conductivity_0<span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span>index<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.5</span><span class="o">*</span>index<span class="o">*</span>orig_extra_conductivity_0<span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestBidomainWithConductivityModifierTutorial.hpp">File name <tt>TestBidomainWithConductivityModifierTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "DistributedTetrahedralMesh.hpp"
+#include "AbstractConductivityModifier.hpp"
+#include "ZeroStimulusCellFactory.hpp"
+</span>
+<span class="k">class</span> <span class="nc">SimpleConductivityModifier</span> <span class="o">:</span> <span class="k">public</span> AbstractConductivityModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+
+<span class="k">private</span><span class="o">:</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mTensor<span class="p">;</span>
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mSpecialMatrix<span class="p">;</span>
+
+<span class="k">public</span><span class="o">:</span>
+    SimpleConductivityModifier<span class="p">()</span>
+        <span class="o">:</span> AbstractConductivityModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(),</span>
+          mSpecialMatrix<span class="p">(</span> zero_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+          <span class="p">{</span>
+              mSpecialMatrix<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">3.14</span><span class="p">;</span>
+              mSpecialMatrix<span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.707</span><span class="p">;</span>
+          <span class="p">}</span>
+
+    c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCalculateModifiedConductivityTensor<span class="p">(</span><span class="kt">unsigned</span> elementIndex<span class="p">,</span> <span class="k">const</span> c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rOriginalConductivity<span class="p">,</span> <span class="kt">unsigned</span> domainIndex<span class="p">)</span>
+    <span class="p">{</span>
+
+        <span class="k">if</span> <span class="p">(</span> elementIndex <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c">// For element 0 let's return the "special matrix", regardless of intra/extra-cellular.
+</span>            <span class="k">return</span> mSpecialMatrix<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c">// Otherwise, we change the behaviour depending on the `domainIndex` (intra/extra-cellular).
+</span>        <span class="kt">double</span> domain_scaling<span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span> domainIndex <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span>
+        <span class="p">{</span>
+            domain_scaling <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span> <span class="c">// Intracellular, domainIndex==0
+</span>        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            domain_scaling <span class="o">=</span> <span class="mf">1.5</span><span class="p">;</span> <span class="c">// Extracellular, domainIndex==1
+</span>        <span class="p">}</span>
+
+        <span class="c">// Modify the current conductivity according to some expression by running along the diagonal,
+</span>        <span class="c">// save to the "working memory", and return.
+</span>        <span class="k">for</span> <span class="p">(</span> <span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span><span class="mi">2</span><span class="p">;</span> i<span class="o">++</span> <span class="p">)</span>
+        <span class="p">{</span>
+            mTensor<span class="p">(</span>i<span class="p">,</span>i<span class="p">)</span> <span class="o">=</span> domain_scaling<span class="o">*</span>elementIndex<span class="o">*</span>rOriginalConductivity<span class="p">(</span>i<span class="p">,</span>i<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">return</span> mTensor<span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">class</span> <span class="nc">TestBidomainWithConductivityModifierTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestConductivityModifier<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c">// Mesh has 4 elements
+</span>
+        ZeroStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">;</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+        bidomain_problem<span class="p">.</span>SetMesh<span class="p">(</span> <span class="o">&amp;</span>mesh <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        BidomainTissue<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bidomain_tissue <span class="o">=</span> bidomain_problem<span class="p">.</span>GetBidomainTissue<span class="p">();</span>
+
+        <span class="kt">double</span> orig_intra_conductivity_0 <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> orig_extra_conductivity_0 <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span>mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">()</span> <span class="o">!=</span> mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">())</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> first_element <span class="o">=</span> mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">()</span><span class="o">-&gt;</span>GetIndex<span class="p">();</span>
+            orig_intra_conductivity_0 <span class="o">=</span> p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span>first_element<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+            orig_extra_conductivity_0 <span class="o">=</span> p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span>first_element<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+
+            TS_ASSERT_DELTA<span class="p">(</span>orig_intra_conductivity_0<span class="p">,</span> <span class="mf">1.75</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span> <span class="c">// hard-coded using default
+</span>            TS_ASSERT_DELTA<span class="p">(</span>orig_extra_conductivity_0<span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span> <span class="c">// hard-coded using default
+</span>        <span class="p">}</span>
+
+        SimpleConductivityModifier modifier<span class="p">;</span>
+        p_bidomain_tissue<span class="o">-&gt;</span>SetConductivityModifier<span class="p">(</span> <span class="o">&amp;</span>modifier <span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>ElementIterator elt_iter<span class="o">=</span>mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">();</span>
+             elt_iter<span class="o">!=</span>mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>elt_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> index <span class="o">=</span> elt_iter<span class="o">-&gt;</span>GetIndex<span class="p">();</span>
+            <span class="k">if</span> <span class="p">(</span>index <span class="o">==</span> <span class="mi">0</span>u<span class="p">)</span>
+            <span class="p">{</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">3.14</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">3.14</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.707</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span><span class="mi">0</span><span class="p">)(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.707</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetIntracellularConductivityTensor<span class="p">(</span>index<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.0</span><span class="o">*</span>index<span class="o">*</span>orig_intra_conductivity_0<span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+                TS_ASSERT_DELTA<span class="p">(</span>p_bidomain_tissue<span class="o">-&gt;</span>rGetExtracellularConductivityTensor<span class="p">(</span>index<span class="p">)(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.5</span><span class="o">*</span>index<span class="o">*</span>orig_extra_conductivity_0<span class="p">,</span> <span class="mf">1e-9</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

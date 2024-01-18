@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/MatlabUbuntu - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="HowtoinstallChasteonUbuntuinpreparationforusingtheMATLABinterfacetocell-basedChaste">How to install Chaste on Ubuntu in preparation for using the MATLAB interface to cell-based Chaste</h1>
+<p>
+<em>This guide is only for set up. The files for operating the MATLAB interface for cell-based Chaste have not yet been released.</em>
+</p>
+<p>
+This guide is the result of the project undertaken by Tom Dunton at the MathWorks. It is known to work with Chaste (revision 15715) and MATLAB R2012a - stray from these versions at your own risk. These instructions have been followed successfully on 64bit versions of Ubuntu 11.10 and 12.04. To avoid conflicting with any existing versions of Chaste, it is advisable to install Ubuntu as a virtual machine on your current system - at least that is what I did while working on the Windows computers at the MathWorks.
+</p>
+<p>
+MATLAB is distributed with its own versions of BLAS, LAPACK, Boost, CVODE, HDF5, Xerces (almost all of the libraries that Chaste uses!). To circumvent the issues this raises, we have to rebuild some of Chaste's dependencies, so that they use MATLAB's versions of some libraries.
+</p>
+<p>
+Throughout this guide, you should be able to copy the entire text within each command box and past it into a terminal window to complete the installation.
+</p>
+<h2 id="Prerequisites">Prerequisites</h2>
+<h3 id="Chaste">Chaste</h3>
+<p>
+Install the Chaste dependencies with the following commands. These are taken from the installation instructions for the <a class="wiki" href="/chaste/tutorials/release_2017.1/InstallGuides/UbuntuPackage.html#ForDEVELOPERSratherthanusers-InstallingChastedependenciesandworkingwiththelatesttrunkcode">chaste-dependencies.deb</a> package.
+</p>
+<pre class="wiki">sudo bash -c 'echo "deb http://www.cs.ox.ac.uk/chaste/ubuntu /" &gt;&gt; /etc/apt/sources.list.d/chaste.list'
+</pre><pre class="wiki">sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 422C4D99
+</pre><pre class="wiki">sudo apt-get update
+</pre><pre class="wiki">sudo apt-get install --install-recommends chaste-dependencies
+</pre><pre class="wiki">sudo apt-get install `dpkg -s chaste-dependencies | egrep "^Suggests" | \
+cut -d "," -f 1-111 --output-delimiter " " | cut -d ":" -f 2`
+</pre><h3 id="Matlab">Matlab</h3>
+<p>
+<strong>You must then install MATLAB (version R2012a) before proceeding.</strong>
+</p>
+<h2 id="Environmentalvariables">Environmental variables</h2>
+<p>
+In order for Chaste's hostconfig system to work successfully, the following environmental variables need to be set in your <tt>$HOME/.profile</tt> file. These environment variables are read by the Chaste host configuration script attached to this guide (<tt>local.py</tt>). The examples given below should be correct if you installed Chaste's dependencies using the instructions above and used the default installation options for MATLAB. If you used different options, you will need to change these locations to match your configuration, both in these instructions and within <tt>local.py</tt>.
+</p>
+<dl class="wiki"><dt><tt>CHASTE</tt></dt><dd>
+Directory where you will install Chaste and any re-compiled dependencies (default is <tt>$HOME/Chaste</tt>).
+</dd></dl>
+<dl class="wiki"><dt><tt>MATLABROOT</tt></dt><dd>
+Root directory of your MATLAB installation (default is <tt>/usr/local/MATLAB/R2012a</tt>).
+</dd></dl>
+<dl class="wiki"><dt><tt>DOWNLOAD_DIR</tt></dt><dd>
+Download location of the files attached to this guide (default is <tt>$HOME/Downloads</tt> ).
+</dd></dl>
+<div class="code"><pre><span class="nb">echo</span> <span class="s2">"export CHASTE=$HOME/Chaste"</span> &gt;&gt; <span class="nv">$HOME</span>/.profile
+<span class="nb">echo</span> <span class="s2">"export MATLABROOT=/usr/local/MATLAB/R2012a"</span> &gt;&gt; <span class="nv">$HOME</span>/.profile
+<span class="nb">echo</span> <span class="s2">"export DOWNLOAD_DIR=$HOME/Downloads"</span> &gt;&gt; <span class="nv">$HOME</span>/.profile
+ 
+</pre></div><p>
+<strong>Before performing the steps outlined below, you need to download all of the attached files to <tt>$DOWNLOAD_DIR</tt> - click on each attachment, then at the bottom of the page there is a link to download in original format. You will also need to log out and back in again, so that your modified <tt>.profile</tt> file is loaded.</strong>
+</p>
+<h2 id="PETSc">PETSc</h2>
+<p>
+The BLAS and LAPACK libraries used by MATLAB do not use <tt>int</tt>, but instead use <tt>ptrdiff_t</tt>, so we have to recompile PETSc after applying the attached <tt>petsc.patch</tt> file. We also have to stop PETSc from catching the signal SIGSEGV, since MATLAB uses this for internal communication. To compile PETSc with the necessary changes, execute these commands in a terminal window.
+</p>
+<div class="code"><pre>mkdir -p <span class="nv">$CHASTE</span>
+<span class="nb">cd</span> <span class="nv">$CHASTE</span>
+wget ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.1-p4.tar.gz
+tar xvzf petsc-3.1-p4.tar.gz
+rm -f petsc-3.1-p4.tar.gz
+mv petsc-3.1-p4 petsc
+<span class="nb">cd </span>petsc
+patch -p0 &lt;<span class="nv">$DOWNLOAD_DIR</span>/petsc.patch
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>openmpi-debug 
+./config/configure.py --LDFLAGS<span class="o">=</span><span class="s2">"-Wl,-rpath,$MATLABROOT/bin/glnxa64,-rpath,$MATLABROOT/sys/os/glnxa64"</span> <span class="se">\
+</span>--with-blas-lib<span class="o">=</span><span class="nv">$MATLABROOT</span>/bin/glnxa64/libmwblas.so --with-lapack-lib<span class="o">=</span><span class="nv">$MATLABROOT</span>/bin/glnxa64/libmwlapack.so <span class="se">\
+</span>--download-openmpi<span class="o">=</span>1 --download-hypre<span class="o">=</span>1 --with-x<span class="o">=</span>0 --with-clanguage<span class="o">=</span>cxx --with-shared<span class="o">=</span>1 --CXXFLAGS<span class="o">=</span><span class="s2">"-DPETSC_MISSING_SIGSEGV"</span>
+make all
+ 
+</pre></div><p>
+For any  PETSc test to pass, you will need to force it to load the newer versions of the <tt>gfortran</tt> and <tt>stdc++</tt> libraries, which are shipped with Ubuntu, eg. for running the post-install tests of PETSc, you would issue the following command instead of that issued by the builder.
+</p>
+<div class="code"><pre><span class="nv">LD_PRELOAD</span><span class="o">=</span>/usr/lib/x86_64-linux-gnu/libgfortran.so.3:/usr/lib/x86_64-linux-gnu/libstdc++.so.6 make <span class="nb">test</span>
+ 
+</pre></div><h2 id="Boost">Boost</h2>
+<p>
+MATLAB ships with Boost 1.44, but this version is known to have some bugs with the serialization (see <a class="ext-link" href="https://svn.boost.org/trac/boost/ticket/4842 here"><span class="icon">​</span>https://svn.boost.org/trac/boost/ticket/4842 here</a> for details). We will therefore need to install a patched Boost, keeping to the same version as that used by MATLAB to avoid conflicts.
+</p>
+<div class="code"><pre>mkdir -p <span class="nv">$CHASTE</span>
+<span class="nb">cd</span> <span class="nv">$CHASTE</span>
+wget http://downloads.sourceforge.net/project/boost/boost/1.44.0/boost_1_44_0.tar.gz
+tar xvzf boost_1_44_0.tar.gz
+rm -f boost_1_44_0.tar.gz
+mv boost_1_44_0 boost
+<span class="nb">cd </span>boost
+patch -p0 &lt;<span class="nv">$DOWNLOAD_DIR</span>/boost.patch
+./bootstrap.sh --prefix<span class="o">=</span>. --with-libraries<span class="o">=</span>serialization,system,filesystem
+./bjam install
+ 
+</pre></div><h2 id="HDF5">HDF5</h2>
+<p>
+We also need to install the correct version of HDF5 for MATLAB (v1.8.6).
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE</span>
+wget http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.6/src/hdf5-1.8.6.tar.gz
+tar xvzf hdf5-1.8.6.tar.gz
+rm -f hdf5-1.8.6.tar.gz
+<span class="nb">cd </span>hdf5-1.8.6
+<span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$CHASTE</span>/petsc/openmpi-debug/bin/mpicc
+<span class="nv">CFLAGS</span><span class="o">=</span>-O1 ./configure --enable-parallel --prefix<span class="o">=</span><span class="nv">$CHASTE</span>/hdf5 --enable-shared
+make
+<span class="nb">cd test
+</span>make check
+<span class="nb">cd</span> ../testpar
+make check
+<span class="nb">cd</span> ..
+make install
+<span class="nb">cd</span> ..
+rm -rf hdf5-1.8.6
+<span class="nb">unset </span>CC
+ 
+</pre></div><h2 id="Chaste1">Chaste</h2>
+<p>
+Firstly we need to get the Chaste source from the SVN repository.
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE</span>
+svn --username anonymous --revision 15715 checkout https://chaste.cs.ox.ac.uk/svn/chaste/trunk/ src
+</pre></div><p>
+When prompted for your password enter your email address.
+</p>
+<div class="code"><pre>
+<span class="nb">cd</span> <span class="nv">$CHASTE</span>/src
+cp <span class="nv">$DOWNLOAD_DIR</span>/local.py python/hostconfig/
+ 
+</pre></div><p>
+We should now be able to build Chaste. We must, however, ensure that we preload the gfrotran and stdc++ libraries as described above, otherwise the incorrect versions included in the MATLAB directory will be used. We also need to preload the HDF5 library, to avoid using the version distributed with MATLAB.
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE</span>/src
+<span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$CHASTE</span>/hdf5/lib/libhdf5.so:/usr/lib/x86_64-linux-gnu/libgfortran.so.3:/usr/lib/x86_64-linux-gnu/libstdc++.so.6 <span class="se">\
+</span>scons <span class="nv">cl</span><span class="o">=</span>1 <span class="nv">build</span><span class="o">=</span>GccOpt
+ 
+</pre></div><p>
+When you have confirmed that all the tests have passed, you must then install the Chaste libraries and headers to a single location.
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE</span>/src
+<span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$CHASTE</span>/hdf5/lib/libhdf5.so:/usr/lib/x86_64-linux-gnu/libgfortran.so.3:/usr/lib/x86_64-linux-gnu/libstdc++.so.6 <span class="se">\
+</span>scons <span class="nv">co</span><span class="o">=</span>1 <span class="nv">cl</span><span class="o">=</span>1 <span class="nv">build</span><span class="o">=</span>GccOpt <span class="nv">install_prefix</span><span class="o">=</span><span class="nv">$CHASTE</span> install
+ 
+</pre></div><h2 id="Finished">Finished</h2>
+<p>
+Your system is now ready to run the MATLAB interface for cell-based Chaste.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/ModernCpp - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#ModernC">Modern C++</a>
+  </li>
+  <li>
+    <a href="#Compilersupport">Compiler support</a>
+  </li>
+  <li>
+    <a href="#ChangesnecessaryinordertoadoptC11">Changes necessary in order to adopt C++11</a>
+    <ol>
+      <li>
+        <a href="#Buildsystemchanges">Build system changes</a>
+        <ol>
+          <li>
+            <a href="#Add-stdc11flag">Add <tt>-std=c++11</tt> flag</a>
+          </li>
+          <li>
+            <a href="#Remove-stdgnu98flag">Remove <tt>-std=gnu++98</tt> flag</a>
+          </li>
+          <li>
+            <a href="#XSDgeneratedcode">XSD generated code</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Codebasechanges">Codebase changes</a>
+        <ol>
+          <li>
+            <a href="#Removestd::auto_ptr">Remove <tt>std::auto_ptr</tt></a>
+          </li>
+          <li>
+            <a href="#FunctionsreturningsmartpointersasBooleans">Functions returning smart pointers as Booleans</a>
+          </li>
+          <li>
+            <a href="#Boostscopedenumsforboost1.56">Boost scoped enums for boost &lt;= 1.56</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#OtherChangesforC11">Other Changes for C++11</a>
+    <ol>
+      <li>
+        <ol>
+          <li>
+            <a href="#nullptr">nullptr</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#PossibleCompilerErrors">Possible Compiler Errors</a>
+    <ol>
+      <li>
+        <ol>
+          <li>
+            <a href="#Attemptingtousenewfeatures">Attempting to use new features</a>
+          </li>
+          <li>
+            <a href="#auto_ptrisdeprecated">auto_ptr is deprecated</a>
+          </li>
+          <li>
+            <a href="#Undefinedreferencetoboost::filesystem">Undefined reference to <tt>boost::filesystem</tt></a>
+          </li>
+          <li>
+            <a href="#ReturningsmartpointersasBooleans">Returning smart pointers as Booleans</a>
+          </li>
+          <li>
+            <a href="#Initalisingstaticconstvariables">Initalising static const variables</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h1 id="ModernC">Modern C++</h1>
+<p>
+This page outlines the changes necessary within the codebase to adopt modern C++.
+</p>
+<p>
+By 'Modern C++' we mean the <a class="ext-link" href="https://isocpp.org/std/the-standard"><span class="icon">​</span>ISO C++ Standards</a> published in (and since) 2011.
+These will be referred to as C++11, C++14, C++17, etc.
+Older versions of the standard were published in 1998 and updated in 2003, which will be referred to as C++98.
+</p>
+<p>
+New C++ standards do not break backward compatibility, except in a few well-documented and very limited senses, and it is, therefore, not necessary in general to change source code.
+</p>
+<p>
+However, certain features may become deprecated in favour of new ones that completely supersede them, and compilers area likely to emit new warnings in certain places.
+In both cases, Chaste will treat these as errors due to the <tt>Werror</tt> flag, and some changes are required.
+</p>
+<h1 id="Compilersupport">Compiler support</h1>
+<p>
+This <a class="ext-link" href="http://en.cppreference.com/w/cpp/compiler_support"><span class="icon">​</span>reference page</a> is a useful guide to which compiler versions support features from modern C++ standards.
+A brief summary is:
+</p>
+<p>
+C++11:
+</p>
+<ul><li>GCC 4.8
+</li><li>Clang 3.3
+</li><li>Intel 15
+</li><li>MSVC 19 (VS 2015)
+</li></ul><p>
+C++14:
+</p>
+<ul><li>GCC 5.0
+</li><li>Clang 3.8
+</li><li>Intel 17
+</li><li>MSVC 19.1 (VS 2017)
+</li></ul><p>
+Ubuntu has out-of-the-box compiler support for C++11 as of Ubuntu 14.04, and for C++14 as of Ubuntu 16.04.
+Additionally, the <a class="ext-link" href="https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test"><span class="icon">​</span>Toolchain test builds</a> PPA provides the latest GCC versions.
+</p>
+<h1 id="ChangesnecessaryinordertoadoptC11">Changes necessary in order to adopt C++11</h1>
+<p>
+The following is the minimal set of changes required in order to compile a C++98 version of Chaste with C++11 support.
+</p>
+<h2 id="Buildsystemchanges">Build system changes</h2>
+<h3 id="Add-stdc11flag">Add <tt>-std=c++11</tt> flag</h3>
+<ul><li>CMake
+<ul><li>If CMake version &lt; 3.1.3, add the flag globally with, for instance, <tt>add_compile_options(-std=c++11)</tt>
+</li><li>Else, use the <tt>CXX_STANDARD</tt> property to <tt>11</tt> and the <tt>CXX_STANDARD_REQUIRED</tt> to <tt>ON</tt> for each call to <tt>add_executable</tt> and <tt>add_library</tt>.
+</li></ul></li></ul><ul><li>Scons
+<ul><li>Add the flag globally, for instance with <tt>extra_flags = extra_flags + ' -std=c++11'</tt>
+</li></ul></li></ul><p>
+Note that this flag additionally needs to be set in <tt>CellMLToSharedLibraryConverter.cpp</tt> which explicitly writes out a <tt>CMakeLists.txt</tt>.
+</p>
+<h3 id="Remove-stdgnu98flag">Remove <tt>-std=gnu++98</tt> flag</h3>
+<p>
+This was added to <tt>ChasteCompilerFlags.cmake</tt> because, from GCC 6.0, C++14 was enabled by default.
+</p>
+<h3 id="XSDgeneratedcode">XSD generated code</h3>
+<p>
+XSD 3.3 (default package on Ubuntu 14.04) generates code containing <tt>std::auto_ptr</tt> in <tt>ChasteParameters_&lt;version&gt;.hpp</tt>.
+This is deprecated and the compiler emits warnings, which Chaste treats as errors.
+</p>
+<p>
+The file <tt>HeartConfig.hpp</tt> has <tt>#include "ChasteParameters_3_4.hpp"</tt>, and <tt>HeartConfig.hpp</tt> is included in a large proportion of the heart translation units.
+As this is a known issue, the chosen fix is to turn off deprecated declaration warnings in the entire heart component by adding the following line to <tt>heart/CMakeLists.txt</tt>:
+</p>
+<pre class="wiki">set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+</pre><p>
+From XSD 4.0 (default package on Ubuntu 16.04), it is possible to generate code without <tt>std::auto_ptr</tt>, and when Ubuntu 14.04 is removed, this should be addressed.
+</p>
+<h2 id="Codebasechanges">Codebase changes</h2>
+<h3 id="Removestd::auto_ptr">Remove <tt>std::auto_ptr</tt></h3>
+<p>
+<tt>std::auto_ptr</tt> was deprecated and replaced by <tt>std::unique_ptr</tt> in C++11.
+</p>
+<p>
+Unfortunately, due to comparisons being made between <tt>std::auto_ptr</tt> and <tt>boost::shared_ptr</tt> within Chaste, it is not possible to simply find-and-replace <tt>auto_ptr</tt> with <tt>unique_ptr</tt>.
+</p>
+<p>
+The easiest change is to replace each instance with <tt>boost::shared_ptr</tt>.
+</p>
+<p>
+There is a (slight) overhead to using a shared pointer instead of a unique pointer, but since no instances of <tt>auto_ptr</tt> were in performance-critical code, there is no problem using <tt>boost::shared_ptr</tt>.
+</p>
+<p>
+In the future, all instances of <tt>boost::shared_ptr</tt> should be replaced with either <tt>std::shared_ptr</tt> or <tt>std::unique_ptr</tt>.
+</p>
+<h3 id="FunctionsreturningsmartpointersasBooleans">Functions returning smart pointers as Booleans</h3>
+<p>
+See, for instance, <tt>CellCycleModelOdeSolver.hpp</tt>:
+</p>
+<pre class="wiki">template&lt;class CELL_CYCLE_MODEL, class ODE_SOLVER&gt;
+bool CellCycleModelOdeSolver&lt;CELL_CYCLE_MODEL, ODE_SOLVER&gt;::IsSetUp()
+{
+    return mpOdeSolver;
+}
+</pre><p>
+This explicit conversion from <tt>boost::shared_ptr&lt;AbstractIvpOdeSolver&gt;</tt> to <tt>bool</tt> seemed fine in C++98, but the C++11 compilers don't like it.
+Instead, something like:
+</p>
+<pre class="wiki">template&lt;class CELL_CYCLE_MODEL, class ODE_SOLVER&gt;
+bool CellCycleModelOdeSolver&lt;CELL_CYCLE_MODEL, ODE_SOLVER&gt;::IsSetUp()
+{
+    return static_cast&lt;bool&gt;(mpOdeSolver.get());
+}
+</pre><p>
+works well, where <tt>.get()</tt> accesses the raw pointer.
+</p>
+<h3 id="Boostscopedenumsforboost1.56">Boost scoped enums for boost &lt;= 1.56</h3>
+<p>
+See <a href="https://chaste.cs.ox.ac.uk/trac/ticket/2811#comment:35">this ticket comment</a> for details.
+In summary, if the boost version being used is &lt;= 1.56, the flag <tt>BOOST_NO_CXX11_SCOPED_ENUMS</tt> must be set in order to ensure binary compatibility with the boost filesystem library.
+</p>
+<p>
+There is only one <tt>#include &lt;boost/filesystem.hpp&gt;</tt> in Chaste: in <tt>BoostFilesystem.hpp</tt>, and it should be replaced with:
+</p>
+<pre class="wiki">#if BOOST_VERSION &lt;= 105600
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include &lt;boost/filesystem.hpp&gt;
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+#else
+#include &lt;boost/filesystem.hpp&gt;
+#endif
+</pre><h1 id="OtherChangesforC11">Other Changes for C++11</h1>
+<p>
+C++11 introduces a large number of new features, many of which make the language safer, easier to read, or easier to write.
+</p>
+<h3 id="nullptr">nullptr</h3>
+<p>
+In C/C++, <tt>NULL</tt> is just a macro that gets expanded to <tt>0</tt>.
+This can be bad: take, for instance, two functions with the following overloaded signatures:
+</p>
+<pre class="wiki">f(int);
+f(foo*);
+</pre><p>
+If you have a variable of type <tt>foo*</tt>, but whose value is actually <tt>NULL</tt>, and you pass it to <tt>f</tt>, the 'wrong' function may be executed.
+</p>
+<p>
+To avoid this ambiguity, and to remove an unhelpful macro, C++11 introduced the new keyword <tt>nullptr</tt>.
+This should always be used instead of <tt>NULL</tt> or <tt>0</tt> when checking equality of pointers, or setting a default value.
+</p>
+<h1 id="PossibleCompilerErrors">Possible Compiler Errors</h1>
+<h3 id="Attemptingtousenewfeatures">Attempting to use new features</h3>
+<pre class="wiki">error: ‘auto’ changes meaning in C++11; please remove it [-Werror=c++0x-compat]
+</pre><p>
+or
+</p>
+<pre class="wiki">error: This file requires compiler and library support for the ISO C++ 2011 standard.
+</pre><p>
+etc.
+</p>
+<p>
+Ensure the C++11 compile flag has been successfully added, and that your compiler is new enough to compile C++11 code.
+</p>
+<h3 id="auto_ptrisdeprecated">auto_ptr is deprecated</h3>
+<pre class="wiki">'auto_ptr&lt;chaste::parameters::v2_2::box_type&gt;' is deprecated [-Werror,-Wdeprecated-declarations]
+</pre><p>
+You shouldn't use <tt>std::auto_ptr</tt> since C++11.
+Instead, use <tt>std::unique_ptr</tt>.
+</p>
+<h3 id="Undefinedreferencetoboost::filesystem">Undefined reference to <tt>boost::filesystem</tt></h3>
+<pre class="wiki">undefined reference to `boost::filesystem::detail::copy_file(boost::filesystem::path const&amp;, boost::filesystem::path const&amp;, boost::filesystem::copy_option, boost::system::error_code*)'
+</pre><p>
+This is the binary incompatibility error with boost filesystem &lt;= 1.56.
+See <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/ModernCpp.html#Boostscopedenumsforboost1.56">Boostscopedenumsforboost1.56</a>.
+</p>
+<h3 id="ReturningsmartpointersasBooleans">Returning smart pointers as Booleans</h3>
+<pre class="wiki">error: cannot convert ‘boost::shared_ptr&lt;AbstractIvpOdeSolver&gt;’ to ‘bool’ in return
+</pre><p>
+This is the attempted implicit conversion between smart pointer and bool: see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/ModernCpp.html#FunctionsreturningsmartpointersasBooleans">FunctionsreturningsmartpointersasBooleans</a>
+</p>
+<h3 id="Initalisingstaticconstvariables">Initalising static const variables</h3>
+<pre class="wiki">error: 'constexpr' needed for in-class initialization of static data member 'const double TestCryptsAndVillusLiteratePaper::mCryptLength' of non-integral type [-fpermissive]
+</pre><p>
+You just need to replace <tt>const</tt> with the new keyword <tt>constexpr</tt> <a class="ext-link" href="http://en.cppreference.com/w/cpp/language/constexpr"><span class="icon">​</span>more info on constexpr</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

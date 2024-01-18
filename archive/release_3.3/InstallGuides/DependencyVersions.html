@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/DependencyVersions - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Supportedversionsofourdependencies">Supported versions of our dependencies</h1>
+<p>
+Chaste has a number of dependencies. If you are using the <a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/UbuntuPackage.html">Ubuntu package</a> then the best versions are selected and installed automatically for you.
+</p>
+<p>
+If you are doing a manual linux installation, then this page shows you the supported and preferred versions of each dependency.
+Note that it reflects the status of the current trunk code, rather than previous releases of Chaste; see instead the copy of this page associated with a release for that information.
+</p>
+<p>
+<a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/InstallGuide.html">The main install guide</a> should generally be updated to reflect installation instructions for one of the preferred versions.
+</p>
+<p>
+Key to table:
+</p>
+<ul><li><span style="background: red">Red</span> -- <strong>Not compatible/supported</strong>. Either because these versions have bugs, or are deprecated because they don't do everything we need now, or are too old to continue tested support for.
+</li><li><span style="background: purple">Purple</span> -- <strong>To be dropped</strong>. This version will work with the current release, and perhaps/probably/parts-of the development version, but will not be supported in future releases.
+</li><li><span style="background: lightblue">Blue</span> -- <strong>Not yet supported</strong>. We plan to support these, this may just mean we have not yet had the chance to test them for compatibility and adapt the code for them if needed.
+</li><li><span style="background: orange">Orange</span> -- <strong>Should work</strong>. These are expected to work, but either haven't been tested or are not regularly tested.
+</li><li><span style="background: yellowgreen">Light green</span> -- <strong>Supported</strong>. These are versions that we test against regularly and so should pass all standard tests, but are not our recommended versions. They might have small bugs or not have as many features, or won't be supported for as long (e.g. not the default in an Ubuntu LTS).
+</li><li><span style="background: green">Green</span> -- <strong>Preferred versions</strong>. No known problems, we regularly test these and intend to maintain Chaste compatibility for as long as practical (usually longer than the package developers).
+</li></ul><p>
+In some instances the version number is a link to the ticket in which support was/is being introduced.
+The strikethrough formatting means the ticket has been closed, usually successfully!
+</p>
+<table border="1">
+<tr><th colspan="1" style="background-color:white;">Library</th><th colspan="25" style="background-color:white;">Versions</th></tr>
+<tr><td colspan="1" style="background-color:white;">PETSc</td><td colspan="1" style="background-color:red;">2.2</td><td colspan="1" style="background-color:red;">2.3.1</td><td colspan="1" style="background-color:purple;">2.3.2</td><td colspan="1" style="background-color:purple;">2.3.3</td><td colspan="1" style="background-color:green;"><a class="missing ticket">3.0</a></td><td colspan="1" style="background-color:green;"><a class="missing ticket">3.1</a></td><td colspan="1" style="background-color:yellowgreen;"><a class="missing ticket">3.2</a></td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2130" title="user story: Add support for PETSc 3.3 (closed: fixed)">3.3</a></td><td colspan="1" style="background-color:green;"><a class="closed ticket" href="/trac/ticket/2385" title="user story: PETSc 3.4 Support (closed: fixed)">3.4</a></td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2565" title="user story: Support PETSc 3.5, and add citation reporting (closed: fixed)">3.5</a></td></tr>
+<tr><td colspan="1" style="background-color:white;">Boost</td><td colspan="1" style="background-color:red;">1.33</td><td colspan="1" style="background-color:red;">1.34</td><td colspan="1" style="background-color:red;">1.35</td><td colspan="1" style="background-color:red;">1.36</td><td colspan="1" style="background-color:red;"><a class="missing ticket">1.37</a></td><td colspan="1" style="background-color:red;">1.38</td><td colspan="1" style="background-color:red;">1.39</td><td colspan="1" style="background-color:yellowgreen;">1.40</td><td colspan="1" style="background-color:red;">1.41</td><td colspan="1" style="background-color:orange;">1.42</td><td colspan="1" style="background-color:red;">1.43</td><td colspan="1" style="background-color:orange;"><a class="missing ticket">1.44</a></td><td colspan="1" style="background-color:orange;">1.45</td><td colspan="1" style="background-color:yellowgreen;">1.46</td><td colspan="1" style="background-color:orange;">1.47</td><td colspan="1" style="background-color:green;">1.48</td><td colspan="1" style="background-color:yellowgreen;">1.49</td><td colspan="1" style="background-color:orange;">1.50</td><td colspan="1" style="background-color:yellowgreen;">1.51</td><td colspan="1" style="background-color:orange;">1.52</td><td colspan="1" style="background-color:orange;"><a class="closed ticket" href="/trac/ticket/2345" title="user story: New dependency version: boost 1.53.0 (closed: fixed)">1.53</a></td><td colspan="1" style="background-color:green;"><a class="closed ticket" href="/trac/ticket/2406" title="user story: Add support for Boost 1.54 (closed: fixed)">1.54</a></td><td colspan="1" style="background-color:yellowgreen;">1.55</td><td colspan="1" style="background-color:orange;"><a class="closed ticket" href="/trac/ticket/2585" title="user story: Boost 1.56 support (closed: fixed)">1.56</a> $</td><td colspan="1" style="background-color:orange;"><a class="closed ticket" href="/trac/ticket/2626" title="user story: Boost 1.57 support (closed: wontfix)">1.57</a> $</td></tr>
+<tr><td colspan="1" style="background-color:white;">scons</td><td colspan="1" style="background-color:red;">0.97</td><td colspan="1" style="background-color:yellowgreen;">1.2.0</td><td colspan="1" style="background-color:yellowgreen;">2.0.1</td><td colspan="1" style="background-color:green;">2.1.0</td><td colspan="1" style="background-color:orange;">2.2.0</td><td colspan="1" style="background-color:green;">2.3.0</td><td colspan="1" style="background-color:orange;">2.3.1</td></tr>
+<tr><td colspan="1" style="background-color:white;">parMETIS</td><td colspan="1" style="background-color:green;">3.1</td><td colspan="1" style="background-color:green;"><a class="reopened ticket" href="/trac/ticket/2250" title="defect: Issue with parMETIS 4.0.2 (reopened)">4.*</a></td></tr>
+<tr><td colspan="1" style="background-color:white;">HDF5</td><td colspan="1" style="background-color:orange;">1.6.*</td><td colspan="1" style="background-color:yellowgreen;">1.6.10</td><td colspan="1" style="background-color:yellowgreen;"><a class="missing ticket">1.8.4</a></td><td colspan="1" style="background-color:yellowgreen;">1.8.6</td><td colspan="1" style="background-color:yellowgreen;">1.8.8</td><td colspan="1" style="background-color:green;">1.8.9</td><td colspan="1" style="background-color:yellowgreen;">1.8.10</td><td colspan="1" style="background-color:orange;">1.8.11</td><td colspan="1" style="background-color:orange;">1.8.12</td><td colspan="1" style="background-color:orange;"><a class="new ticket" href="/trac/ticket/2599" title="defect: Support HDF5 1.8.13 (new)">1.8.13</a> <a class="new ticket" href="/trac/ticket/2599" title="defect: Support HDF5 1.8.13 (new)">#2599</a></td></tr>
+<tr><td colspan="1" style="background-color:white;">XSD</td><td colspan="1" style="background-color:yellowgreen;">2.3</td><td colspan="1" style="background-color:yellowgreen;">3.1</td><td colspan="1" style="background-color:yellowgreen;">3.2</td><td colspan="1" style="background-color:green;">3.3</td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2628" title="user story: Ubuntu 14.10 Support (closed: fixed)">4.0.0</a></td></tr>
+<tr><td colspan="1" style="background-color:white;">Xerces</td><td colspan="1" style="background-color:orange;">2.7.0</td><td colspan="1" style="background-color:yellowgreen;">2.8.0</td><td colspan="1" style="background-color:green;">3.1.0</td><td colspan="1" style="background-color:green;">3.1.1</td></tr>
+<tr><td colspan="1" style="background-color:white;">Amara</td><td colspan="1" style="background-color:green;">1.2.0.2</td><td colspan="1" style="background-color:red;">2.*</td></tr>
+<tr><td colspan="1" style="background-color:white;">SUNDIALS*</td><td colspan="1" style="background-color:red;">2.2.0</td><td colspan="1" style="background-color:yellowgreen;">2.3.0</td><td colspan="1" style="background-color:yellowgreen;">2.4.0</td><td colspan="1" style="background-color:green;">2.5.0</td></tr>
+<tr><td colspan="1" style="background-color:white;">VTK</td><td colspan="1" style="background-color:red;">5.04</td><td colspan="1" style="background-color:yellowgreen;">5.2</td><td colspan="1" style="background-color:orange;">5.4</td><td colspan="1" style="background-color:orange;">5.6</td><td colspan="1" style="background-color:green;">5.8</td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2469" title="user story: Support VTK 6.x (closed: fixed)">5.10</a></td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2469" title="user story: Support VTK 6.x (closed: fixed)">6.0</a></td><td colspan="1" style="background-color:yellowgreen;"><a class="closed ticket" href="/trac/ticket/2469" title="user story: Support VTK 6.x (closed: fixed)">6.1</a></td></tr>
+<tr></tr>
+</table><p>
+<strong>Footnotes:</strong>
+</p>
+<p>
+<tt>*</tt> SUNDIALS includes CVODE with a different version number!
+</p>
+<p>
+<tt>$</tt> Boost 1.56 and 1.57 contain small bugs in serialization that we have tried to work around, but it is possible you could call <tt>#includes</tt> in such a way as to break it if you are doing a lot of your own serialization.
+</p>
+<p>
+Note: some versions of dependencies have quirks that may not be documented on this wiki, but you may find hints on the <a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/TestingMultipleVersions.html">testing multiple versions</a> page. For example, building with VTK 5.10 requires changes to your hostconfig since it names its libraries differently to the other 5.x versions.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

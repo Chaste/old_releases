@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ReleaseNotes - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <ol>
+      <li>
+        <a href="#ChangessinceRelease2018.1">Changes since Release 2018.1</a>
+        <ol>
+          <li>
+            <a href="#Headlinefeatures">Headline features</a>
+          </li>
+          <li>
+            <a href="#Newdependencysupport">New dependency support</a>
+          </li>
+          <li>
+            <a href="#Core">Core</a>
+          </li>
+          <li>
+            <a href="#Heart">Heart</a>
+          </li>
+          <li>
+            <a href="#FuturePlans">Future Plans</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+Please mention any changes to the code which will break users' code here - to be put in the release notes for the next release.  Also mention any significant improvements or new features.
+</p>
+<p>
+The real definitive release notes will be written in <a class="source" href="/trac/browser/trunk/docs/ReleaseNotes.html">source:trunk/docs/ReleaseNotes.html</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/docs/ReleaseNotes.html" title="Download">​</a> at the time of release.  To make that process easier, please structure this page in the same manner, rather than simply copying from <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a>.
+</p>
+<p>
+<a class="wiki" href="/trac/wiki/OlderReleaseNotes">OlderReleaseNotes</a> -- release notes for previous releases.
+</p>
+<hr />
+<h2 id="ChangessinceRelease2018.1">Changes since Release 2018.1</h2>
+<h3 id="Headlinefeatures">Headline features</h3>
+<ul><li>Chaste is now compiled with <a class="ext-link" href="https://en.wikipedia.org/wiki/C%2B%2B14"><span class="icon">​</span>C++14</a>.
+</li><li>Chaste now supports up to and including Ubuntu 19.04 (Disco).
+</li><li>The minimum required CMake version for building Chaste is now 3.5.1.
+</li><li>Installing Chaste is now even easier using the new <a class="ext-link" href="https://github.com/Chaste/chaste-docker"><span class="icon">​</span>docker image for Chaste</a>.
+</li></ul><h3 id="Newdependencysupport">New dependency support</h3>
+<ul><li>Chaste now supports PETSc up to 3.11, Boost up to 1.70, HDF5 up to 1.10.5, Xerces up to 3.2.2, SUNDIALS up to 3.1.0 and VTK up to 8.1.
+</li><li>Chaste no longer supports PETSc &lt; 3.6, Boost &lt; 1.58, HDF5 &lt; 1.8.16, XSD &lt; 4.0.0, Xerces &lt; 3.1.3, SUNDIALS &lt; 2.5.0 and VTK &lt; 6.2.
+</li></ul><h3 id="Core">Core</h3>
+<ul><li>Two new CMake build types have been added: <tt>AggressiveOpt</tt> which sets <tt>-Ofast -march=native -DNDEBUG</tt> and is good for release builds with more aggressive optimisation, and <tt>DebugOpt</tt> which sets <tt>-Og -g</tt> and is a good default for an edit-compile-debug workflow.
+<ul><li><tt>TestChasteBuildInfo.hpp</tt> is now displaying correct information for C++ compiler flags for both cmake and the old scons build system.
+</li></ul></li><li>Dropping support for XSD 3.x should prevent Chaste builds from emitting warnings about deprecated <tt>std::auto_ptr</tt>.
+</li><li>The <tt>docs</tt> directory has been refactored to contain more relevant information, and now includes a <a class="ext-link" href="https://joss.theoj.org/"><span class="icon">​</span>JOSS</a> paper about Chaste and recent publications it has enabled.
+</li><li>The unused interface <tt> Hdf5DataWriter::DefineFixedDimensionUsingMatrix()</tt> was <strong>deleted</strong>.
+</li></ul><h3 id="Heart">Heart</h3>
+<ul><li>Intracellular calcium is now converted consistently into milliMolar within the action potential models and so the method <tt>AbstractCardiacCellInterface::GetIntracellularCalciumConcentration()</tt> (used by mechanics models) always returns calcium in milliMolar. Note that this has changed the state variable ordering in the PyCML-generated C++ models, so any archives of these variables will need to be updated.
+</li><li>Tweaks to <tt>SteadyStateRunner</tt> class which might provide a speed-up for getting certain action potential models to steady state, by removing maximum time step from CVODE and solving separately during stimulus and non-stimulus regions.
+</li><li>The behaviour of <tt>AbstractCardiacProblem&lt;&gt;::SetOutputNodes()</tt> and <tt>SingleTraceOutputModifier</tt> has been altered. When running in parallel node indices into the original mesh are now automatically converted to indices into then permuted runtime mesh.  
+</li></ul><h3 id="FuturePlans">Future Plans</h3>
+<ul><li>This is the last release of Chaste to support Xerces &lt; 3.1.2.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/CmakeBuildGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="CmakeBuildGuide">Cmake Build Guide</h1>
+<p>
+This wiki page details all the available options for cmake builds.
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#CmakeBuildGuide">Cmake Build Guide</a>
+    <ol>
+      <li>
+        <a href="#GeneralCMakeConcepts">General CMake Concepts</a>
+      </li>
+      <li>
+        <a href="#FileLayout">File Layout</a>
+      </li>
+      <li>
+        <a href="#Workflow">Workflow</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#ConfigureStep">Configure Step</a>
+    <ol>
+      <li>
+        <a href="#ChasteConfigurationOptions">Chaste Configuration Options</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#BuildStep">Build Step</a>
+    <ol>
+      <li>
+        <a href="#BuildingSpecificTargets">Building Specific Targets</a>
+        <ol>
+          <li>
+            <a href="#Components">Components</a>
+          </li>
+          <li>
+            <a href="#Testpacks">Test packs</a>
+          </li>
+          <li>
+            <a href="#Intersectingcomponentsandtestpacks">Intersecting components and test packs</a>
+          </li>
+          <li>
+            <a href="#Componentlibrarywithouttests">Component library without tests</a>
+          </li>
+          <li>
+            <a href="#Specifictests">Specific tests</a>
+          </li>
+          <li>
+            <a href="#OtherUsefulTargets">Other Useful Targets</a>
+            <ol>
+              <li>
+                <a href="#Doxygen">Doxygen</a>
+              </li>
+              <li>
+                <a href="#Coverage">Coverage</a>
+              </li>
+              <li>
+                <a href="#DoxygenCoverage">Doxygen Coverage</a>
+              </li>
+              <li>
+                <a href="#MemoryTesting">Memory Testing</a>
+              </li>
+              <li>
+                <a href="#Profiling">Profiling</a>
+              </li>
+              <li>
+                <a href="#Tutorials">Tutorials</a>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Windows">Windows</a>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <a href="#InstallStep">Install Step</a>
+  </li>
+  <li>
+    <a href="#PackagingyourbuildwithCPack">Packaging your build with CPack</a>
+  </li>
+  <li>
+    <a href="#TestingStep">Testing Step</a>
+  </li>
+  <li>
+    <a href="#BuildingProjects">Building Projects</a>
+    <ol>
+      <li>
+        <a href="#UsingChastelikeastandardlibrary">Using Chaste like a standard library</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<h2 id="GeneralCMakeConcepts">General CMake Concepts</h2>
+<h2 id="FileLayout">File Layout</h2>
+<p>
+The main CMake file is <tt>CMakeLists.txt</tt>. All the cmake macros and finder scripts (apart from those in the main CMake distribution) are in <tt>/cmake/</tt>. Most of these are kept in <tt>/cmake/Modules</tt>, and there is a base CMake Configure script for Chaste in <tt>/cmake/Config/</tt>. The remainder in <tt>/cmake/</tt> are left over from the old CMake setup for windows (some are still in use).
+</p>
+<h2 id="Workflow">Workflow</h2>
+<p>
+If you aren't familiar with this, perhaps start with <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>, and come back here for more detailed instructions...
+</p>
+<p>
+CMake is a build system generator, so splits up the compilation process into two steps:
+</p>
+<ol><li><a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">Configure</a>
+</li><li><a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#BuildStep">Build</a> (or 'make')
+</li></ol><p>
+In the first you call <tt>cmake</tt> to <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">configure</a> your project. During this step you can specify a Generator. By default this is a Makefile generator, so the configure step will output a bunch of Makefiles, with which you can build you project. Other Generators include one for Microsoft Visual C++, which outputs MSVC project files during the configure step. 
+</p>
+<p>
+It is standard for CMake to build your project in a separate (empty) directory to your source tree (usually this can still be in a subdirectory within the source tree, but the Chaste CMake system will prevent you from doing in-source builds to avoid making a mess of the git repository).
+</p>
+<p>
+The standard way (for Makefile generators) to compile the Chaste project using CMake is to make a build directory, call <tt>cmake</tt> on the root of the source tree and then use <tt>make</tt> to compile. For example,
+</p>
+<pre class="wiki">mkdir /path/to/build/dir
+cd /path/to/build/dir
+cmake /path/to/source/dir
+make
+</pre><p>
+This will compile the Chaste libraries and all the tests. To run the tests you can either call <tt>make</tt> on the <tt>test</tt> target
+</p>
+<pre class="wiki">make test
+</pre><p>
+Or use <tt>ctest</tt>, which is part of CMake
+</p>
+<pre class="wiki">ctest
+</pre><p>
+Look under the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#TestingStep">Testing Step</a> heading below for more information
+</p>
+<p>
+Note: CMake, <tt>cmake</tt>, <tt>ccmake</tt> and <tt>ctest</tt> are general build managers, that have many more options than we have detailed in this document. For much more detailed documentation on these tools, please consult the CMake documentation here: <a class="ext-link" href="https://cmake.org/documentation/"><span class="icon">​</span>https://cmake.org/documentation/</a>
+</p>
+<h1 id="ConfigureStep">Configure Step</h1>
+<p>
+Run the <a class="ext-link" href="https://cmake.org/runningcmake/"><span class="icon">​</span>CMake configuration step</a> using
+</p>
+<pre class="wiki">cmake /path/to/source
+</pre><p>
+This should work on (at least) Ubuntu with all required dependencies installed. Note that the <tt>ccmake</tt> graphical user interface provides a nice way to see what options are available.
+</p>
+<p>
+If you have any problems with dependencies not being found, or if you wish to select one specific dependency when you have multiple versions installed, more information can be found on the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/FindingChasteDependencies.html">ChasteGuides/FindingChasteDependencies</a> page.
+</p>
+<h2 id="ChasteConfigurationOptions">Chaste Configuration Options</h2>
+<p>
+These options can be set in the <tt>ccmake</tt> gui, or specified on the command line using <tt>-DOPTION=$option</tt>. eg.
+</p>
+<pre class="wiki">cmake -DChaste_NUM_CPUS_TEST=2 /path/to/source
+</pre><table class="wiki">
+<tr><th> Variable </th><th> Description 
+</th></tr><tr><td> BUILD_SHARED_LIBS </td><td> Standard CMake option (used by Chaste) that indicates whether to build static or shared libraries (defaults to OFF for WIN32 and CYGWIN, ON for everything else). Only the defaults currently work.
+</td></tr><tr><td> CMAKE_BUILD_TYPE </td><td> Choose the type of build : None <tt>Debug</tt> <tt>Release</tt> <tt>RelWithDebInfo</tt> or <tt>MinSizeRel</tt>. Used for single build configuration generators (e.g. Makefiles). Not used for multi build configuration generators (e.g. MSVC) 
+</td></tr><tr><td> CMAKE_INSTALL_PREFIX </td><td> Typing <tt>make install</tt> will install Chaste to this base directory 
+</td></tr><tr><td> Chaste_COVERAGE </td><td> Build Chaste with coverage information 
+</td></tr><tr><td> Chaste_ENABLE_TESTING </td><td> Enable building of tests (defaults to ON) 
+</td></tr><tr><td> Chaste_ENABLE_&lt;component&gt;_TESTING </td><td> Enable building of tests for &lt;component&gt; (defaults to ON) 
+</td></tr><tr><td> Chaste_INSTALL_TESTS </td><td> Install source files for tests along with header files and built libraries 
+</td></tr><tr><td> Chaste_MEMORY_TESTING </td><td> Setup tests so they are run under valgrind 
+</td></tr><tr><td> Chaste_NUM_CPUS_TEST </td><td> Number of cpus to use when running tests (using mpiexec). Defaults to 1 (note that parallel tests are always run with 2 or more cpus) 
+</td></tr><tr><td> Chaste_PROFILE_GPERFTOOLS </td><td> Setup compile options and run all tests with Google CPU profiler (gperftools) 
+</td></tr><tr><td> Chaste_PROFILE_GPROF </td><td> Setup compile options and run all tests with GNU gprof profiler 
+</td></tr><tr><td> Chaste_UPDATE_PROVENANCE </td><td> Updates the build timestamp in the provenance (defaults to ON). Note that this will cause re-linking to the <tt>global</tt> library on every build. 
+</td></tr><tr><td> Chaste_USE_CVODE </td><td> Compiles Chaste with Sundials support (defaults to ON) 
+</td></tr><tr><td> Chaste_USE_PETSC_HDF5 </td><td> Prefer to compile Chaste with HDF5 library used by PETSc (defaults to ON) 
+</td></tr><tr><td> Chaste_USE_PETSC_PARMETIS </td><td> Prefer to compile Chaste with Parmetis library used by PETSc (defaults to ON) 
+</td></tr><tr><td> Chaste_USE_VTK </td><td> Compiles Chaste with VTK support (defaults to ON) 
+</td></tr><tr><td> Chaste_USE_XERCES </td><td> Compiles Chaste with Xerces and XSD support (defaults to OFF for WIN32 or CYGWIN, ON for everything else) 
+</td></tr><tr><td> Chaste_VERBOSE </td><td> Provide extra info when building Chaste (default OFF). Only useful for windows, sets up verbose compilation for MSVC compiler. For Makefile generators (default on linux and mac) use <tt>make VERBOSE=1</tt> 
+</td></tr><tr><td> Chaste_VERSION_MAJOR </td><td> Set Chaste major version  
+</td></tr><tr><td> Chaste_VERSION_MINOR </td><td> Set Chaste minor version  
+</td></tr><tr><td> Chaste_PYCML_EXTRA_ARGS </td><td> Add any extra arguments for PyCML here (need to set this *before* cellml files are converted to source) 
+</td></tr><tr><td colspan="2">
+</td></tr></table>
+<h1 id="BuildStep">Build Step</h1>
+<p>
+For Makefile generators (this is the default) the configure step will generate a bunch of Makefiles, so you just need to run
+</p>
+<pre class="wiki">make -jN
+</pre><p>
+for <tt>N</tt> cores. 
+</p>
+<h2 id="BuildingSpecificTargets">Building Specific Targets</h2>
+<h3 id="Components">Components</h3>
+<p>
+The configure step generates a number of targets which can be built. These targets can be libraries or executables (i.e. test executables). Each component (i.e. <tt>global</tt>, <tt>pde</tt>, <tt>heart</tt> etc) is compiled into a library, with a target name given by the name of the component (so the target name for <tt>global</tt> is <tt>global</tt>)
+</p>
+<p>
+You can specify building a specific component library and all its tests by giving <tt>make</tt> the name of the component target. For example:
+</p>
+<pre class="wiki">make global   # builds the global library and all dependencies
+make io       # builds the io library and all dependencies
+make linalg   # builds the linalg (linear algebra) library and all dependencies
+make mesh     # builds the mesh library and all dependencies
+make ode      # builds the ode library and all dependencies
+make pde      # builds the pde library and all dependencies
+make heart    # builds the heart library and all dependencies
+make cell_based crypt   # builds the cell_based and crypt libraries and all their dependencies
+make core     # builds all the core Chaste libraries (global, io, linalg, mesh, ode, pde and continuum_mechanics)
+</pre><h3 id="Testpacks">Test packs</h3>
+<p>
+If you wish to build a specific test pack then just type <tt>make</tt> and then the name of the test pack, for example:
+</p>
+<pre class="wiki">make Continuous  # builds the Continuous test pack
+make Nightly     # builds the Nightly test pack
+make Weekly      # builds the Weekly test pack
+make Parallel    # builds the Parallel test pack
+</pre><p>
+And then run using, for example
+</p>
+<pre class="wiki">ctest -L Continuous
+</pre><p>
+or
+</p>
+<pre class="wiki">ctest -L Continuous -j4
+</pre><p>
+to run up to 4 tests in parallel (see below).
+</p>
+<h3 id="Intersectingcomponentsandtestpacks">Intersecting components and test packs</h3>
+<p>
+If you want to run a test pack for just a specific component, for instance Continuous tests from cell_based, or Nightly tests from heart, you can invoke <tt>ctest</tt> with <tt>&lt;Testpack&gt;_&lt;component&gt;</tt>, for instance
+</p>
+<pre class="wiki">make cell_based
+ctest -L Continuous_cell_based
+</pre><p>
+or 
+</p>
+<pre class="wiki">make heart
+ctest -L Nightly_heart
+</pre><h3 id="Componentlibrarywithouttests">Component library without tests</h3>
+<p>
+If you wish to build only the library (without tests) then you can type
+</p>
+<pre class="wiki">make chaste_${component}
+</pre><p>
+where <tt>${component}</tt> is the name of the component you wish to build.
+</p>
+<h3 id="Specifictests">Specific tests</h3>
+<p>
+You can build a specific test by using the target name for the test executable. The target name for a given test file <tt>TestName.hpp</tt> is given by <tt>$TestName</tt>. So for test file <tt>heart/test/mechanics/TestCardiacElectroMechanicsOnAnnulus.hpp</tt> the command will be 
+</p>
+<pre class="wiki">make TestCardiacElectroMechanicsOnAnnulus
+</pre><p>
+This will build an executable <tt>heart/test/TestCardiacElectroMechanicsOnAnnulus</tt>, which you can run directly or use <tt>ctest</tt> to call the test
+</p>
+<pre class="wiki">ctest -R TestCardiacElectroMechanicsOnAnnulus
+</pre><h3 id="OtherUsefulTargets">Other Useful Targets</h3>
+<h4 id="Doxygen">Doxygen</h4>
+<p>
+Type <tt>make doxygen</tt> to generate Doxygen documentation for the current code tree. The Doxygen documentation will be put in the <tt>doxygen</tt> sub-folder of the build folder
+</p>
+<h4 id="Coverage">Coverage</h4>
+<p>
+Set the CMake variable <tt>Chaste_COVERAGE</tt> to <tt>ON</tt> and then re-configure Chaste. Once this is complete type <tt>make coverage</tt>. This will re-build the Continuous and Parallel test packs with coverage information, and then run these tests to collect their coverage. Once this is complete it uses Lcov to generate a html report on the coverage, placing it in the <tt>coverage</tt> sub-folder of the build directory.
+</p>
+<h4 id="DoxygenCoverage">Doxygen Coverage</h4>
+<p>
+Type <tt>make doxygen_coverage</tt> to generate a html report of the current Doxygen coverage. This report is placed in the <tt>doxygen_coverage</tt> subfolder.
+</p>
+<h4 id="MemoryTesting">Memory Testing</h4>
+<p>
+Set the CMake variable <tt>Chaste_MEMORY_TESTING</tt> to <tt>ON</tt> and then re-configure Chaste. Once this is complete type <tt>make memtest</tt>. This will run the Continuous test pack under valgrind and then generate a html report in the <tt>memtest</tt> sub-folder.
+</p>
+<p>
+To run memory testing on a single test suite, set the CMake variable <tt>Chaste_MEMORY_TESTING</tt> to <tt>ON</tt> and then re-configure Chaste, then build and run the test as normal.  This will generate a plain text valgrind <tt>.out</tt> file for any test suites run, in the <tt>memtest</tt> subdirectory of the build directory.
+</p>
+<p>
+For example, if you wish to run a memory test on the test <tt>TestOdeBasedCellCycleModels</tt>, first set your build folder to compile with memory testing, and compile the test
+</p>
+<pre class="wiki">cmake -DChaste_MEMORY_TESTING=ON .
+make TestOdeBasedCellCycleModels
+</pre><p>
+Then run the test. After the test completes the valgrind output will will be in <tt>memtest/TestOdeBasedCellCycleModels.valgrind.out</tt>
+</p>
+<pre class="wiki">ctest -R TestOdeBasedCellCycleModels
+</pre><h4 id="Profiling">Profiling</h4>
+<p>
+The CMake setup support two methods of profiling, using GNU gprof and gperftools (Google CPU profiler). To enable the former, set the CMake variable <tt>Chaste_PROFILE_GPROF</tt> to <tt>ON</tt>. To enable the latter, set <tt>Chaste_PROFILE_GPERFTOOLS</tt> to <tt>ON</tt>. To run the profiling, type <tt>make profile</tt>. This will run the Profile and <a class="missing wiki">ProfileAssembly?</a> test packs using the chosen profiling tool and then generate a html report in the <tt>profile</tt> sub-folder.
+</p>
+<h4 id="Tutorials">Tutorials</h4>
+<p>
+To generate the markdown files from the tutorial source files, type <tt>make tutorials</tt>. This will create <tt>tutorials/UserTutorials</tt> and <tt>tutorials/PaperTutorials</tt>, generate the markdown files from the tutorial source files and put them in these directories.
+</p>
+<h2 id="Windows">Windows</h2>
+<p>
+Windows uses the MSVC project file generator, so you can't use <tt>make</tt>. Instead, you can use the CMake interface to run the build
+</p>
+<pre class="wiki">cmake --build . --config Debug
+</pre><p>
+Note that the windows build currently only works for the <tt>Debug</tt> configuration
+</p>
+<p>
+To build a particular target you can use the <tt>--target</tt> options. eg.
+</p>
+<pre class="wiki">cmake --build . --config Debug --target heart
+</pre><h1 id="InstallStep">Install Step</h1>
+<p>
+You can install the Chaste libraries to the CMAKE_INSTALL_PREFIX directory using
+</p>
+<pre class="wiki">make install
+</pre><p>
+Note that this step isn't necessary, you can just use the build folder.
+</p>
+<h1 id="PackagingyourbuildwithCPack">Packaging your build with CPack</h1>
+<p>
+Once you have built Chaste, you can package up your build using the <tt>cpack</tt> executable. Cpack uses a set of generators to package your build:
+ 
+</p>
+<table class="wiki">
+<tr><td>DEB</td><td style="text-align: right">                         = Debian packages
+</td></tr><tr><td>NSIS</td><td style="text-align: right">                        = Null Soft Installer
+</td></tr><tr><td>NSIS64</td><td style="text-align: right">                      = Null Soft Installer (64-bit)
+</td></tr><tr><td>RPM</td><td style="text-align: right">                         = RPM packages
+</td></tr><tr><td>STGZ</td><td style="text-align: right">                       = Self extracting Tar GZip compression
+</td></tr><tr><td>TBZ2</td><td style="text-align: right">                        = Tar BZip2 compression
+</td></tr><tr><td>TGZ</td><td style="text-align: right">                         = Tar GZip compression
+</td></tr><tr><td>TZ</td><td style="text-align: right">                          = Tar Compress compression
+</td></tr><tr><td>ZIP</td><td style="text-align: right">                         = ZIP file format
+</td></tr></table>
+<p>
+To use, type <tt>cpack -G &lt;generator&gt;</tt> to use the specified generator to generate the package. Naturally you must have the correct dependencies installed to use each generator (e.g. Normally only Debian or Ubuntu systems will be able to use the <tt>DEB</tt> generator). 
+</p>
+<h1 id="TestingStep">Testing Step</h1>
+<p>
+You can run all tests using 
+</p>
+<pre class="wiki">ctest
+</pre><p>
+or
+</p>
+<pre class="wiki">ctest -j10
+</pre><p>
+to spread the tests over 10 cpus. Note that by default, each test only uses 1 cpu (except those with target names ending in <tt>Parallel</tt>, see below). You can change this behaviour but using the <tt>Chaste_NUM_CPUS_TEST</tt> cmake variable. Set this variable to the number of cpus uses by each test. For example, if you wish to still run 10 tests in parallel using the <tt>-j10</tt> flag, as above, but you now set <tt>Chaste_NUM_CPUS_TEST=2</tt>, then <tt>cmake -j10</tt> will use a total of <tt>10*2=20</tt> cpus.
+</p>
+<p>
+To run the continuous test pack you can use
+</p>
+<pre class="wiki">ctest -L Continuous
+</pre><p>
+The <tt>-L</tt> option takes a regex expression and matches against the labels for each test. Each tests has multiple lables like <tt>Continuous</tt> <tt>Nightly</tt>, <tt>Parallel</tt>, 'heart', 'lung' etc. corresponding to the tests packs and components the test belongs to. So you could run all the global tests using 
+</p>
+<pre class="wiki">ctest -L global
+</pre><p>
+To run a specific test you can use the <tt>-R</tt> option
+</p>
+<pre class="wiki">ctest -R TestCardiacElectroMechanicsOnAnnulus
+</pre><p>
+The <tt>-R</tt> option takes a regex expression and matches against the CMake target name. Similarly, you can use the <tt>-E</tt> option to exclude a term. You also can use <tt>^</tt> to match the start of the string, and <tt>$</tt> to match the end, e.g.
+</p>
+<pre class="wiki">ctest -R ^TestCardiacSimulation$
+</pre><p>
+You can add <tt>Parallel</tt> to the end of the target name to run the parallel version of that test (if the test is in the parallel test pack).
+</p>
+<p>
+The <tt>-V</tt> option prints the output of tests to the terminal, so to run a particular test and see the output, you can do e.g.
+</p>
+<pre class="wiki">ctest -V -R TestVoronoiVertexMeshGenerator
+</pre><h1 id="BuildingProjects">Building Projects</h1>
+<p>
+You can build projects as for the Scons setup, by adding a subdirectory to the <tt>projects/</tt> folder and then adding a <tt>projects/myproject/CMakeLists.txt</tt> file with something like
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components})
+chaste_do_project(myproject)
+</pre><p>
+where <tt>${components}</tt> is a list of components your project depends on. You can use <tt>core</tt> to indicate all the core Chaste libraries, or leave off the COMPONENTS list entirely (the default is <tt>core</tt>). The build system then assumes you are using the standard Chaste layout for a project and builds your project accordingly
+</p>
+<p>
+If you have a <tt>test</tt> subdirectory you want built, you again need to add a <tt>projects/myproject/test/CMakeLists.txt</tt> file containing something like
+</p>
+<pre class="wiki">chaste_do_test_project(myproject)
+</pre><p>
+And if you have an <tt>apps</tt> subdirectory then you need to add a <tt>projects/myproject/apps/CMakeLists.txt</tt> file containing 
+</p>
+<pre class="wiki">chaste_do_apps_project(myproject)
+</pre><p>
+Assuming you are following the standard Chaste layout for your project, then the CMake configure step will find all your library files, tests and applications and setup build targets for them. These will be added to the default build target so they will be built along with all the other Chaste components (or you can build them individually).
+</p>
+<p>
+You can also build projects outside the Chaste directory tree. This is useful if you are not editing the Chaste source code as part of your project and are just using Chaste as a library. Separating your project from the Chaste build tree results in a significantly faster configuration and build steps. Assuming you have already built Chaste and (optionally) installed it in a given directory, then simply add a <tt>CMakeLists.txt</tt> file in the root folder of your project as explained above, along with corresponding <tt>CMakeLists.txt</tt> files in the <tt>test</tt> and <tt>apps</tt> sub-folders. Note that if you have built (or installed) Chaste in more than one location on your computer, you might want to specify the particular build folder you wish to use. This can be done in the root <tt>CMakeLists.txt</tt> file like so:
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components} PATHS path/to/build_folder NO_DEFAULT_PATH)
+chaste_do_project(myproject)
+</pre><h2 id="UsingChastelikeastandardlibrary">Using Chaste like a standard library</h2>
+<p>
+You can also use Chaste like a standard system library. The CMake configure step will have registered Chaste on your system, so the find_package function should work from any location (if not, you can specify a path, see below). It provides the following variables once you run it
+</p>
+<ul><li>Chaste_LIBRARIES: This variable contains the Chaste libraries you need to link against (for the components you specified in the find_package function)
+</li><li>Chaste_INCLUDE_DIRS: This variable contains the Chaste include folders you need to include
+</li><li>Chaste_THIRD_PARTY_INCLUDE_DIRS: This variable contains the third-party include folders you need to include
+</li><li>Chaste_THIRD_PARTY_LIBRARIES: This variable contains the third-party libraries used to build Chaste (Note that unless you are using Chaste_LINK_LIBRARIES_WITH_UNRESOLVED_SYMBOLS=ON you won't need these)
+</li></ul><p>
+So an example CMakeLists.txt script would go
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components})
+include_directories(${Chaste_INCLUDE_DIRS} ${Chaste_THIRD_PARTY_INCLUDE_DIRS})
+add_executable(my_library \my\source\file.cpp)
+target_link_libraries(my_library ${Chaste_LIBRARIES})
+</pre><p>
+Note that if you have configured Chaste from more than one build folder, problems occur because you don't know which one CMake will give you. You can give a specific build directory to CMake by using the NO_DEFAULT_PATH option for find_package and the PATHS option to specify a path. e.g.
+</p>
+<pre class="wiki">find_package(Chaste COMPONENTS ${components} PATHS ${path} NO_DEFAULT_PATH)
+</pre></div>
+          
+
+    </div>
+  </body>
+</html>

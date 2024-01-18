@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/VisualisationGuides/UsingCmgui - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="VisualisingcardiacsimulationswithCmgui">Visualising cardiac simulations with Cmgui</h1>
+<p>
+Cmgui is a powerful visualization tool that has several key features that make it unique:
+</p>
+<ul><li>It is scriptable, i.e., you can feed it with a series of text instructions and Cmgui will simply print out the images you require. 
+</li><li>It allows for visualization of moving meshes, which makes it very useful for mechanics simulations.
+</li><li>The images produced are always somewhat better looking than other visualizers.
+</li></ul><p>
+On the other hand, using Cmgui is not as intuitive as, for example, <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingMeshalyzer.html">Meshalyzer</a>.
+</p>
+<p>
+The best place to start is the <a class="ext-link" href="http://cmiss.bioeng.auckland.ac.nz/development/examples/a/index.html"><span class="icon">​</span>Cmgui examples page</a>. In particular, it is advisable to start with the first one: <a class="ext-link" href="http://cmiss.bioeng.auckland.ac.nz/development/examples/a/a1/index.html"><span class="icon">​</span>viewing a cube</a>.
+At any point in time, it is often useful to consult the <a class="ext-link" href="http://cmiss.bioeng.auckland.ac.nz/development/help/cmgui/gfx/index.html"><span class="icon">​</span>full list of cmgui commands</a>.
+</p>
+<h2 id="BasicusageofthegraphicalfrontendafteraChastesimulation">Basic usage of the graphical front end after a Chaste simulation</h2>
+<p>
+Chaste is capable of outputting Cmgui-readable files containing the solution of the simulation. Since mastering Cmgui may take some time, Chaste also outputs a little script called <tt>LoadSolutions.com</tt> that makes the user skips the first steps of reading the mesh from file and loading up the data.
+The Chaste Cmgui output is located within a directory called <em>cmgui_output</em>. After running a Chaste simulation, the best thing to do is to go to that <em>cmgui_output</em> directory and type
+</p>
+<pre class="wiki">PATH_TO_CMGUI_EXECUTABLE LoadSolutions.com
+</pre><p>
+ 
+where PATH_TO_CMGUI_EXECUTABLE refers to the place where you put your cmgui executable. This will pop up the graphics and command windows as shown here
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_first.png"><img src="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_first.png" /></a> 
+</p>
+<p>
+Within the graphic window
+   
+</p>
+<ul><li>Left-click and move --&gt; Rotate object
+</li><li>Right-click and move up --&gt; Zoon-out
+</li><li>Right-click and move down --&gt; Zoom-in 
+</li></ul><p>
+Note that the instruction above loaded the geometry AND the data. It is instructive to give a look at the script and see the PERL-style syntax of Cmgui.
+</p>
+<p>
+If you want to change the spectrum, select Graphic--&gt;Spectrum editor. Here you can adjust the spectrum minimum and maximum as shown here
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_second.png"><img src="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_second.png" /></a> 
+</p>
+<p>
+Another very useful window is <em>Scene Editor</em> which you can bring up by choosing Graphic--&gt;Scene editor. ehre you can manipulate what you see and how. In the example below, I choose to visualize my nodes as little spheres
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_third.png"><img src="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_third.png" /></a> 
+</p>
+<h2 id="MoreadvancedusageusingCmguiscripts">More advanced usage using Cmgui scripts</h2>
+<p>
+As mentioned above, one of the most powerful features of Cmgui is that you can feed a script to it and Cmgui will just print the image you like. The syntax of the script is a Perl-like syntax.
+All Cmgui commands have the structure of <strong>gfx COMMAND_NAME options</strong>. Comments are preceded by the <strong>#</strong> character.
+</p>
+<p>
+Here, we will comment an example of a script that was used for a published figure.
+</p>
+<p>
+We start by reading in the mesh. We will issue 2 <strong>read</strong> commands, one for nodes and one for elements, followed by the path to the node and element files respectively. We then define the faces so that we can plot a surface. In this example, <strong>monodomain3d</strong> is the name of the group used in the Chaste simulation.
+</p>
+<pre class="wiki"># Read the mesh
+gfx read node MyocytesPlusFibroblasts/cmgui_output/extended1d.exnode
+gfx read elem MyocytesPlusFibroblasts/cmgui_output/extended1d.exelem
+gfx define faces egroup monodomain3d
+</pre><p>
+Now we load the data, which is conatained in a <strong>.exnode</strong> file. There will be one of these files per time step of simulation. 
+</p>
+<pre class="wiki"># Load the data
+gfx read node MyocytesPlusFibroblasts/cmgui_output/extended1d_140.exnode
+</pre><p>
+An alternative is to read <strong>ALL</strong> time steps in one go by means of a for loop (in this case we have 200 time steps):
+</p>
+<pre class="wiki">for ($i=0; $i&lt;201; $i++) { 
+gfx read node extended1d_$i.exnode time $i
+}
+</pre><p>
+Then we create a graphical window:
+</p>
+<pre class="wiki"># Create a window
+gfx create window 1 double_buffer;
+</pre><p>
+and then adjust our preferred view. You can choose your view by playing with the mouse and when you are happy with it, you can issue a command (in the cmgui command window)
+</p>
+<pre class="wiki">gfx list window 1 commands
+</pre><p>
+The output can be copied and pasted in our script so that next time the very same angle, point of view, etc will be re-created exactly. An example of an output is
+</p>
+<pre class="wiki">gfx modify window 1 image scene default light_model default;
+gfx modify window 1 image add_light default;
+gfx modify window 1 layout simple ortho_axes z -y eye_spacing 0.25 width 1715 height 1125;
+gfx modify window 1 set current_pane 1;
+gfx modify window 1 background colour 0 0 0 texture none;
+gfx modify window 1 view parallel eye_point 8.58981 3.21216 5.66403 interest_point 1.18447 1.10423 1.46629 up_vector -0.502462 0.0458483 0.863383 view_angle 26.953 near_clipping_plane 0.0876946 far_clip$
+gfx modify window 1 set transform_tool current_pane 1 std_view_angle 40 normal_lines no_antialias depth_of_field 0.0 fast_transparency blend_normal;
+</pre><p>
+Similar consideration apply for the spectrum. You can play with the graphical interface until you are happy with it and then, in the CMgui command window, issue a command
+</p>
+<pre class="wiki">gfx list spectrum default commands
+</pre><p>
+copy and paste the output in the script. In our example, the output will look like
+</p>
+<pre class="wiki">gfx modify spectrum default clear overwrite_colour;
+gfx modify spectrum default linear reverse range -85 40 extend_above extend_below rainbow colour_range 0 1 component 1;
+</pre><p>
+The following instructions are used to make the spectrum appear on your image
+</p>
+<pre class="wiki">#put the spectrum in...
+gfx cre scene overlay
+gfx mod scene overlay add_light default
+gfx mod win 1 overlay scene overlay
+gfx create colour_bar spectrum default
+gfx cre colour_bar as colour_bar axis 0 1 0 centre 1 0 0 divisions 2 font BIG length 1 number_format %+.1f label_material black tick_direction 1 0 0
+
+gfx draw colour_bar scene overlay position 0
+</pre><p>
+The following instructions are obtained with the command
+</p>
+<pre class="wiki">gfx list g_element XXXX commands
+</pre><p>
+and are the ones that specify the nature of your graphical elements (e.g, nodes as spheres, lines hidden or showing, surface hidden or showing, etc)
+</p>
+<pre class="wiki">gfx modify g_element extended1d general clear circle_discretization 6 default_coordinate coordinates element_discretization "4*4*4" native_discretization none;
+gfx modify g_element extended1d lines select_on invisible material default data Vm_1 spectrum default selected_material default_selected;
+gfx modify g_element extended1d node_points glyph point general size "1*1*1" centre 0,0,0 font default select_on invisible material default data Vm_1 spectrum default selected_material default_selected;
+gfx modify g_element extended1d surfaces select_on material default data Vm_1 spectrum default selected_material default_selected render_shaded;
+</pre><p>
+Finally, we print the output
+</p>
+<pre class="wiki">gfx print postscript file myo_plus_fibro.eps win 1
+</pre><p>
+The full script we just discussed is
+</p>
+<pre class="wiki"># Read the mesh
+gfx read node MyocytesPlusFibroblasts/cmgui_output/extended1d.exnode
+gfx read elem MyocytesPlusFibroblasts/cmgui_output/extended1d.exelem generate_faces_and_lines
+# Load the data
+gfx read node MyocytesPlusFibroblasts/cmgui_output/extended1d_140.exnode
+
+# Create a window
+gfx create window 1 double_buffer;
+gfx modify window 1 image scene default light_model default;
+gfx modify window 1 image add_light default;
+gfx modify window 1 layout simple ortho_axes z -y eye_spacing 0.25 width 1715 height 1125;
+gfx modify window 1 set current_pane 1;
+gfx modify window 1 background colour 0 0 0 texture none;
+gfx modify window 1 view parallel eye_point 8.58981 3.21216 5.66403 interest_point 1.18447 1.10423 1.46629 up_vector -0.502462 0.0458483 0.863383 view_angle 26.953 near_clipping_plane 0.0876946 far_clip$
+gfx modify window 1 set transform_tool current_pane 1 std_view_angle 40 normal_lines no_antialias depth_of_field 0.0 fast_transparency blend_normal;
+
+# SPECTRUM
+gfx modify spectrum default clear overwrite_colour;
+gfx modify spectrum default linear reverse range -85 40 extend_above extend_below rainbow colour_range 0 1 component 1;
+
+gfx define font BIG "50 default normal normal"
+
+#put the spectrum in...
+gfx cre scene overlay
+gfx mod scene overlay add_light default
+gfx mod win 1 overlay scene overlay
+gfx create colour_bar spectrum default
+gfx cre colour_bar as colour_bar axis 0 1 0 centre 1 0 0 divisions 2 font BIG length 1 number_format %+.1f label_material black tick_direction 1 0 0
+
+
+gfx draw colour_bar scene overlay position 0
+
+# Modify the scene (obtained by gfx list g_element XXXX commands)
+gfx modify g_element extended1d general clear circle_discretization 6 default_coordinate coordinates element_discretization "4*4*4" native_discretization none;
+gfx modify g_element extended1d lines select_on invisible material default data Vm_1 spectrum default selected_material default_selected;
+gfx modify g_element extended1d node_points glyph point general size "1*1*1" centre 0,0,0 font default select_on invisible material default data Vm_1 spectrum default selected_material default_selected;
+gfx modify g_element extended1d surfaces select_on material default data Vm_1 spectrum default selected_material default_selected render_shaded;
+
+#Print the output
+gfx print postscript file myo_plus_fibro.eps win 1
+
+quit
+</pre><p>
+Results of the script above, i.e, the file <strong>myo_plus_fibro.eps</strong> looks like
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_result.png"><img src="/chaste/tutorials/release_2017.1/ChasteGuides/VisualisationGuides/UsingCmgui/cmgui_result.png" /></a> 
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

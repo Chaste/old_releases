@@ -1,0 +1,292 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/ConvertingAssemblersToUseNewDesign - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/ConvertingAssemblersToUseNewDesign" href="/chaste/tutorials/release_2.1/ChasteGuides/ConvertingAssemblersToUseNewDesign.html">ConvertingAssemblersToUseNewDesign</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="ConvertingassemblerstousethenewFEMsolverdesign">Converting assemblers to use the new FEM solver design</h1>
+<p>
+This page illustrates the <strong>simplest</strong> way to convert an assembler which uses the old assembler hierarchy to use the new design. See <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a> for more information about the new design.
+</p>
+<p>
+Below is the <strong>old</strong> <tt>SimpleLinearEllipticAssembler</tt> (a solver of linear elliptic PDEs using the old design), with all comments removed and new
+comments added to explain what would need to be changed in order to convert it to use the new design. Following this, the new solver <tt>SimpleLinearEllipticSolver</tt> which uses the new design is given.
+</p>
+<p>
+The code below is also attached to the page.
+</p>
+<p>
+<strong>Old <tt>SimpleLinearEllipticAssembler</tt> with comments on how to convert it</strong>
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractLinearEllipticPde.hpp"
+</span><span class="c">// the following 3 headers are no longer needed
+</span><span class="cp">#include "AbstractLinearAssembler.hpp"
+#include &lt;boost/mpl/void.hpp&gt;
+#include &lt;boost/mpl/if.hpp&gt;
+</span>
+<span class="c">//  The CONCRETE template parameter can be deleted 
+</span><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEMENT_DIM<span class="p">,</span> <span class="kt">unsigned</span> SPACE_DIM<span class="p">,</span> <span class="k">class</span> <span class="nc">CONCRETE</span> <span class="o">=</span> boost<span class="o">::</span>mpl<span class="o">::</span>void_<span class="o">&gt;</span> 
+<span class="k">class</span> <span class="nc">SimpleLinearEllipticAssembler</span>  
+  <span class="o">:</span> <span class="k">public</span> AbstractLinearAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> SimpleLinearEllipticAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> CONCRETE<span class="o">&gt;</span> <span class="o">&gt;</span>
+      <span class="c">//  The concrete class will now inherit from two classes: AbstractAssemblerSolverHybrid&lt;ELEMENT_DIM,SPACE_DIM,your_problem_dim,NORMAL&gt;
+</span>      <span class="c">//    AND ONE OF:
+</span>      <span class="c">//      AbstractStaticLinearPdeSolver&lt;ELEMENT_DIM,SPACE_DIM,your_problem_dim&gt; 
+</span>      <span class="c">//    OR
+</span>      <span class="c">//      AbstractDynamicLinearPdeSolver&lt;ELEMENT_DIM,SPACE_DIM,your_problem_dim&gt; 
+</span><span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="c">// All these (the following 6 lines) will typically no longer be needed 
+</span>    <span class="c">// and can be deleted
+</span>    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> E_DIM <span class="o">=</span> ELEMENT_DIM<span class="p">;</span> 
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> S_DIM <span class="o">=</span> SPACE_DIM<span class="p">;</span> 
+    <span class="k">static</span> <span class="k">const</span> <span class="kt">unsigned</span> P_DIM <span class="o">=</span> <span class="mi">1</span>u<span class="p">;</span> 
+    <span class="k">typedef</span> SimpleLinearEllipticAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> CONCRETE<span class="o">&gt;</span> SelfType<span class="p">;</span>
+    <span class="k">typedef</span> AbstractLinearAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> SelfType<span class="o">&gt;</span> BaseClassType<span class="p">;</span> 
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">AbstractStaticAssembler</span><span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> SelfType<span class="o">&gt;</span><span class="p">;</span>
+
+<span class="k">protected</span><span class="o">:</span>
+
+    AbstractLinearEllipticPde<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> mpEllipticPde<span class="p">;</span>
+
+
+    <span class="c">// ComputeMatrixTerm, ComputeVectorTerm and ComputeVectorSurfaceTerm don't need to be changed
+</span>    <span class="k">virtual</span> c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeMatrixTerm<span class="p">(</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rGradPhi<span class="p">,</span>
+        ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">,</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rU<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rGradU<span class="p">,</span>
+        Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="p">..</span>
+    <span class="p">}</span>
+
+
+    <span class="c">// ComputeMatrixTerm, ComputeVectorTerm and ComputeVectorSurfaceTerm don't need to be changed
+</span>    <span class="k">virtual</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeVectorTerm<span class="p">(</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rGradPhi<span class="p">,</span>
+        ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">,</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rU<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rGradU<span class="p">,</span>
+        Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="p">..</span>
+    <span class="p">}</span>
+
+
+    <span class="c">// ComputeMatrixTerm, ComputeVectorTerm and ComputeVectorSurfaceTerm don't need to be changed
+</span>    <span class="k">virtual</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">&gt;</span> ComputeVectorSurfaceTerm<span class="p">(</span><span class="k">const</span> BoundaryElement<span class="o">&lt;</span>ELEMENT_DIM<span class="o">-</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rSurfaceElement<span class="p">,</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+            ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="p">..</span>
+    <span class="p">}</span>
+
+
+<span class="k">public</span><span class="o">:</span>
+    <span class="c">// Constructor needs to call base class constructors of new parents (see new version below)
+</span>    SimpleLinearEllipticAssembler<span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pMesh<span class="p">,</span>
+                                  AbstractLinearEllipticPde<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pPde<span class="p">,</span>
+                                  BoundaryConditionsContainer<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> pBoundaryConditions<span class="p">,</span>
+                                  <span class="kt">unsigned</span> numQuadPoints <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">:</span> AbstractAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(),</span>
+          BaseClassType<span class="p">(</span>numQuadPoints<span class="p">)</span>
+    <span class="p">{</span>
+        mpEllipticPde <span class="o">=</span> pPde<span class="p">;</span>
+
+        <span class="c">// The following two lines aren't valid anymore and should be deleted
+</span>        <span class="k">this</span><span class="o">-&gt;</span>SetMesh<span class="p">(</span>pMesh<span class="p">);</span> 
+        <span class="k">this</span><span class="o">-&gt;</span>SetBoundaryConditionsContainer<span class="p">(</span>pBoundaryConditions<span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c">// PrepareForSolve() doesn't exist anymore. Use InitialiseForSolve if there's anything that needs to be done before the solve
+</span>    <span class="kt">void</span> PrepareForSolve<span class="p">()</span>
+    <span class="p">{</span>
+        BaseClassType<span class="o">::</span>PrepareForSolve<span class="p">();</span>
+        assert<span class="p">(</span>mpEllipticPde <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="c">// NOTE: if you have PrepareForAssembleSystem or FinaliseAssembleSystem
+</span>    <span class="c">// implemented, these need to be change to PrepareForSetupLinearSystem(Vec currentSolution)
+</span>    <span class="c">// and  FinaliseLinearSystem(Vec currentSolution). 
+</span>    <span class="c">// 
+</span>    <span class="c">// The current time is not passed into either of these. If you need to use it do:
+</span>    <span class="c">// double time = PdeSimulationTime::GetTime()
+</span>
+
+    <span class="kt">void</span> InitialiseForSolve<span class="p">(</span>Vec initialSolution<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c">// BaseClassType should be given as AbstractLinearPdeSolver
+</span>        BaseClassType<span class="o">::</span>InitialiseForSolve<span class="p">(</span>initialSolution<span class="p">);</span>
+        assert<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="p">);</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SetMatrixIsSymmetric<span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+        <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SetKspType<span class="p">(</span><span class="s">"cg"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+<span class="c">// All this stuff can be deleted
+</span><span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEMENT_DIM<span class="p">,</span> <span class="kt">unsigned</span> SPACE_DIM<span class="p">,</span> <span class="k">class</span> <span class="nc">CONCRETE</span><span class="o">&gt;</span>
+<span class="k">struct</span> AssemblerTraits<span class="o">&lt;</span>SimpleLinearEllipticAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> CONCRETE<span class="o">&gt;</span> <span class="o">&gt;</span>
+<span class="p">{</span>
+    <span class="k">typedef</span> <span class="k">typename</span> boost<span class="o">::</span>mpl<span class="o">::</span>if_<span class="o">&lt;</span>boost<span class="o">::</span>mpl<span class="o">::</span>is_void_<span class="o">&lt;</span>CONCRETE<span class="o">&gt;</span><span class="p">,</span>
+                                     SimpleLinearEllipticAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> CONCRETE<span class="o">&gt;</span><span class="p">,</span>
+                                     <span class="k">typename</span> AssemblerTraits<span class="o">&lt;</span>CONCRETE<span class="o">&gt;::</span>CVT_CLASS<span class="o">&gt;::</span>type
+            CVT_CLASS<span class="p">;</span>
+    <span class="k">typedef</span> <span class="k">typename</span> boost<span class="o">::</span>mpl<span class="o">::</span>if_<span class="o">&lt;</span>boost<span class="o">::</span>mpl<span class="o">::</span>is_void_<span class="o">&lt;</span>CONCRETE<span class="o">&gt;</span><span class="p">,</span>
+                                     SimpleLinearEllipticAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> CONCRETE<span class="o">&gt;</span><span class="p">,</span>
+                                     <span class="k">typename</span> AssemblerTraits<span class="o">&lt;</span>CONCRETE<span class="o">&gt;::</span>CMT_CLASS<span class="o">&gt;::</span>type
+            CMT_CLASS<span class="p">;</span>
+    <span class="k">typedef</span> <span class="k">typename</span> boost<span class="o">::</span>mpl<span class="o">::</span>if_<span class="o">&lt;</span>boost<span class="o">::</span>mpl<span class="o">::</span>is_void_<span class="o">&lt;</span>CONCRETE<span class="o">&gt;</span><span class="p">,</span>
+                     AbstractAssembler<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span>u<span class="o">&gt;</span><span class="p">,</span>
+                     <span class="k">typename</span> AssemblerTraits<span class="o">&lt;</span>CONCRETE<span class="o">&gt;::</span>CMT_CLASS<span class="o">&gt;::</span>type
+            INTERPOLATE_CLASS<span class="p">;</span>
+<span class="p">};</span>
+</pre></div><p>
+<strong>New <tt>SimpleLinearEllipticSolver</tt></strong>
+</p>
+<div class="code"><pre><span class="cp">
+#include "AbstractLinearEllipticPde.hpp"
+</span><span class="c">// the 2 new parents new to be included 
+</span><span class="cp">#include "AbstractAssemblerSolverHybrid.hpp"
+#include "AbstractStaticLinearPdeSolver.hpp"  </span><span class="c">// or AbstractDynamicinearPdeSolver
+</span>
+
+<span class="k">template</span><span class="o">&lt;</span><span class="kt">unsigned</span> ELEMENT_DIM<span class="p">,</span> <span class="kt">unsigned</span> SPACE_DIM<span class="o">&gt;</span>
+<span class="k">class</span> <span class="nc">SimpleLinearEllipticSolver</span> 
+     <span class="c">// new parents: See assembler/solver description page for what NORMAL means.
+</span>     <span class="c">// Second should be either AbstractStaticLinearPdeSolver or AbstractDynamicLinearPdeSolver
+</span>   <span class="o">:</span> <span class="k">public</span> AbstractAssemblerSolverHybrid<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span><span class="p">,</span> NORMAL<span class="o">&gt;</span><span class="p">,</span>  
+     <span class="k">public</span> AbstractStaticLinearPdeSolver<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span> SPACE_DIM<span class="p">,</span> <span class="mi">1</span><span class="o">&gt;</span>     
+<span class="p">{</span>
+<span class="k">protected</span><span class="o">:</span>
+    AbstractLinearEllipticPde<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> mpEllipticPde<span class="p">;</span>
+
+    
+    <span class="k">virtual</span> c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeMatrixTerm<span class="p">(</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rGradPhi<span class="p">,</span>
+        ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">,</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rU<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rGradU<span class="p">,</span>
+        Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+       <span class="p">..</span> 
+    <span class="p">}</span>
+
+    
+    <span class="k">virtual</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">*</span><span class="p">(</span>ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">&gt;</span> ComputeVectorTerm<span class="p">(</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> SPACE_DIM<span class="p">,</span> ELEMENT_DIM<span class="o">+</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rGradPhi<span class="p">,</span>
+        ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">,</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&amp;</span> rU<span class="p">,</span>
+        c_matrix<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rGradU<span class="p">,</span>
+        Element<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pElement<span class="p">)</span>
+    <span class="p">{</span>
+       <span class="p">..</span>
+    <span class="p">}</span>
+        
+
+    <span class="k">virtual</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">&gt;</span> ComputeVectorSurfaceTerm<span class="p">(</span><span class="k">const</span> BoundaryElement<span class="o">&lt;</span>ELEMENT_DIM<span class="o">-</span><span class="mi">1</span><span class="p">,</span>SPACE_DIM<span class="o">&gt;&amp;</span> rSurfaceElement<span class="p">,</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> ELEMENT_DIM<span class="o">&gt;&amp;</span> rPhi<span class="p">,</span>
+            ChastePoint<span class="o">&lt;</span>SPACE_DIM<span class="o">&gt;&amp;</span> rX<span class="p">)</span>
+    <span class="p">{</span>
+       <span class="p">..</span>
+    <span class="p">}</span>
+
+    <span class="c">//  **** ADD THE FOLLOWING METHOD ****. 
+</span>    <span class="c">// It implements a pure method on the solver parent class by
+</span>    <span class="c">// calling a method on the hyrid parent.
+</span>    
+    <span class="c">/**
+     * Delegate to AbstractAssemblerSolverHybrid::SetupGivenLinearSystem.
+     *  @param currentSolution The current solution which can be used in setting up
+     *   the linear system if needed (NULL if there isn't a current solution)
+     *  @param computeMatrix Whether to compute the LHS matrix of the linear system
+     *   (mainly for dynamic solves).
+     */</span>
+    <span class="kt">void</span> SetupLinearSystem<span class="p">(</span>Vec currentSolution<span class="p">,</span> <span class="kt">bool</span> computeMatrix<span class="p">)</span>
+    <span class="p">{</span>
+        SetupGivenLinearSystem<span class="p">(</span>currentSolution<span class="p">,</span> computeMatrix<span class="p">,</span> <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="p">);</span>
+    <span class="p">}</span>
+    
+<span class="k">public</span><span class="o">:</span>
+
+    <span class="c">// Constuctor calls base class constructors
+</span>    SimpleLinearEllipticSolver<span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pMesh<span class="p">,</span>
+                               AbstractLinearEllipticPde<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="o">&gt;*</span> pPde<span class="p">,</span>
+                               BoundaryConditionsContainer<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;*</span> pBoundaryConditions<span class="p">,</span>
+                               <span class="kt">unsigned</span> numQuadPoints <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">:</span> AbstractAssemblerSolverHybrid<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="p">,</span>NORMAL<span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">,</span>pBoundaryConditions<span class="p">,</span>numQuadPoints<span class="p">),</span>
+          AbstractStaticLinearPdeSolver<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">(</span>pMesh<span class="p">)</span>
+    <span class="p">{</span>
+       mpEllipticPde <span class="o">=</span> pPde<span class="p">;</span>
+    <span class="p">}</span>
+
+
+    <span class="kt">void</span> InitialiseForSolve<span class="p">(</span>Vec initialSolution <span class="o">=</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+       <span class="c">// Only change is the 'AbstractLinearPdeSolver&lt;ELEMENT_DIM,SPACE_DIM,1&gt;::'
+</span>       AbstractLinearPdeSolver<span class="o">&lt;</span>ELEMENT_DIM<span class="p">,</span>SPACE_DIM<span class="p">,</span><span class="mi">1</span><span class="o">&gt;::</span>InitialiseForSolve<span class="p">(</span>initialSolution<span class="p">);</span>
+       
+       assert<span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="p">);</span>
+       <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SetMatrixIsSymmetric<span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+       <span class="k">this</span><span class="o">-&gt;</span>mpLinearSystem<span class="o">-&gt;</span>SetKspType<span class="p">(</span><span class="s">"cg"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+          <h3>Attachments</h3>
+          <ul>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/ChasteGuides/ConvertingAssemblersToUseNewDesign/before_with_comments_on_how_to_alter.h" title="View attachment">before_with_comments_on_how_to_alter.h</a>
+      (<span title="5474 bytes">5.3 KB</span>)
+              </li>
+              <li>
+      <a href="/chaste/tutorials/release_2.1/ChasteGuides/ConvertingAssemblersToUseNewDesign/after.h" title="View attachment">after.h</a>
+      (<span title="3448 bytes">3.4 KB</span>)
+              </li>
+          </ul>
+
+    </div>
+  </body>
+</html>

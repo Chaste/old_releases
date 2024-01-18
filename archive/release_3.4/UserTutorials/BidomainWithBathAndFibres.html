@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/BidomainWithBathAndFibres - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestBidomainWithBathAndFibresTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 25790 on (default)">r25790</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Runningabidomainsimulationwithabathandfibres">Running a bidomain simulation with a bath and fibres</h1>
+<p>
+In this tutorial we run a bidomain simulation with both a bath and fibres
+</p>
+<p>
+We include the same headers as in the previous fibre tutorial
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991BackwardEuler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+</pre></div><p>
+Define the test class as before
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestBidomainWithBathAndFibresTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSimulation<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>  <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorialWithBathAndFibres"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+</pre></div><p>
+Bath problems seem to require decreased ODE timesteps. We use the
+Backward Euler version of the Luo-Rudy model (see below) instead to
+improve code performance.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdeTimeStep<span class="p">(</span><span class="mf">0.01</span><span class="p">);</span>  <span class="c1">//ms
+</span>
+</pre></div><p>
+Use the <tt>PlaneStimulusCellFactory</tt> to define a set of Luo-Rudy cells, in this
+case with a Backward Euler solver. We pass the stimulus magnitude as 0.0
+as we don't want any stimulated cells.
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellMLBackwardEuler<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+</pre></div><p>
+Note that in the previous bath example, a mesh was read in and elements where then set to be
+bath elements in the test. With fibres as well, in a bath simulation, it is better to read in a
+mesh that has all the information: this mesh has bath elements defined as an extra column in the
+.ele file, and a .ortho file which defines the fibre direction for each element. Note that the
+.ortho file should include fibre information for bath elements as well, but they won't be used
+in the simulation. (The fibres read here are the same 'kinked' fibres as in the previous fibre
+tutorial).
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements_bath_sides"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+
+</pre></div><p>
+Set anistropic conductivities.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.175</span><span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">));</span>
+
+</pre></div><p>
+and now we define the electrodes..
+</p>
+<div class="code"><pre>        <span class="kt">double</span> magnitude <span class="o">=</span> <span class="o">-</span><span class="mf">9.0e3</span><span class="p">;</span> <span class="c1">// uA/cm^2
+</span>        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> duration <span class="o">=</span> <span class="mi">2</span><span class="p">;</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetElectrodeParameters<span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> magnitude<span class="p">,</span> start_time<span class="p">,</span> duration<span class="p">);</span>
+
+</pre></div><p>
+Now create the problem class, using the cell factory and passing
+in <tt>true</tt> as the second argument to indicate we are solving a bath
+problem, and solve.
+</p>
+<div class="code"><pre>        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory<span class="p">,</span> <span class="nb">true</span> <span class="p">);</span>
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestBidomainWithBathAndFibresTutorial.hpp">File name <tt>TestBidomainWithBathAndFibresTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991BackwardEuler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestBidomainWithBathAndFibresTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestSimulation<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>  <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorialWithBathAndFibres"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdeTimeStep<span class="p">(</span><span class="mf">0.01</span><span class="p">);</span>  <span class="c1">//ms
+</span>
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellMLBackwardEuler<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements_bath_sides"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="p">,</span> <span class="mf">0.175</span><span class="p">));</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetExtracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">));</span>
+
+        <span class="kt">double</span> magnitude <span class="o">=</span> <span class="o">-</span><span class="mf">9.0e3</span><span class="p">;</span> <span class="c1">// uA/cm^2
+</span>        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> duration <span class="o">=</span> <span class="mi">2</span><span class="p">;</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetElectrodeParameters<span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> magnitude<span class="p">,</span> start_time<span class="p">,</span> duration<span class="p">);</span>
+
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory<span class="p">,</span> <span class="nb">true</span> <span class="p">);</span>
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

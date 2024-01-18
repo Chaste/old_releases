@@ -1,0 +1,506 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningNodeBasedSimulations - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestRunningNodeBasedSimulationsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/8af276d/git_repo" title="#2933 #2935 Remove dynamic exception specifications [ throw(Exception) ...">8af276d/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Examplesshowinghowtocreaterunandvisualizenode-basedsimulations">Examples showing how to create, run and visualize node-based simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to create, run and visualize node-based simulations.
+Full details of the mechanical model can be found in Pathamathan et al "A computational study of
+discrete mechanical tissue models", Physical Biology. Vol. 6. No. 3. 2009.. DOI (10.1088/1478-3975/6/3/036001).
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous cell-based Chaste tutorials (<a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/RunningMeshBasedSimulations.html">UserTutorials/RunningMeshBasedSimulations</a>), we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+</span>
+</pre></div><p>
+The following header is usually included in all cell-based test suites. It enables us to write tests where the <tt>SimulationTime</tt> is handled automatically and simplifies the tests.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellBasedTestSuite.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell population
+simulation test. We encountered some of these header files in
+<a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/RunningMeshBasedSimulations.html">UserTutorials/RunningMeshBasedSimulations</a>.
+</p>
+<div class="code"><pre><span class="cp">#include "CellsGenerator.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "UniformCellCycleModel.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+</span></pre></div><p>
+The next header file defines the class for storing the spatial information of cells.
+</p>
+<div class="code"><pre><span class="cp">#include "NodesOnlyMesh.hpp"
+</span></pre></div><p>
+The next header file defines a node-based <tt>CellPopulation</tt> class.
+</p>
+<div class="code"><pre><span class="cp">#include "NodeBasedCellPopulation.hpp"
+</span></pre></div><p>
+The next header file defines a boundary condition to be used in the third test.
+</p>
+<div class="code"><pre><span class="cp">#include "SphereGeometryBoundaryCondition.hpp"
+</span></pre></div><p>
+Next, we define the test class.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningNodeBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><h2 id="Test1-abasicnode-basedsimulation">Test 1 - a basic node-based simulation</h2>
+<p>
+In the first test, we run a simple node-based simulation, in which we create a monolayer
+of cells, using a nodes only mesh. Each cell is assigned a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestMonolayer</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because HoneycombMeshGenerator is not designed to be run in parallel */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+The first thing we do is generate a nodes only mesh. To do this we first create a <tt>MutableMesh</tt>
+to use as a generating mesh.
+To do this we can use the <tt>HoneycombMeshGenerator</tt>. This generates a honeycomb-shaped mesh,
+in which all nodes are equidistant. Here the first and second arguments
+define the size of the mesh - we have chosen a mesh that is 2 nodes (i.e.
+cells) wide, and 2 nodes high.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Once we have a <tt>MutableMesh</tt> we can generate a <tt>NodesOnlyMesh</tt> from it using the
+following commands. Note you can also generate the <tt>NodesOnlyMesh</tt> from a collection of
+nodes, see  <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2017.1/classNodesOnlyMesh.html" title="Documentation for the NodesOnlyMesh class"><span class="icon">​</span>NodesOnlyMesh</a> for details.
+</p>
+<div class="code"><pre>        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+</pre></div><p>
+To run node-based simulations you need to define a cut off length (second argument in
+<tt>ConstructNodesWithoutMesh</tt>), which defines the connectivity of the nodes by defining
+a radius of interaction.
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we the <tt>CellsGenerator</tt> helper class, which is templated over the type
+of cell model required (here <tt>UniformCellCycleModel</tt>)
+and the dimension. We create an empty vector of cells and pass this into the
+method along with the mesh. The second argument represents the size of that the vector
+<tt>cells</tt> should become - one cell for each node, the third argument specifies
+the proliferative type of the cell.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+</pre></div><p>
+Now we have a mesh and a set of cells to go with it, we can create a <tt>CellPopulation</tt>.
+In general, this class associates a collection of cells with a mesh.
+For this test, because we have a <tt>NodesOnlyMesh</tt>, we use a particular type of
+cell population called a <tt>NodeBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+We now pass a force law to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial. If different simulation input parameters are being explored
+the lines should be removed.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/NodeBasedMonolayer/results_from_time_0</tt>.
+we need to select the 'Cells as circles` option to be able to visualize the cells, as opposed
+to just the centres.
+We may have to do: <tt>javac Visualize2dCentreCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+Alternatively, to view in Paraview, load the file <tt>/tmp/$USER/testoutput/NodeBasedMonolayer/results_from_time_0/results.pvd</tt>
+and add glyphs to represent cells. An option is to use 3D spherical glyphs and then make a planar cut.
+Note that, for larger simulations, you may need to unclick "Mask Points" (or similar) so as not to limit the number of glyphs
+displayed by Paraview.
+</p>
+<h2 id="Test2-abasicnode-basedsimulationin3D">Test 2 - a basic node-based simulation in 3D</h2>
+<p>
+In the second test we run a simple node-based simulation in 3D. This is very similar
+to the 2D test with the dimension template (&lt;2,2&gt; and &lt;2&gt;) changed from 2 to 3 and instead of using a mesh
+generator we generate the nodes directly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSpheroid</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because we cannot currently run node based simulations in parallel. */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+First, we generate a nodes only mesh. This time we specify the nodes manually by first
+creating a vector of nodes.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*&gt;</span> nodes<span class="p">;</span>
+</pre></div><p>
+We then create some nodes to add to this vector.
+</p>
+<div class="code"><pre>        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">0u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+</pre></div><p>
+Finally a <tt>NodesOnlyMesh</tt> is created and the vector of nodes is passed to
+the <tt>ConstructNodesWithoutMesh</tt> method.
+</p>
+<div class="code"><pre>        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+</pre></div><p>
+To run node-based simulations you need to define a cut off length (second argument in
+<tt>ConstructNodesWithoutMesh</tt>), which defines the connectivity of the nodes by defining
+a radius of interaction.
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span>nodes<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+As before, we do this with the <tt>CellsGenerator</tt> helper class (this time with dimension 3).
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+</pre></div><p>
+We make a <tt>NodeBasedCellPopulation</tt> (this time with dimension 3) as before.
+</p>
+<div class="code"><pre>        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+(this time with dimension 3) and set the output directory, output multiple and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedSpheroid"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+Again we create a force law (this time with dimension 3), and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+
+</pre></div><p>
+To avoid memory leaks, we conclude by deleting any pointers that we created in the test.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>nodes<span class="p">.</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">delete</span> nodes<span class="p">[</span>i<span class="p">];</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Note that you <strong>cannot view the results of a 3D simulation using the Java visualiser</strong> but
+to visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/NodeBasedSpheroid/results_from_time_0/results.pvd</tt>,
+and add spherical glyphs to represent cells.
+</p>
+<h2 id="Test3-anode-basedsimulationonarestrictedgeometry">Test 3 - a node-based simulation on a restricted geometry</h2>
+<p>
+In the third test we run a node-based simulation restricted to the surface of a sphere.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOnSurfaceOfSphere</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because we cannot currently run node based simulations in parallel. */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+We begin with exactly the same code as the previous test: we create a cell population
+from a mesh and vector of cells, and use this in turn to create
+a simulation object.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*&gt;</span> nodes<span class="p">;</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">0u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+</pre></div><p>
+To run node-based simulations you need to define a cut off length (second argument in
+<tt>ConstructNodesWithoutMesh</tt>), which defines the connectivity of the nodes by defining
+a radius of interaction.
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span>nodes<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedOnSphere"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+As before, we create a linear spring force and pass it to the simulation object.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+This time we create a <tt>CellPopulationBoundaryCondition</tt> and pass this to
+the <tt>OffLatticeSimulation</tt>. Here we use a <tt>SphereGeometryBoundaryCondition</tt>
+which restricts cells to lie on a sphere (in 3D) or circle (in 2D).
+</p>
+<p>
+For a list of possible boundary conditions see subclasses of <tt>AbstractCellPopulationBoundaryCondition</tt>.
+These can be found in the inheritance diagram, here, <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2017.1/classAbstractCellPopulationBoundaryCondition.html" title="Documentation for the AbstractCellPopulationBoundaryCondition class"><span class="icon">​</span>AbstractCellPopulationBoundaryCondition</a>.
+Note that some of these boundary conditions are not compatible with node-based simulations see the specific class documentation for details,
+if you try to use an incompatible class then you will receive a warning.
+</p>
+<p>
+First we set the centre (0,0,1) and radius of the sphere (1).
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> centre <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        centre<span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        <span class="kt">double</span> radius <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+</pre></div><p>
+We then make a pointer to the boundary condition using the MAKE_PTR_ARGS macro, and pass
+it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR_ARGS<span class="p">(</span>SphereGeometryBoundaryCondition<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_boundary_condition<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> centre<span class="p">,</span> radius<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_boundary_condition<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+
+</pre></div><p>
+To avoid memory leaks, we conclude by deleting any pointers that we created in the test.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>nodes<span class="p">.</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">delete</span> nodes<span class="p">[</span>i<span class="p">];</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+</p>
+<p>
+Load the file <tt>/tmp/$USER/testoutput/NodeBasedOnSphere/results_from_time_0/results.pvd</tt>,
+and add spherical glyphs to represent cells.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningNodeBasedSimulationsTutorial.hpp">File name <tt>TestRunningNodeBasedSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+</span>
+<span class="cp">#include "AbstractCellBasedTestSuite.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "CellsGenerator.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "UniformCellCycleModel.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+#include "NodesOnlyMesh.hpp"
+#include "NodeBasedCellPopulation.hpp"
+#include "SphereGeometryBoundaryCondition.hpp"
+</span><span class="k">class</span> <span class="nc">TestRunningNodeBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestMonolayer<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because HoneycombMeshGenerator is not designed to be run in parallel */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestSpheroid<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because we cannot currently run node based simulations in parallel. */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*&gt;</span> nodes<span class="p">;</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">0u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span>nodes<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedSpheroid"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>nodes<span class="p">.</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">delete</span> nodes<span class="p">[</span>i<span class="p">];</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOnSurfaceOfSphere<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="cm">/** The next line is needed because we cannot currently run node based simulations in parallel. */</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*&gt;</span> nodes<span class="p">;</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">0u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        nodes<span class="p">.</span>push_back<span class="p">(</span><span class="k">new</span> Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3u</span><span class="p">,</span>  <span class="nb">false</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">));</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span>nodes<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">3</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"NodeBasedOnSphere"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> centre <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        centre<span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        <span class="kt">double</span> radius <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>SphereGeometryBoundaryCondition<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">,</span> p_boundary_condition<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> centre<span class="p">,</span> radius<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_boundary_condition<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">8u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>nodes<span class="p">.</span>size<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">delete</span> nodes<span class="p">[</span>i<span class="p">];</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/StructureOfCellBasedSimulations - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/StructureOfCellBasedSimulations" href="/chaste/tutorials/release_3.1/ChasteGuides/StructureOfCellBasedSimulations.html">StructureOfCellBasedSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="Structureofcell-basedsimulationsinChaste">Structure of cell-based simulations in Chaste</h1>
+<p>
+This wiki page is intended for new cell-based Chaste users/developers and was written as part of the <a class="wiki" href="/cgi-bin/trac.cgi/wiki/CellBasedWorkshop2012">2012 Chaste cell-based modelling workshop</a> to summarize the structure of cell-based simulations in Chaste. For information, see the technical Chaste papers (details available at the Chaste public <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/publications.html"><span class="icon">&nbsp;</span>website</a>).
+</p>
+<h2 id="Initialization">Initialization</h2>
+<p>
+In order to set up a simulation object, we first need to do the following:
+</p>
+<ul><li>Set up a vector of <tt>Cell</tt>s (for example, by using a helper class such as <tt>CellsGenerator</tt>) and an associated mesh (for example, by using a helper clas such as <tt>HoneycombMeshGenerator</tt>). Note that in the case of node-based simulations, we still supply a mesh, albeit a special type called <tt>NodesOnlyMesh</tt>.
+</li><li>Using these, we may then create a suitable subclass of <tt>AbstractCellPopulation</tt>.
+</li><li>Using this, we may then create a suitable subclass of <tt>AbstractCellBasedSimulation</tt>.
+</li><li>Further objects, such as <tt>Force</tt>s or <tt>CellKiller</tt>s, may also be passed to the simulation object in order to fully specify a model.
+</li><li>Prior to calling <tt>Solve()</tt>, we must first call the methods <tt>SetOutputDirectory()</tt> and <tt>SetEndTime()</tt> on the simulation object, in order to specify where results are written to file and for how long we wish the simulation to proceed. We may also call <tt>SetSamplingTimestepMultiple()</tt> on the simulation object, which specifies how often results are written to file.
+</li></ul><h2 id="TheSolvemethod">The <tt>Solve()</tt> method</h2>
+<p>
+The actual simulation of a cell-based model is implemented by calling the method <tt>Solve()</tt> on a subclass of <tt>AbstractCellBasedSimulation</tt>. This method comprises a number of steps, which we summarize below:
+</p>
+<p>
+<strong>Initialization</strong>: begin by setting up the simulation via the following steps:
+</p>
+<ul><li>Set up the <tt>SimulationTime</tt> singleton class: given the specified end time and size of time step, compute the number of time steps.
+</li><li>Set up the simulation output directory using the specified directory name and create output files.
+</li><li>Call the method <tt>SetupSolve()</tt> on the simulation object. This method can be overridden by child classes (e.g. to set up a PDE solver).
+</li><li>Age the cells to the correct time. Note that cells are created with negative birth times so that some are initially almost ready to divide.
+</li><li>Output initial conditions to file.
+</li></ul><p>
+<strong>Main time loop</strong>: while not yet at the end time, and as long as no stopping event has occurred, simulate the cell population via the following steps.
+</p>
+<ul><li>Call the method <tt>UpdateCellPopulation()</tt> on the simulation object, which in turn calls <tt>DoCellRemoval()</tt>, <tt>DoCellBirth()</tt> and <tt>CellPopulation::Update()</tt>.
+<ul><li><strong>TODO</strong>: talk a bit more about <tt>DoCellRemoval()</tt>, <tt>DoCellBirth()</tt> and <tt>CellPopulation::Update()</tt>.
+</li></ul></li><li>Call the method <tt>UpdateCellLocationsAndTopology()</tt> on the simulation object, which synchronously updates the location of each cell as well as the cell topology (which cells are neighbours of each other).
+<ul><li><strong>TODO</strong>: talk a bit more about <tt>UpdateCellLocationsAndTopology()</tt>.
+</li></ul></li><li>Call the method <tt>PostSolve()</tt> on the simulation object, which may be overridden by child classes (e.g. to solve a PDE).
+</li><li>Increment the simulation time by one time step and output the results to file.
+</li><li>Note that we proceed through the main time loop as long as the simulation method <tt>StoppingEventHasOccurred()</tt> returns <tt>false</tt>. This method is evaluated at the start of each time step, and can be used to specify conditions under which we require the simulation to stop prematurely. For example, we might wish to simulate a crypt until it becomes monoclonal, if this event occurs.
+</li></ul><p>
+<strong>Post-processing</strong>: after leaving the main time loop, tidy up via the following steps.
+</p>
+<ul><li>Carry out a final call to the <tt>UpdateCellPopulation()</tt> method so that the cell population is coherent with new cell positions. Note that cell birth and death still need to be checked because they may be spatially dependent.
+</li><li>Call the method <tt>AfterSolve()</tt> on the simulation object, which may be overridden by child classes (e.g. to solve a PDE).
+</li><li>Close output files.
+</li><li>Note that a helper class, <tt>CellBasedEventHandler</tt>, can be used to evaluate the time spent in each part of the cell-based code.
+</li></ul><p>
+Further details on how to visualize the results of cell-based simulations are available <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/RunningCellBasedVisualization.html">here</a>.
+</p>
+<p>
+File format information is given in the file <tt>docs/FileFormats.html</tt>, supplied with the release. (The latest version of this file may also be viewed <a href="https://chaste.cs.ox.ac.uk/cgi-bin/trac.cgi/browser/trunk/docs/FileFormats.html">here</a> - click on the 'download in original format' link at the bottom of the page). 
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

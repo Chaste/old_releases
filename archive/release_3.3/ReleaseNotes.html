@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ReleaseNotes - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <ol>
+      <li>
+        <a href="#Release3.3changessinceRelease3.2">Release 3.3 (changes since Release 3.2)</a>
+        <ol>
+          <li>
+            <a href="#Headlinefeatures">Headline features</a>
+            <ol>
+              <li>
+                <a href="#General">General</a>
+              </li>
+              <li>
+                <a href="#Cardiac">Cardiac</a>
+              </li>
+              <li>
+                <a href="#Cell-based">Cell-based</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#Majornewfunctionalitycodechanges">Major new functionality &amp; code changes</a>
+            <ol>
+              <li>
+                <a href="#General1">General</a>
+              </li>
+              <li>
+                <a href="#Cardiac1">Cardiac</a>
+              </li>
+              <li>
+                <a href="#Cell-based1">Cell-based</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#Minor">Minor</a>
+            <ol>
+              <li>
+                <a href="#General2">General</a>
+              </li>
+              <li>
+                <a href="#Cardiac2">Cardiac</a>
+              </li>
+              <li>
+                <a href="#Cell-based2">Cell-based</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#FuturePlans">Future Plans</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+Please mention any changes to the code which will break users' code here - to be put in the release notes for the next release.  Also mention any significant improvements or new features.
+</p>
+<p>
+The real definitive release notes will be written in <a class="missing source">source:trunk/docs/ReleaseNotes.html</a> at the time of release.  To make that process easier, please structure this page in the same manner, rather than simply copying from <a class="wiki" href="/trac/wiki/LatestNews">LatestNews</a>.
+</p>
+<p>
+<a class="wiki" href="/trac/wiki/OlderReleaseNotes">OlderReleaseNotes</a> -- release notes for releases 1.1 to 3.2
+</p>
+<hr />
+<h2 id="Release3.3changessinceRelease3.2">Release 3.3 (changes since Release 3.2)</h2>
+<p>
+This release is designed to coincide with several publications that have associated code projects, including <a class="wiki" href="/trac/wiki/PaperTutorials/Frontiers2014">PaperTutorials/Frontiers2014</a> and others under review; see <a class="wiki" href="/trac/wiki/PaperTutorials">PaperTutorials</a> for the latest list.
+It also includes support for new library versions that have been released since Chaste 3.2, and for the latest version of Ubuntu.
+</p>
+<h3 id="Headlinefeatures">Headline features</h3>
+<h4 id="General">General</h4>
+<ul><li>A new run time flag <tt>-citations [file]</tt> was implemented that generates a list of BibTeX-format citations for the libraries/algorithms used in a particular run. With no arguments the citations are printed to std::cout. With an optional argument they are printed to a file on disk (note: a relative or absolute path may be given but the directory must exist and be writeable). 
+</li><li>Chaste works with most recent PETSc versions up to and including PETSc 3.5.
+</li><li>Recent releases of Boost (1.56 and newer) are now supported, and support for versions prior to 1.40 has been dropped.
+</li><li>CodeSynthesis XSD version 4.0 is now supported.
+</li><li>Ubuntu Utopic (14.10) is now supported.
+</li></ul><h4 id="Cardiac">Cardiac</h4>
+<ul><li>Meshalyzer output is now off by default, as more people are using VTK. It can be turned back on with <tt>HeartConfig::Instance()-&gt;SetVisualizeWithMeshalyzer()</tt>. 
+</li><li>A human heart mesh has been added to our public data repository: <a href="https://chaste.cs.ox.ac.uk/trac/browser/data/public">https://chaste.cs.ox.ac.uk/trac/browser/data/public</a>
+</li></ul><h4 id="Cell-based">Cell-based</h4>
+<ul><li>The re-factoring of the way cell populations write data to file, begun in the last release, has been further refined. See below for more details.
+</li></ul><h3 id="Majornewfunctionalitycodechanges">Major new functionality &amp; code changes</h3>
+<h4 id="General1">General</h4>
+<ul><li>PETSc 3.5 support has been added. If you have been solving nonlinear systems with your own Jacobian matrices, then the method interface needs to change to work with PETSc 3.5. The commit <a class="missing changeset" title="No permission to view changeset 22721 on (default)">r22721</a> gives lots of examples of how to do this.
+</li><li>In Boost 1.56 the algorithm for generating normal random numbers has changed, to fix a bug in earlier Boost versions. Chaste now uses that algorithm across all Boost versions, giving consistent results, but this means <strong>random numbers have changed from previous Chaste releases</strong>, and this may change simulation results.
+</li></ul><h4 id="Cardiac1">Cardiac</h4>
+<ul><li>The formulation for extended biodomain (tridomain) has been changed from solving for voltages (3 phi variables at each point in space) to transmembrane potentials (1 phi and 2 V_m variables at each point in space).  The new matrix formulation is symmetric and hence faster linear solvers (conjugate gradient) are now used by default. Checkpointing is backward compatible. 
+</li><li>The list of Oxford CellML metadata has been moved to a new file <tt>oxford-metadata.ttl</tt>, see <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CodeGenerationFromCellML#Standardisednames">CodeGenerationFromCellML</a> for more details.
+</li><li>Lookup table settings can take advantage of automatic units conversion.
+</li><li>A new lightweight output class has been added as an addition (or replacement) to HDF5 output and post-processing. There are currently two concrete implementations: <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classSingleTraceOutputModifier.html" title="Documentation for the SingleTraceOutputModifier class"><span class="icon">​</span>class:SingleTraceOutputModifier</a> which outputs time and voltage(s) at a single node to a named file during the simulation and ​<a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classActivationOutputModifier.html" title="Documentation for the ActivationOutputModifier class"><span class="icon">​</span>class:ActivationOutputModifier</a> which computes a limited number of activation/recovery times at every node with results being written to file at the end of the simulation.
+</li></ul><p>
+ 
+</p>
+<h4 id="Cell-based1">Cell-based</h4>
+<ul><li>The method <tt>OutputSimulationModifierParameters()</tt> has been added to the simulation modifier class hierarchy. This is pure virtual in <tt>AbstractCellBasedSimulationModifier</tt> so must be provided by subclasses.
+</li><li>For clarity, <tt>CellLocationWriter</tt> and <tt>CellVariablesWriter</tt> have been renamed to <tt>CellLocationIndexWriter</tt> and <tt>CellCycleModelProteinConcentrationsWriter</tt> respectively; their associated output filenames and VTK cell data names have also been updated.
+</li><li>Writers which involve total counts of cells (<tt>CellMutationStatesCountWriter</tt>, <tt>CellProliferativeTypesCountWriter</tt> and <tt>CellProliferativePhasesCountWriter</tt>) form a new subclass which behaves differently to the <tt>CellPopulationWriter</tt> class.  They should be added to the population with <tt>AddCellPopulationCountWriter&lt;&gt;()</tt>.
+</li></ul><h3 id="Minor">Minor</h3>
+<p>
+New functionality and code changes, which may still require changes to user code.
+</p>
+<h4 id="General2">General</h4>
+<ul><li>Code timing should now be done with the <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classTimer.html" title="Documentation for the Timer class"><span class="icon">​</span>class:Timer</a>, rather than manual calls to <tt>std::clock</tt> or <tt>MPI_Wtime</tt>.
+</li><li>Updated random normal distribution sampling using <tt>RandomNumberGenerator</tt> - it has been altered to match the results from the latest boost (no matter what version of boost you are using): a small bug fix introduced in boost 1.56.
+</li><li>Fixed a bug in reseeding random normal numbers. If you had called a random normal distribution sample an odd number of times, the first number you got after reseeding was what the next one should have been before reseeding. 
+</li><li>We have replaced all occurrences of <tt>PetscTruth</tt> with <tt>PetscBool</tt>. New code should be written to use the newer type (<tt>PetscBool</tt>).
+</li><li>Some new utility methods have been added: <tt>OutputFileHandler::GetRelativePath</tt>, <tt>PetscTools::IsInitialised</tt>, <tt>FileComparison::IgnoreBlankLines</tt>
+</li></ul><h4 id="Cardiac2">Cardiac</h4>
+<ul><li>If using many different cell models with lookup tables, the memory used could become excessive. A new <tt>FreeMemory()</tt> method has been added to the <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classAbstractLookupTableCollection.html" title="Documentation for the AbstractLookupTableCollection class"><span class="icon">​</span>class:AbstractLookupTableCollection</a> class for releasing memory when a particular cell model is no longer needed. Note that if you are just using multiple instances of the same cell model there is no need for this, as the lookup tables are shared between instances.
+</li><li>Running a parallel cardiac simulation on more processes than suitable for the size of the problem now produces an error which terminates the simulation (rather than a warning). This is to avoid potential deadlock later in the run.
+</li><li>There is a new method <tt>SetSolver()</tt> on <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classAbstractCardiacCellInterface.html" title="Documentation for the AbstractCardiacCellInterface class"><span class="icon">​</span>class:AbstractCardiacCellInterface</a>, and a method <tt>HasAnalyticJacobian</tt> on <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classAbstractCvodeSystem.html" title="Documentation for the AbstractCvodeSystem class"><span class="icon">​</span>class:AbstractCvodeSystem</a>.
+</li><li>The <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.3/classCellMLLoader.html" title="Documentation for the CellMLLoader class"><span class="icon">​</span>class:CellMLLoader</a> now copies <tt>.out</tt> files if present, meaning it can generate analytic Jacobians for CVODE.
+</li><li>When using CVODE in tissue simulations we now perform a reset on the rare occasions that it fails to solve.
+</li><li>Added (somewhat slow) support for lookup tables in generalised Rush-Larsen models.
+</li></ul><h4 id="Cell-based2">Cell-based</h4>
+<ul><li>There's now a new <tt>AbstractCellBasedWithTimingsTestSuite</tt> which uses <tt>Timer</tt>, and then calls the normal <tt>AbstractCellBasedTestSuite</tt> <tt>setUp</tt> and <tt>tearDown</tt> methods.
+</li><li>There's now a <tt>ReturnSimulationModifiers</tt> method (on the simulation) to return the vector of simulation modifiers.
+</li><li>The redundant <tt>VertexElementMap</tt> input argument has been removed from the <tt>MutableVertexMesh</tt> methods <tt>CheckForSwapsFromShortEdges()</tt> and <tt>IdentifySwapType()</tt>.
+</li></ul><h3 id="FuturePlans">Future Plans</h3>
+<ul><li>Tested support for various older versions of third party libraries will likely be dropped in the next release. See <a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a> for up-to-date information as development progresses.
+</li></ul></div>
+          
+
+    </div>
+  </body>
+</html>

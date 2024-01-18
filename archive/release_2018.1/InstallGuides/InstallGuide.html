@@ -1,0 +1,346 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/InstallGuide - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallGuide">Install Guide</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#InstallGuide">Install Guide</a>
+    <ol>
+      <li>
+        <a href="#BasicInstallation">Basic Installation</a>
+        <ol>
+          <li>
+            <a href="#Somepre-requisites">Some pre-requisites</a>
+          </li>
+          <li>
+            <a href="#Defineafoldertoinstallallthedependenciesin">Define a folder to install all the dependencies in</a>
+          </li>
+          <li>
+            <a href="#CMake">CMake</a>
+          </li>
+          <li>
+            <a href="#SCONS">SCONS</a>
+          </li>
+          <li>
+            <a href="#BOOST">BOOST</a>
+          </li>
+          <li>
+            <a href="#PETSc">PETSc</a>
+          </li>
+          <li>
+            <a href="#XSD">XSD</a>
+          </li>
+          <li>
+            <a href="#XERCES">XERCES</a>
+          </li>
+          <li>
+            <a href="#PyCmldependencies">PyCml dependencies</a>
+          </li>
+          <li>
+            <a href="#VTK">VTK</a>
+          </li>
+          <li>
+            <a href="#Settingpathsautomatically">Setting paths automatically</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#ConfiguringChaste">Configuring Chaste</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This is the place to start if you want to be able to build the Chaste source code, to run your own tests or simulations on your machine.
+</p>
+<p>
+The easiest ways to install Chaste are:
+</p>
+<ul><li>On Ubuntu - use the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu .deb package</a>.
+</li><li>On any platform - using <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/Docker.html">Docker</a>.
+</li><li>Other Linux systems - try following the instructions provided <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html#BasicInstallation">lower down this page</a>
+</li><li>Mac OS X 'Yosemite' (and possibly other versions) - see <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/ChasteInstallationOnOSXYosemite">InstallGuides/ChasteInstallationOnOSXYosemite</a>, currently testing on Mojave <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/ChasteInstallationOnMacOSMojave">InstallGuides/ChasteInstallationOnMacOSMojave</a>
+</li><li>Any system - install a virtual machine (e.g. using <a class="ext-link" href="https://www.virtualbox.org/"><span class="icon">​</span>VirtualBox</a>) running the latest long-term support Ubuntu Linux, and install the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu package</a> as above
+</li></ul><p>
+Then obtain the source code, deciding whether you are a <em>user</em> or <em>developer</em>; see <a class="wiki" href="/chaste/tutorials/release_2018.1/GettingStarted.html">GettingStarted</a>.
+</p>
+<p>
+If you encounter any problems, or have/want an unusual setup, then the full <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>, or alternative guides listed at <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides.html">InstallGuides</a>, may be useful.
+</p>
+<hr />
+<h2 id="BasicInstallation">Basic Installation</h2>
+<p>
+These instructions have been tried successfully on:
+</p>
+<ul><li>Fedora 24 (May 2017)
+</li><li>Fedora 25 (June 2017)
+</li></ul><p>
+The following instructions detail an installation using the preferred versions of our dependencies, for a non-root user. For a full list of the compatibility of various versions of our dependencies see <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a>. Some alternative versions of the libraries are incompatible, and others may have minor bugs. 
+</p>
+<p>
+<strong>NB: </strong> The newest versions of the libraries may not have been tested yet, so don't simply install the top one on each external download page! Ideally follow these instructions, but if this isn't possible (or you have pre-installed versions) then check <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> first.
+</p>
+<h3 id="Somepre-requisites">Some pre-requisites</h3>
+<p>
+The following tools are required or useful.
+Most systems will already have these installed, or provide an easy way to set them up:
+</p>
+<ul><li><tt>gcc</tt> and <tt>g++</tt>
+</li><li><tt>gfortran</tt> --- if you want to build PETSc with HYPRE support (<tt>--download-hypre</tt> option <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html#PETSc">below</a>).
+</li><li><tt>wget</tt>
+</li><li><tt>python-devel</tt>
+</li><li><tt>git</tt> --- git, for <em>Code Developers</em> or <em>Code Users</em> of development branches.
+</li><li><tt>valgrind</tt> --- for memory testing - optional.
+</li></ul><p>
+Since version 3.1, Chaste requires you to be using a 64 bit system.
+Almost all modern systems will be 64 bit. In the terminal, type
+</p>
+<div class="code"><pre>uname -m
+</pre></div><p>
+If this returns <tt>i686</tt>, you have a 32 bit system, and you will not be able to use modern versions of Chaste.
+</p>
+<p>
+Many systems will also include some of the below Chaste dependencies already. You can usually have a look for them with <tt>locate</tt>, e.g.
+</p>
+<div class="code"><pre>locate petsc
+</pre></div><p>
+If you find pre-existing versions, then check <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> to see if they are compatible with Chaste, if so you may be able to skip their installation below, but make sure that you have the 'includes' and 'libraries' where required (if you don't know what this means then just follow all the below instructions!).
+</p>
+<h3 id="Defineafoldertoinstallallthedependenciesin">Define a folder to install all the dependencies in</h3>
+<p>
+First define the folder where you want to install the libraries that Chaste depends on.
+It is generally best if this is on a local hard disk for speed.
+We will also add the binary directory to the path right away, so we can run <tt>cmake</tt> (which we are about to install) without having to type the full path to this directory.
+How to do this depends on your shell, but if you are running bash the easiest way is to add it to your <tt>.bashrc</tt> file, e.g. using
+</p>
+<div class="code"><pre>gedit ~/.bashrc
+</pre></div><p>
+At the end of the file add the following lines:
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">CHASTE_LIBS</span><span class="o">=</span>/home/scratch/chaste-libs
+</pre></div><p>
+Save, quit and then re-load <tt>.bashrc</tt> (or log out and back in again):
+</p>
+<div class="code"><pre><span class="nb">source</span> ~/.bashrc
+</pre></div><p>
+If it doesn't already exist, create this directory:
+</p>
+<div class="code"><pre>mkdir -p <span class="nv">$CHASTE_LIBS</span>
+</pre></div><p>
+The following instructions assume that:
+</p>
+<ul><li><tt>wget</tt> is installed.
+</li><li>You are connected to the internet. 
+</li></ul><p>
+If either of these is not true, then download the http links in your browser
+and copy them onto the machine you wish to install on.
+</p>
+<h3 id="CMake">CMake</h3>
+<p>
+CMake is the recommended build system for Chaste, and is needed to build several of the dependencies listed below.
+Install CMake instead of Scons, unless you have a reason for doing otherwise.
+</p>
+<p>
+On Fedora machines try the following line
+</p>
+<div class="code"><pre>sudo dnf install cmake
+</pre></div><p>
+To install manually, use
+</p>
+<div class="code"><pre>wget http://www.cmake.org/files/v3.5/cmake-3.5.1.tar.gz
+tar -zxf cmake-3.5.1.tar.gz
+<span class="nb">cd </span>cmake-3.5.1
+./bootstrap --prefix<span class="o">=</span><span class="nv">$CHASTE_LIBS</span> --parallel<span class="o">=</span>4 <span class="o">&amp;&amp;</span> make -j4 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ..
+rm -rf cmake-3.5.1.tar.gz cmake-3.5.1
+</pre></div><h3 id="SCONS">SCONS</h3>
+<p>
+Scons has been deprecated in favour of Cmake.
+These instructions are for legacy use of Scons only: unless you have a reason for installing Scons, it is recommended to skip this step.
+</p>
+<div class="code"><pre>wget http://prdownloads.sourceforge.net/scons/scons-2.3.1.tar.gz
+tar zxf scons-2.3.1.tar.gz
+<span class="nb">cd </span>scons-2.3.1
+python setup.py install --prefix<span class="o">=</span><span class="nv">$CHASTE_LIBS</span>
+<span class="nb">cd</span> ..
+rm -rf scons-2.3.1.tar.gz scons-2.3.1
+</pre></div><h3 id="BOOST">BOOST</h3>
+<p>
+On Fedora machines try the following line
+</p>
+<div class="code"><pre>sudo dnf install boost-system boost-filesystem boost-serialization boost-program-options
+</pre></div><p>
+To install manually, use
+</p>
+<div class="code"><pre>wget http://downloads.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz
+tar -zxf boost_1_58_0.tar.gz
+<span class="nb">cd </span>boost_1_58_0
+./bootstrap.sh --prefix<span class="o">=</span><span class="nv">$CHASTE_LIBS</span> --with-libraries<span class="o">=</span>system,filesystem,serialization,program_options
+./b2 install
+<span class="nb">cd</span> ..
+rm -rf boost_1_58_0.tar.gz boost_1_58_0
+</pre></div><h3 id="PETSc">PETSc</h3>
+<p>
+Fedora provides a PETSc package, but unfortunately this does not currently contain all the files required to use PETSc with Chaste.
+</p>
+<p>
+PETSc can install a lot of Chaste's dependencies for us.
+</p>
+<p>
+(There is a <tt>--download-boost</tt> option, but this doesn't include the particular libraries we need, so we can't use that.)
+</p>
+<p>
+These steps can take some time (potentially an hour or more).
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE_LIBS</span>
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.6.2.tar.gz
+tar -zxf petsc-lite-3.6.2.tar.gz
+rm -f petsc-lite-3.6.2.tar.gz
+<span class="nb">cd </span>petsc-3.6.2
+</pre></div><div class="code"><pre><span class="c"># Define package versions
+</span><span class="nv">MPICH</span><span class="o">=</span>https://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
+<span class="nv">HDF5</span><span class="o">=</span>https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.16/src/hdf5-1.8.16.tar.bz2
+
+<span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+</pre></div><p>
+If you want to build PETSc with hypre, optionally remove <tt>--with-fc=0</tt> and add <tt>--download-hypre=1</tt> in the following code blocks.
+If you are not sure whether you want to build PETSc with hypre, leave the following as is.
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+./configure --with-make-np<span class="o">=</span>4 --with-cc<span class="o">=</span>gcc --with-cxx<span class="o">=</span>g++ --with-fc<span class="o">=</span>0 --with-x<span class="o">=</span><span class="nb">false</span> --with-ssl<span class="o">=</span><span class="nb">false</span> --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span><span class="nv">$MPICH</span> --download-hdf5<span class="o">=</span><span class="nv">$HDF5</span> --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-sundials<span class="o">=</span>1 --with-shared-libraries
+make all <span class="nb">test</span>
+</pre></div><div class="code"><pre><span class="c"># Optional - optimised petsc build too.
+</span><span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu-opt
+./configure --with-make-np<span class="o">=</span>4 --with-cc<span class="o">=</span>gcc --with-cxx<span class="o">=</span>g++ --with-fc<span class="o">=</span>0 --with-x<span class="o">=</span><span class="nb">false</span> --with-ssl<span class="o">=</span><span class="nb">false</span> --download-f2cblaslapack<span class="o">=</span>1 --download-mpich<span class="o">=</span><span class="nv">$MPICH</span> --download-hdf5<span class="o">=</span><span class="nv">$HDF5</span> --download-parmetis<span class="o">=</span>1 --download-metis<span class="o">=</span>1 --download-sundials<span class="o">=</span>1 --with-shared-libraries --with-debugging<span class="o">=</span>0
+make all <span class="nb">test</span>
+</pre></div><div class="code"><pre><span class="nb">unset </span>PETSC_ARCH
+<span class="nb">unset </span>PETSC_DIR
+</pre></div><h3 id="XSD">XSD</h3>
+<p>
+On Fedora machines try the following line
+</p>
+<div class="code"><pre>sudo dnf install xsd
+</pre></div><p>
+To install manually, use the distributed binaries.
+</p>
+<div class="code"><pre><span class="nb">cd</span> <span class="nv">$CHASTE_LIBS</span>
+wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+tar -xjf xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+ln -s <span class="nv">$CHASTE_LIBS</span>/xsd-4.0.0-x86_64-linux-gnu/bin/xsd <span class="nv">$CHASTE_LIBS</span>/bin/xsd
+rm -f xsd-4.0.0-x86_64-linux-gnu.tar.bz2
+</pre></div><h3 id="XERCES">XERCES</h3>
+<p>
+On Fedora machines try the following line
+</p>
+<div class="code"><pre>sudo dnf install xerces-c xerces-c-devel
+</pre></div><p>
+For machines without a system Xerces package:
+</p>
+<div class="code"><pre>wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.4.tar.gz
+tar -zxf xerces-c-3.1.4.tar.gz
+<span class="nb">cd </span>xerces-c-3.1.4/
+<span class="nb">export </span><span class="nv">XERCESCROOT</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>
+./configure --prefix<span class="o">=</span><span class="nv">$CHASTE_LIBS</span>
+make all
+make install
+<span class="nb">cd</span> <span class="nv">$CHASTE_LIBS</span>
+rm -rf xerces-c-3.1.4 xerces-c-3.1.4.tar.gz
+</pre></div><h3 id="PyCmldependencies">PyCml dependencies</h3>
+<p>
+On Fedora machines try the following line
+</p>
+<div class="code"><pre>sudo dnf install python-lxml python-amara python-rdflib python-dateutil
+</pre></div><p>
+If you cannot get these via your package manager, python package installs are generally smoothest using <tt>pip</tt>. Either install as a system package, e.g. <tt>sudo dnf install python-pip</tt>, or <a class="ext-link" href="https://pip.pypa.io/en/latest/installing.html"><span class="icon">​</span>follow the instructions here</a>.
+Unfortunately some of Amara's dependencies are so old, we need to use <a class="ext-link" href="https://pypi.python.org/pypi/setuptools"><span class="icon">​</span>easy_install</a> for that.
+It will probably already be installed, but you can <tt>sudo dnf install python-setuptools</tt> or similar if not.
+</p>
+<div class="code"><pre>pip install --user <span class="s2">"python-dateutil==1.5"</span>
+easy_install --user <span class="s2">"Amara==1.2.0.2"</span>
+pip install --user <span class="s2">"rdflib==2.4.2"</span>
+pip install --user lxml
+</pre></div><h3 id="VTK">VTK</h3>
+<p>
+One of the following commands may well work on your system:
+</p>
+<div class="code"><pre>sudo apt-get install libvtk6-dev       <span class="c">#(Ubuntu/Debian)
+</span>sudo dnf install vtk-devel             <span class="c">#(Fedora/RedHat)
+</span></pre></div><p>
+Otherwise, from source:
+</p>
+<div class="code"><pre>wget http://www.vtk.org/files/release/6.2/VTK-6.2.0.tar.gz
+tar -zxf VTK-6.2.0.tar.gz
+rm -f VTK-6.2.0.tar.gz
+<span class="nb">cd </span>VTK-6.2.0
+cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="nv">$CHASTE_LIBS</span> . <span class="o">&amp;&amp;</span> make -j4 <span class="o">&amp;&amp;</span> make install
+<span class="nb">cd</span> ..
+rm -rf VTK-6.2.0
+</pre></div><p>
+You may need to:
+</p>
+<ul><li><tt>sudo dnf install mesa-libGL-devel</tt> (or similar) to get OpenGL headers installed before this point, if you get a configure error stating that these headers have not been found
+</li><li><tt>sudo dnf install redhat-rpm-config</tt> (or similar) if you get <tt>gcc: error: /usr/lib/rpm/redhat/redhat-hardened-cc1: No such file or directory</tt>
+</li><li><tt>sudo dnf install libxt-devel</tt> (or similar) if you get an error about X11
+</li></ul><h3 id="Settingpathsautomatically">Setting paths automatically</h3>
+<p>
+You probably then want to add various environment variables specifying these dependency locations to your <tt>.bashrc</tt> file, e.g. using
+</p>
+<div class="code"><pre>gedit ~/.bashrc
+</pre></div><p>
+At the end of the file add the lines (leaving out packages you installed via a package manager):
+</p>
+<div class="code"><pre><span class="nb">export </span><span class="nv">PETSC_DIR</span><span class="o">=</span><span class="nv">$CHASTE_LIBS</span>/petsc-3.6.2
+<span class="nb">export </span><span class="nv">PETSC_ARCH</span><span class="o">=</span>linux-gnu
+
+<span class="nb">export </span><span class="nv">SUNDIALS_ROOT</span><span class="o">=</span><span class="nv">$PETSC_DIR</span>/<span class="nv">$PETSC_ARCH</span>
+
+<span class="nb">export </span><span class="nv">HDF5_ROOT</span><span class="o">=</span><span class="nv">$PETSC_DIR</span>/<span class="nv">$PETSC_ARCH</span>
+
+<span class="nb">export </span><span class="nv">XERCES_INCLUDE_DIR</span><span class="o">=</span><span class="nv">$CHASTE_LIBS</span>/include
+<span class="nb">export </span><span class="nv">XERCES_LIBRARY_DIR</span><span class="o">=</span><span class="nv">$CHASTE_LIBS</span>/lib
+
+<span class="nb">export </span><span class="nv">XSD_ROOT</span><span class="o">=</span><span class="nv">$CHASTE_LIBS</span>/xsd-4.0.0-x86_64-linux-gnu
+</pre></div><p>
+Save, quit and then re-load <tt>.bashrc</tt> (or log out and back in again):
+</p>
+<div class="code"><pre><span class="nb">source</span> ~/.bashrc
+</pre></div><hr />
+<h2 id="ConfiguringChaste">Configuring Chaste</h2>
+<p>
+Once you've installed the dependencies as above, you need to get hold of the Chaste code. See <a class="wiki" href="/chaste/tutorials/release_2018.1/GettingStarted.html">GettingStarted</a> for the options to pick here.
+</p>
+<p>
+Again, machines that use the Ubuntu package are handled automatically - you are ready to go.
+</p>
+<p>
+Once you've done this, you are ready to build and run the test suite, see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

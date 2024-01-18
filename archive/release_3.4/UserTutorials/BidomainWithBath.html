@@ -1,0 +1,381 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/BidomainWithBath - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestBidomainWithBathTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 25790 on (default)">r25790</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtorunabidomainsimulationfortissuecontainedinaperfusingbath">An example showing how to run a bidomain simulation for tissue contained in a perfusing bath</h1>
+<p>
+In this tutorial we show how the changes the need to be made when running a simulation of
+cardiac tissue contained in a bath.
+</p>
+<p>
+The usual headers are included
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+</pre></div><p>
+Cell models can be solved using a specialised (for cardiac cell models) Backward Euler
+implementation, with again the code being automatically generated from the cellml files.
+Backward Euler allows much greater ODE timesteps to be used. For cellml models provided with Chaste,
+using Backward Euler is trivial: just change the .hpp included as follows, and the class name as below.
+</p>
+<p>
+If you want to use Backward Euler for your own CellML file, there is an intermediate step - see
+<a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CodeGenerationFromCellML#GeneratingBackwardEulercellmodels">https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CodeGenerationFromCellML#GeneratingBackwardEulercellmodels</a>
+(note: requires Maple). (This step creates the .out files that are already present in heart/src/odes/cellml)
+</p>
+<div class="code"><pre><span class="cp">#include "LuoRudy1991BackwardEuler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span></pre></div><p>
+This test will show how to load a mesh in the test and pass it into the problem,
+for which the following includes are needed
+</p>
+<div class="code"><pre><span class="cp">#include "DistributedTetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+</span></pre></div><p>
+This header is needed for the sqrt function.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cmath&gt;
+</span>
+</pre></div><p>
+Define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestWithBathAndElectrodes<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+First, set the end time and output info. In this simulation
+we'll explicitly read the mesh, alter it, then pass it
+to the problem class, so we don't set the mesh file name.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>  <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorialWithBath"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+</pre></div><p>
+Bath problems seem to require decreased ODE timesteps.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdeTimeStep<span class="p">(</span><span class="mf">0.001</span><span class="p">);</span>  <span class="c1">//ms
+</span>
+</pre></div><p>
+Use the <tt>PlaneStimulusCellFactory</tt> to define a set
+of Luo-Rudy cells. We pass the stimulus magnitude as 0.0
+as we don't want any stimulated cells.
+</p>
+<div class="code"><pre>        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellMLBackwardEuler<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+</pre></div><p>
+Now, we load up a rectangular mesh (in triangle/tetgen format), done as follows,
+using <tt>TrianglesMeshReader</tt>.  Note that we use a distributed mesh, so the data
+is shared among processes if run in parallel.
+</p>
+<div class="code"><pre>        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> reader<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_400_elements"</span><span class="p">);</span>
+        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>reader<span class="p">);</span>
+
+</pre></div><p>
+In most simulations there is one valid tissue identifier and one valid bath identifier
+(for elements).
+One of these can be assigned to an element with
+</p>
+<ul><li><tt>mesh.GetElement(i)-&gt;SetAttribute(HeartRegionCode::GetValidTissueId());</tt>
+</li><li><tt>mesh.GetElement(i)-&gt;SetAttribute(HeartRegionCode::GetValidBathId());</tt>
+</li></ul><p>
+ 
+If we want heterogeneous conductivities outside the heart (for example for torso and blood)
+then we will need different identifiers:
+</p>
+<div class="code"><pre>        std<span class="o">::</span>set<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> tissue_ids<span class="p">;</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> tissue_id<span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+        tissue_ids<span class="p">.</span>insert<span class="p">(</span>tissue_id<span class="p">);</span>
+
+        std<span class="o">::</span>set<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> bath_ids<span class="p">;</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> bath_id1<span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+        bath_ids<span class="p">.</span>insert<span class="p">(</span>bath_id1<span class="p">);</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> bath_id2<span class="o">=</span><span class="mi">2</span><span class="p">;</span>
+        bath_ids<span class="p">.</span>insert<span class="p">(</span>bath_id2<span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetTissueAndBathIdentifiers<span class="p">(</span>tissue_ids<span class="p">,</span> bath_ids<span class="p">);</span>
+
+</pre></div><p>
+In bath problems, each element has an attribute which must be set
+to 0 (cardiac tissue) or 1 (bath). This can be done by having an
+extra column in the element file (see the file formats documentation,
+or for example
+mesh/test/data/1D_0_to_1_10_elements_with_two_attributes.ele,
+and note that the header in this file has 1 at the end to indicate that
+the file defines an attribute for each element). We have read in a mesh
+without this type of information set up, so we set it up manually,
+by looping over elements and setting those more than 2mm from the centre
+as bath elements (by default, the others are cardiac elements).
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>ElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> iter<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> iter<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="k">if</span><span class="p">(</span> sqrt<span class="p">((</span>x<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>x<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>y<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>y<span class="o">-</span><span class="mf">0.05</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">0.02</span> <span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.05</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="c1">//Outside circle on the bottom
+</span>                    iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>bath_id1<span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">else</span>
+                <span class="p">{</span>
+                    <span class="c1">//Outside circle on the top
+</span>                    iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>bath_id2<span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                <span class="c1">//IDs default to 0, but we want to be safe
+</span>                iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>tissue_id<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Since we have modified the mesh by setting element attributes, we need to inform Chaste of this fact.
+If we do not, problems will arise when <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials/CardiacCheckpointingAndRestarting.html">checkpointing</a>,
+since the code that saves the simulation state will assume that it can just reuse the original mesh files,
+and thus won't save the new element attributes.
+</p>
+<p>
+(Some mesh modifications, that use methods on the mesh class directly, will automatically record that
+the mesh has been modified.  Since we're just modifying elements, this information isn't propagated at
+present.)
+</p>
+<div class="code"><pre>        mesh<span class="p">.</span>SetMeshHasChangedSinceLoading<span class="p">();</span>
+
+</pre></div><p>
+The external conductivity can set two ways:
+</p>
+<ul><li>the default conductivity in the bath is set with <tt>SetBathConductivity(double)</tt>
+</li><li>heterogeneous overides can be set with <tt>SetBathMultipleConductivities(std::map&lt;unsigned, double&gt; )</tt>
+</li></ul><div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetBathConductivity<span class="p">(</span><span class="mf">7.0</span><span class="p">);</span>  <span class="c1">//bath_id1 tags will take the default value (actually 7.0 is the default)
+</span>        std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> <span class="kt">double</span><span class="o">&gt;</span> multiple_bath_conductivities<span class="p">;</span>
+        multiple_bath_conductivities<span class="p">[</span>bath_id2<span class="p">]</span> <span class="o">=</span> <span class="mf">6.5</span><span class="p">;</span>  <span class="c1">// mS/cm
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetBathMultipleConductivities<span class="p">(</span>multiple_bath_conductivities<span class="p">);</span>
+
+</pre></div><p>
+Now we define the electrodes. First define the magnitude of the electrodes
+(ie the magnitude of the boundary extracellular stimulus), and the duration
+it lasts for. Currently, electrodes switch on at time 0 and have constant magnitude
+until they are switched off. (Note that this test has a small range of
+magnitudes that will work, perhaps because the electrodes are close to the tissue).
+</p>
+<div class="code"><pre>        <span class="c1">// For default conductivities and explicit cell model -1e4 is under threshold, -1.4e4 too high - crashes the cell model
+</span>        <span class="c1">// For heterogeneous conductivities as given, -1e4 is under threshold
+</span>        <span class="kt">double</span> magnitude <span class="o">=</span> <span class="o">-</span><span class="mf">14.0e3</span><span class="p">;</span> <span class="c1">// uA/cm^2
+</span>        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> duration <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//ms
+</span>
+</pre></div><p>
+Electrodes work in two ways: the first electrode applies an input flux, and
+the opposite electrode can either be grounded or apply an equal and opposite
+flux (ie an output flux). The <tt>false</tt> here indicates the second electrode
+is not grounded, ie has an equal and opposite flux. The "0" indicates
+that the electrodes should be applied to the bounding surfaces in the x-direction
+(1 would be y-direction, 2 z-direction), which are X=0.0 and X=0.1 in the given mesh.
+(This explains why the full mesh ought to be rectangular/cuboid - the nodes on
+x=xmin and x=xmax ought to be form two surfaces of equal area.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetElectrodeParameters<span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> magnitude<span class="p">,</span> start_time<span class="p">,</span> duration<span class="p">);</span>
+
+</pre></div><p>
+Now create the problem class, using the cell factory and passing
+in <tt>true</tt> as the second argument to indicate we are solving a bath
+problem..
+</p>
+<div class="code"><pre>        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory<span class="p">,</span> <span class="nb">true</span> <span class="p">);</span>
+
+</pre></div><p>
+..set the mesh and electrodes..
+</p>
+<div class="code"><pre>        bidomain_problem<span class="p">.</span>SetMesh<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+</pre></div><p>
+..and solve as before.
+</p>
+<div class="code"><pre>        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The results can be visualised as before. <strong>Note:</strong> The voltage is only
+defined at cardiac nodes (a node contained in <em>any</em> cardiac element), but
+for visualisation and computation a 'fake' value of ZERO is given for the
+voltage at bath nodes.
+</p>
+<p>
+Finally, we can check that an AP was induced in any of the cardiac
+cells. We use a <tt>ReplicatableVector</tt> as before, and make sure we
+only check the voltage at cardiac cells.
+</p>
+<div class="code"><pre>        Vec solution <span class="o">=</span> bidomain_problem<span class="p">.</span>GetSolution<span class="p">();</span> <span class="c1">// the Vs and phi_e's, as a PetSc vector
+</span>        ReplicatableVector <span class="nf">solution_repl</span><span class="p">(</span>solution<span class="p">);</span>
+
+        <span class="kt">bool</span> ap_triggered <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>HeartRegionCode<span class="o">::</span>IsRegionTissue<span class="p">(</span> iter<span class="o">-&gt;</span>GetRegion<span class="p">()</span> <span class="p">))</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span>solution_repl<span class="p">[</span><span class="mi">2</span><span class="o">*</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="c1">// 2*i, ie the voltage for this node (would be 2*i+1 for phi_e for this node)
+</span>                <span class="p">{</span>
+                    ap_triggered <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        TS_ASSERT<span class="p">(</span>ap_triggered<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestBidomainWithBathTutorial.hpp">File name <tt>TestBidomainWithBathTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "BidomainProblem.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+<span class="cp">#include "LuoRudy1991BackwardEuler.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "DistributedTetrahedralMesh.hpp"
+#include "TrianglesMeshReader.hpp"
+#include &lt;cmath&gt;
+</span>
+<span class="k">class</span> <span class="nc">TestRunningBidomainSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestWithBathAndElectrodes<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>  <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorialWithBath"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdeTimeStep<span class="p">(</span><span class="mf">0.001</span><span class="p">);</span>  <span class="c1">//ms
+</span>
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellMLBackwardEuler<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> reader<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_400_elements"</span><span class="p">);</span>
+        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>reader<span class="p">);</span>
+
+        std<span class="o">::</span>set<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> tissue_ids<span class="p">;</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> tissue_id<span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+        tissue_ids<span class="p">.</span>insert<span class="p">(</span>tissue_id<span class="p">);</span>
+
+        std<span class="o">::</span>set<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> bath_ids<span class="p">;</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> bath_id1<span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+        bath_ids<span class="p">.</span>insert<span class="p">(</span>bath_id1<span class="p">);</span>
+        <span class="k">static</span> <span class="kt">unsigned</span> bath_id2<span class="o">=</span><span class="mi">2</span><span class="p">;</span>
+        bath_ids<span class="p">.</span>insert<span class="p">(</span>bath_id2<span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetTissueAndBathIdentifiers<span class="p">(</span>tissue_ids<span class="p">,</span> bath_ids<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>ElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> x <span class="o">=</span> iter<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="kt">double</span> y <span class="o">=</span> iter<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="k">if</span><span class="p">(</span> sqrt<span class="p">((</span>x<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>x<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span>y<span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>y<span class="o">-</span><span class="mf">0.05</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">0.02</span> <span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.05</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="c1">//Outside circle on the bottom
+</span>                    iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>bath_id1<span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">else</span>
+                <span class="p">{</span>
+                    <span class="c1">//Outside circle on the top
+</span>                    iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>bath_id2<span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                <span class="c1">//IDs default to 0, but we want to be safe
+</span>                iter<span class="o">-&gt;</span>SetAttribute<span class="p">(</span>tissue_id<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        mesh<span class="p">.</span>SetMeshHasChangedSinceLoading<span class="p">();</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetBathConductivity<span class="p">(</span><span class="mf">7.0</span><span class="p">);</span>  <span class="c1">//bath_id1 tags will take the default value (actually 7.0 is the default)
+</span>        std<span class="o">::</span>map<span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> <span class="kt">double</span><span class="o">&gt;</span> multiple_bath_conductivities<span class="p">;</span>
+        multiple_bath_conductivities<span class="p">[</span>bath_id2<span class="p">]</span> <span class="o">=</span> <span class="mf">6.5</span><span class="p">;</span>  <span class="c1">// mS/cm
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetBathMultipleConductivities<span class="p">(</span>multiple_bath_conductivities<span class="p">);</span>
+
+        <span class="c1">// For default conductivities and explicit cell model -1e4 is under threshold, -1.4e4 too high - crashes the cell model
+</span>        <span class="c1">// For heterogeneous conductivities as given, -1e4 is under threshold
+</span>        <span class="kt">double</span> magnitude <span class="o">=</span> <span class="o">-</span><span class="mf">14.0e3</span><span class="p">;</span> <span class="c1">// uA/cm^2
+</span>        <span class="kt">double</span> start_time <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="kt">double</span> duration <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//ms
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetElectrodeParameters<span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> magnitude<span class="p">,</span> start_time<span class="p">,</span> duration<span class="p">);</span>
+
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory<span class="p">,</span> <span class="nb">true</span> <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>SetMesh<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        Vec solution <span class="o">=</span> bidomain_problem<span class="p">.</span>GetSolution<span class="p">();</span> <span class="c1">// the Vs and phi_e's, as a PetSc vector
+</span>        ReplicatableVector <span class="nf">solution_repl</span><span class="p">(</span>solution<span class="p">);</span>
+
+        <span class="kt">bool</span> ap_triggered <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractTetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>NodeIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>HeartRegionCode<span class="o">::</span>IsRegionTissue<span class="p">(</span> iter<span class="o">-&gt;</span>GetRegion<span class="p">()</span> <span class="p">))</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span>solution_repl<span class="p">[</span><span class="mi">2</span><span class="o">*</span>iter<span class="o">-&gt;</span>GetIndex<span class="p">()]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="c1">// 2*i, ie the voltage for this node (would be 2*i+1 for phi_e for this node)
+</span>                <span class="p">{</span>
+                    ap_triggered <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        TS_ASSERT<span class="p">(</span>ap_triggered<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

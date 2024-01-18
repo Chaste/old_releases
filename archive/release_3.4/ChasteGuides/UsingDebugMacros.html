@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/UsingDebugMacros - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="UsingDebugMacros">Using Debug Macros</h1>
+<p>
+If you are having trouble and want to debug without writing
+</p>
+<pre class="wiki">std::cout &lt;&lt; "blah" &lt;&lt; std::endl &lt;&lt; std::flush;
+</pre><p>
+(etc) there is a handy helper macro list in <a class="missing source">source:trunk/global/src/Debug.hpp</a> .
+</p>
+<h2 id="Trace">Trace</h2>
+<p>
+For the above example
+</p>
+<pre class="wiki">TRACE("Some trace");
+</pre><p>
+prints this to the screen:
+</p>
+<pre class="wiki">DEBUG: Some trace
+</pre><h2 id="Printingvariables">Printing variables</h2>
+<pre class="wiki">PRINT_VARIABLE(my_var);
+PRINT_2_VARIABLES(my_var, another_var);
+PRINT_3_VARIABLES(my_var, another_var, cancer_curing_constant);
+PRINT_4_VARIABLES(my_var, another_var, cancer_curing_constant, heart_disease_ending_constant);
+PRINT_VECTOR(vector); // std::vector of anything
+</pre><p>
+will result in the following output
+</p>
+<pre class="wiki">DEBUG: my_var = 3141
+DEBUG: my_var = 3141, another_var = 2.81
+DEBUG: my_var = 3141, another_var = 2.81, cancer_curing_constant = 0.0534502
+DEBUG: my_var = 3141, another_var = 2.81, cancer_curing_constant = 0.0534502, heart_disease_ending_constant = -3e-141
+DEBUG: vector = {0,1,2.7,3.1}
+</pre><h2 id="Determiningiflinesarereached">Determining if lines are reached</h2>
+<pre class="wiki">MARK;
+</pre><p>
+will do something like
+</p>
+<pre class="wiki">DEBUG: ./global/test/TestDebug.hpp at line 95
+</pre><p>
+and
+</p>
+<pre class="wiki">for (unsigned i=0; i&lt;3; i++)
+{
+   HOW_MANY_TIMES_HERE("my line");
+}
+</pre><p>
+outputs
+</p>
+<pre class="wiki">DEBUG: Num times here (my line): 1
+DEBUG: Num times here (my line): 2
+DEBUG: Num times here (my line): 3
+</pre><p>
+and
+</p>
+<pre class="wiki">for (unsigned j=0; j&lt;3; j++)
+{
+  TRACE_FROM_NTH_VISIT("hello",2);
+}
+</pre><p>
+will output
+</p>
+<pre class="wiki">DEBUG: hello (visit 2)
+DEBUG: hello (visit 3)
+</pre><p>
+and finally, 
+</p>
+<pre class="wiki">QUIT_AFTER_N_VISITS(11);
+</pre><p>
+will quit (assert(0), with "User-forced quit." output), the 11th time that line is visited.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

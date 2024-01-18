@@ -1,0 +1,559 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewCellPopulationBoundaryCondition - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/CreatingAndUsingANewCellPopulationBoundaryCondition" href="/chaste/tutorials/release_3.2/UserTutorials/CreatingAndUsingANewCellPopulationBoundaryCondition.html">CreatingAndUsingANewCellPopulationBoundaryCondition</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestCreatingAndUsingANewCellPopulationBoundaryConditionTutorial.hpp at revision <a class="changeset" href="/trac/changeset/20767" title="Copyright mayhem.">r20767</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanduseanewcellpopulationboundarycondition">An example showing how to create and use a new cell population boundary condition</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how to create a new cell population boundary condition
+class to specify a fixed domain within which cells are constrained to lie, and
+how to use this in a cell-based simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span></pre></div><p>
+The next header defines a base class for cell population boundary conditions,
+from which the new class will inherit.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellPopulationBoundaryCondition.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. You will have encountered some these files already in previous
+cell-based Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "OffLatticeSimulation.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span></pre></div><h2 id="Definingthecellpopulationboundaryconditionclass">Defining the cell population boundary condition class</h2>
+<p>
+As an example, let us consider a boundary condition for a two-dimensional cell-based
+simulation, in which all cells are constrained to lie within the domain given in
+Cartesian coordinates by 0 &lt;= y &lt;= 5. To implement this we define a cell population
+boundary condition class, <tt>MyBoundaryCondition</tt>, which inherits from
+<tt>AbstractCellPopulationBoundaryCondition</tt> and overrides the methods
+<tt>ImposeBoundaryCondition()</tt>, <tt>VerifyBoundaryCondition()</tt> and
+<tt>OutputCellPopulationBoundaryConditionParameters()</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">MyBoundaryCondition</span> <span class="o">:</span> <span class="k">public</span> AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="k">public</span><span class="o">:</span>
+</pre></div><p>
+The first public method is a default constructor, which calls the base
+constructor. There is a single input argument, a pointer to a cell population.
+</p>
+<div class="code"><pre>    MyBoundaryCondition<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+        <span class="o">:</span> AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span>pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+</pre></div><p>
+The second public method overrides <tt>ImposeBoundaryCondition()</tt>.
+This method is called during the <tt>Solve()</tt> method in <tt>OffLatticeSimulation</tt>
+at the end of each timestep, just after the position of each node
+in the cell population has been updated according to its equation of motion.
+The method iterates over all cells in the population, and moves any cell whose
+centre has y coordinate less than 0 or greater than 5 back into the domain.
+</p>
+<p>
+Implicit in this method is the assumption that, when a node hits the
+boundary of the domain, it does so inelastically. This means, for example,
+that a node hitting the boundary at y=0 has its location moved to y=0. A
+more physically realistic modelling assumption might be to assume that
+momentum is conserved in the collision.
+</p>
+<p>
+Also implicit in this method is the assumption that we are using a cell-centre
+based population. If we were using a vertex-based population then each node
+would correspond not to a cell centre but to a vertex.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> ImposeBoundaryCondition<span class="p">(</span><span class="k">const</span> std<span class="o">::</span>map<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span><span class="p">,</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;&amp;</span> rOldLocations<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> node_index <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationIndexUsingCell<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+            Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_node <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetNode<span class="p">(</span>node_index<span class="p">);</span>
+            <span class="kt">double</span> y_coordinate <span class="o">=</span> p_node<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+
+            <span class="k">if</span> <span class="p">(</span>y_coordinate <span class="o">&gt;</span> <span class="mf">5.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                p_node<span class="o">-&gt;</span>rGetModifiableLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>y_coordinate <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                p_node<span class="o">-&gt;</span>rGetModifiableLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div><p>
+The third public method overrides <tt>VerifyBoundaryCondition()</tt>.
+This method is called during the <tt>Solve()</tt> method in <tt>OffLatticeSimulation</tt>
+at the end of each timestep, just after <tt>ImposeBoundaryCondition()</tt>, and checks
+that each cell in the population now satisfies <tt>MyBoundaryCondition</tt>.
+</p>
+<div class="code"><pre>    <span class="kt">bool</span> VerifyBoundaryCondition<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kt">bool</span> condition_satisfied <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cell_location <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+            <span class="kt">double</span> y_coordinate <span class="o">=</span> cell_location<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">((</span>y_coordinate <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span>y_coordinate <span class="o">&gt;</span> <span class="mf">5.0</span><span class="p">))</span>
+            <span class="p">{</span>
+                condition_satisfied <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> condition_satisfied<span class="p">;</span>
+    <span class="p">}</span>
+</pre></div><p>
+Just as we encountered in <a class="wiki" href="/chaste/tutorials/release_3.2/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
+a method that outputs any member variables to a specified results file <tt>rParamsFile</tt>.
+In our case, there are no parameters, so we simply call the method on the base class.
+Nonetheless, we still need to override the method, since it is pure virtual in the base
+class.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> OutputCellPopulationBoundaryConditionParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputCellPopulationBoundaryConditionParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+As mentioned in previous cell-based Chaste tutorials, we need to include the next block
+of code to be able to archive the cell population boundary condition object in a cell-based
+simulation, and to obtain a unique identifier for our new boundary condition for writing
+results to file.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyBoundaryCondition<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyBoundaryCondition<span class="p">)</span>
+
+<span class="k">namespace</span> boost
+<span class="p">{</span>
+    <span class="k">namespace</span> serialization
+    <span class="p">{</span>
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> save_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> <span class="k">const</span> MyBoundaryCondition <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> BOOST_PFTO <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">const</span> AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_cell_population <span class="o">=</span> t<span class="o">-&gt;</span>GetCellPopulation<span class="p">();</span>
+            ar <span class="o">&lt;&lt;</span> p_cell_population<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> load_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> MyBoundaryCondition <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_cell_population<span class="p">;</span>
+            ar <span class="o">&gt;&gt;</span> p_cell_population<span class="p">;</span>
+
+            <span class="o">::</span><span class="k">new</span><span class="p">(</span>t<span class="p">)</span>MyBoundaryCondition<span class="p">(</span>p_cell_population<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div><p>
+This completes the code for <tt>MyBoundaryCondition</tt>. Note that usually this code
+would be separated out into a separate declaration in a .hpp file and definition
+in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellPopulationBoundaryConditionTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><h2 id="Testingthecellpopulationboundarycondition">Testing the cell population boundary condition</h2>
+<p>
+We now test that our new cell population boundary condition is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestMyBoundaryCondition<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We first create a <tt>MeshBasedCellPopulation</tt> using the helper
+classes <tt>HoneycombMeshGenerator</tt> and <tt>CellsGenerator</tt>,
+as in previous cell-based Chaste tutorials.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We now use the cell population to construct a cell population boundary condition object.
+</p>
+<div class="code"><pre>        MyBoundaryCondition bc<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+</pre></div><p>
+We start by verifying that some cells do not satisfy the boundary condition:
+</p>
+<div class="code"><pre>        <span class="kt">bool</span> population_satisfies_bc <span class="o">=</span> bc<span class="p">.</span>VerifyBoundaryCondition<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>population_satisfies_bc<span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+
+        std<span class="o">::</span>map<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span><span class="p">,</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> old_node_locations<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>NodeIterator node_iter <span class="o">=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorBegin<span class="p">();</span>
+                node_iter <span class="o">!=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorEnd<span class="p">();</span>
+                <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            old_node_locations<span class="p">[</span><span class="o">&amp;</span><span class="p">(</span><span class="o">*</span>node_iter<span class="p">)]</span> <span class="o">=</span> node_iter<span class="o">-&gt;</span>rGetLocation<span class="p">();</span>
+        <span class="p">}</span>
+</pre></div><p>
+To test that we have implemented the cell population boundary condition correctly,
+we call the overridden method <tt>ImposeBoundaryCondition()</tt>...
+</p>
+<div class="code"><pre>        bc<span class="p">.</span>ImposeBoundaryCondition<span class="p">(</span>old_node_locations<span class="p">);</span>
+</pre></div><p>
+... and check that the cell population does indeed now satisfy the boundary condition:
+</p>
+<div class="code"><pre>        population_satisfies_bc <span class="o">=</span> bc<span class="p">.</span>VerifyBoundaryCondition<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>population_satisfies_bc<span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</pre></div><p>
+The last block of code provides an archiving test for the cell population boundary
+condition, in a similar way to previous cell-based Chaste tutorials:
+</p>
+<div class="code"><pre>        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_bc.arch"</span><span class="p">;</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_bc <span class="o">=</span> <span class="k">new</span> MyBoundaryCondition<span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_bc<span class="p">;</span>
+            <span class="k">delete</span> p_bc<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc<span class="p">;</span>
+            input_arch <span class="o">&gt;&gt;</span> p_bc<span class="p">;</span>
+
+            <span class="k">delete</span> p_bc<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div><h2 id="Usingtheboundaryconditioninacell-basedsimulation">Using the boundary condition in a cell-based simulation</h2>
+<p>
+We now provide a test demonstrating how <tt>MyBoundaryCondition</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestOffLatticeSimulationWithMyBoundaryCondition<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Once again we create a <tt>MeshBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We use the cell population to construct a cell population boundary condition object.
+</p>
+<div class="code"><pre>        MAKE_PTR_ARGS<span class="p">(</span>MyBoundaryCondition<span class="p">,</span> p_bc<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">));</span>
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple, and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyBoundaryCondition"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+</pre></div><p>
+We create a force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+</pre></div><p>
+We now pass the cell population boundary condition into the cell-based simulation.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+When you visualize the results with
+</p>
+<p>
+<tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestOffLatticeSimulationWithMyBoundaryCondition/results_from_time_0</tt>
+</p>
+<p>
+you should see that cells are restricted to the domain 0 &lt;= y &lt;= 5.
+</p>
+<div class="code"><pre><span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewCellPopulationBoundaryConditionTutorial.hpp">File name <tt>TestCreatingAndUsingANewCellPopulationBoundaryConditionTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+
+#include "AbstractCellPopulationBoundaryCondition.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "CellsGenerator.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">MyBoundaryCondition</span> <span class="o">:</span> <span class="k">public</span> AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="o">:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="k">public</span><span class="o">:</span>
+    MyBoundaryCondition<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> pCellPopulation<span class="p">)</span>
+        <span class="o">:</span> AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span>pCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> ImposeBoundaryCondition<span class="p">(</span><span class="k">const</span> std<span class="o">::</span>map<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span><span class="p">,</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;&amp;</span> rOldLocations<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">unsigned</span> node_index <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationIndexUsingCell<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+            Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_node <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetNode<span class="p">(</span>node_index<span class="p">);</span>
+            <span class="kt">double</span> y_coordinate <span class="o">=</span> p_node<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+
+            <span class="k">if</span> <span class="p">(</span>y_coordinate <span class="o">&gt;</span> <span class="mf">5.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                p_node<span class="o">-&gt;</span>rGetModifiableLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span>y_coordinate <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="p">{</span>
+                p_node<span class="o">-&gt;</span>rGetModifiableLocation<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">bool</span> VerifyBoundaryCondition<span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kt">bool</span> condition_satisfied <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cell_location <span class="o">=</span> <span class="k">this</span><span class="o">-&gt;</span>mpCellPopulation<span class="o">-&gt;</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">);</span>
+            <span class="kt">double</span> y_coordinate <span class="o">=</span> cell_location<span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">((</span>y_coordinate <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span>y_coordinate <span class="o">&gt;</span> <span class="mf">5.0</span><span class="p">))</span>
+            <span class="p">{</span>
+                condition_satisfied <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> condition_satisfied<span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> OutputCellPopulationBoundaryConditionParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputCellPopulationBoundaryConditionParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="cp">
+#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyBoundaryCondition<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>MyBoundaryCondition<span class="p">)</span>
+
+<span class="k">namespace</span> boost
+<span class="p">{</span>
+    <span class="k">namespace</span> serialization
+    <span class="p">{</span>
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> save_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> <span class="k">const</span> MyBoundaryCondition <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> BOOST_PFTO <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">const</span> AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_cell_population <span class="o">=</span> t<span class="o">-&gt;</span>GetCellPopulation<span class="p">();</span>
+            ar <span class="o">&lt;&lt;</span> p_cell_population<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+        <span class="kr">inline</span> <span class="kt">void</span> load_construct_data<span class="p">(</span>
+            Archive <span class="o">&amp;</span> ar<span class="p">,</span> MyBoundaryCondition <span class="o">*</span> t<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> file_version<span class="p">)</span>
+        <span class="p">{</span>
+            AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_cell_population<span class="p">;</span>
+            ar <span class="o">&gt;&gt;</span> p_cell_population<span class="p">;</span>
+
+            <span class="o">::</span><span class="k">new</span><span class="p">(</span>t<span class="p">)</span>MyBoundaryCondition<span class="p">(</span>p_cell_population<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellPopulationBoundaryConditionTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+
+    <span class="kt">void</span> TestMyBoundaryCondition<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        MyBoundaryCondition bc<span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">);</span>
+
+        <span class="kt">bool</span> population_satisfies_bc <span class="o">=</span> bc<span class="p">.</span>VerifyBoundaryCondition<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>population_satisfies_bc<span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+
+        std<span class="o">::</span>map<span class="o">&lt;</span>Node<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span><span class="p">,</span> c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> old_node_locations<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>AbstractMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>NodeIterator node_iter <span class="o">=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorBegin<span class="p">();</span>
+                node_iter <span class="o">!=</span> p_mesh<span class="o">-&gt;</span>GetNodeIteratorEnd<span class="p">();</span>
+                <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            old_node_locations<span class="p">[</span><span class="o">&amp;</span><span class="p">(</span><span class="o">*</span>node_iter<span class="p">)]</span> <span class="o">=</span> node_iter<span class="o">-&gt;</span>rGetLocation<span class="p">();</span>
+        <span class="p">}</span>
+
+        bc<span class="p">.</span>ImposeBoundaryCondition<span class="p">(</span>old_node_locations<span class="p">);</span>
+
+        population_satisfies_bc <span class="o">=</span> bc<span class="p">.</span>VerifyBoundaryCondition<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>population_satisfies_bc<span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+
+        OutputFileHandler handler<span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_bc.arch"</span><span class="p">;</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> <span class="k">const</span> p_bc <span class="o">=</span> <span class="k">new</span> MyBoundaryCondition<span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+            output_arch <span class="o">&lt;&lt;</span> p_bc<span class="p">;</span>
+            <span class="k">delete</span> p_bc<span class="p">;</span>
+        <span class="p">}</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">(),</span> std<span class="o">::</span>ios<span class="o">::</span>binary<span class="p">);</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            AbstractCellPopulationBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bc<span class="p">;</span>
+            input_arch <span class="o">&gt;&gt;</span> p_bc<span class="p">;</span>
+
+            <span class="k">delete</span> p_bc<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithMyBoundaryCondition<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        MAKE_PTR_ARGS<span class="p">(</span>MyBoundaryCondition<span class="p">,</span> p_bc<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">));</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithMyBoundaryCondition"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

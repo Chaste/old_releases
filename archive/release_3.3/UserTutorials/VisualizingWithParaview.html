@@ -1,0 +1,410 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/VisualizingWithParaview - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestVisualizingWithParaviewTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="ExamplesshowinghowtovisualizesimulationsinParaview">Examples showing how to visualize simulations in Paraview</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste is used to generate simulations
+that can be viewed in Paraview, and how to use Paraview itself. Three examples
+are provided: the first uses a <tt>MeshBasedCellPopulation</tt> (a cell-centre model
+based on a Delaunay triangulation description of cell neighbours);
+the second uses a <tt>NodeBasedCellPopulation</tt> (a cell-centre model based on an
+'overlapping spheres' description of cell neighbours); and the third uses a
+<tt>VertexBasedCellPopulation</tt> (in which each cell is represented by a polygon).
+To be able to view these simulations, we must first have
+downloaded and installed VTK and Paraview, and updated our hostconfig file
+to ensure that it knows to use VTK.
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The remaining header files define classes that will be used in the cell population
+simulation test. We have encountered each of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "StochasticDurationCellCycleModel.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "MeshBasedCellPopulationWithGhostNodes.hpp"
+#include "NodeBasedCellPopulation.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "SmartPointers.hpp"
+#include "VoronoiDataWriter.hpp"
+</span>
+<span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><p>
+Next, we define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>
+and defines some test methods.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestVisualizingWithParaviewTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><h2 id="Test1-amesh-basedcellcentremonolayersimulation">Test 1 - a mesh-based cell centre monolayer simulation</h2>
+<p>
+In the first test, we run a simple cell-based simulation using a <tt>MeshBasedCellPopulation</tt>,
+in which we use
+a honeycomb mesh with ghost nodes, and give each cell a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">Test2DMeshBasedMonolayerSimulationForVisualizing</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+In a similar way to previous cell-based Chaste tutorials,
+we create a mesh-based cell population in which cells are defined by their centres,
+and cell proliferation is governed by a stochastic generation-based cell-cycle model
+with no differentiation.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> location_indices <span class="o">=</span> generator<span class="p">.</span>GetCellLocationIndices<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> location_indices<span class="p">.</span>size<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        MeshBasedCellPopulationWithGhostNodes<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">,</span> location_indices<span class="p">);</span>
+
+</pre></div><p>
+The following line tells the cell population to write data to .vtu files with cells
+not as points, but as polytopes. This is the default setting: we include the call
+here to highlight this option. If writing point data, we may choose the shape used
+to visualize each cell in Paraview using glyphs.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>SetWriteVtkAsPoints<span class="p">(</span><span class="nb">false</span><span class="p">);</span>
+
+</pre></div><p>
+In order to output the .vtu files required for Paraview, we explicitly
+instruct the simulation to output the data we need.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>VoronoiDataWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+</pre></div><p>
+We create a force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial.
+We are checking that we reached the end time of the simulation
+with the correct number of cells. If different simulation input parameters are being explored
+the lines should be removed.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">102u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, we must first open Paraview. We open the folder containing our test output using the 'file' menu at
+the top. The output will be located in <tt>/tmp/$USER/testoutput/Test2DMonolayerSimulationForVisualizing/results_from_time_0</tt>.
+There will be a .vtu file generated for every timestep, which must all be opened at once to view the simulation. To do this,
+simply select <tt>results.pvd</tt>. We should now see <tt>results.pvd</tt>  in the pipeline browser. We click <tt>Apply</tt> in the properties tab
+of the object inspector, and we should now see a visualization in the right hand window.  (An alternative to opening the <tt>results.pvd</tt>
+file is to open all the time steps en masse where we open <tt>results_..vtu</tt> and see <tt>results_*</tt> appear in the pipeline browser.)
+</p>
+<p>
+At this stage, it will be necessary to refine how we wish to view this particular visualisation. The viewing styles can be edited using
+the display tab of the object inspector. In particular, under <tt>Style</tt>, the representation drop down menu allows us to view
+the cells as a surface with edges, or as simply a wireframe. It is advisable at this point to familiarize ourselves with the different
+viewing options, colour and size settings.
+</p>
+<p>
+At this stage, the viewer is showing all cells in the simulation, including the ghost nodes. In order to view only real cells, we must
+apply a threshold. This is achieved using the threshold button on the third toolbar (the icon is a cube with a green 'T' inside). Once you
+click the threshold button, you will see a new threshold appear below your results in the pipeline browser. Go to the properties tab and
+reset the lower threshold to be less than 0, and the upper threshold to be between 0 and 1, ensuring that the 'Non-ghosts' option is
+selected in the 'Scalars' drop down menu. Once we have edited this, we click apply (we may need to click it twice), and the visualisation on the
+right window will have changed to eliminate ghost nodes.
+</p>
+<p>
+To view the simulation, simply use the animation buttons located on the top toolbar. We can also save a screenshot, or an animation, using
+the appropriate options from the file menu. Next to the threshold button are two other useful options, 'slice' and 'clip', but these will
+only be applicable for 3D visualisations.
+</p>
+<h2 id="Test2-anode-basedsimulation">Test 2 - a node-based simulation</h2>
+<p>
+We next run a similar simulation to the first example, but now use a <tt>NodeBasedCellPopulation</tt>,
+in which cells are represented as 'overlapping spheres'.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">Test2DNodeBasedMonolayerSimulationForVisualizing</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We set up the simulation in much the same way as above, except now using a <tt>NodesOnlyMesh</tt> and
+<tt>NodeBasedCellPopulation</tt>. Further details on how to set up a node-based simulation can be found in
+<a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/RunningNodeBasedSimulations.html">UserTutorials/RunningNodeBasedSimulations</a>.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">());</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DNodeBasedMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial.
+We are checking that we reached the end time of the simulation
+with the correct number of cells.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">100u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+To visualize the results, we follow the instructions above for the first simulation, ensuring that we open the
+test output from the new folder, <tt>Test2DNodeBasedMonolayerSimulationForVisualizing</tt>.
+After opening Paraview, load the file <tt>results.pvd</tt>, then click "Apply" in the object inspector panel.
+As this simulation uses a <tt>NodeBasedCellPopulation</tt>, you must use glyphs to visualize cells: click the button
+marked "Glyph" in the toolbar of common filters; specify cells to be displayed as spheres; then click "Apply".
+</p>
+<h2 id="Test3-abasicvertex-basedsimulation">Test 3 - a basic vertex-based simulation</h2>
+<p>
+Here, we run a simple vertex-based simulation, in which we create a monolayer
+of cells using a mutable vertex mesh. Each cell is assigned a fixed cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">Test2DVertexBasedMonolayerSimulationForVisualizing</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+In this test, we create a vertex-based cell population in which cells are defined
+by their vertices, and cell proliferation is governed by a fixed generation-based
+cell-cycle model (with differentiation after a default number of generations).
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">());</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DVertexMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+</pre></div><p>
+We create a force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_nagai_honda_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_nagai_honda_force<span class="p">);</span>
+
+</pre></div><p>
+We also make a pointer to target area modifier and add it to the simulator.
+The target area modifier assigns target areas to cells throughout the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+The next two lines are for test purposes only and are not part of this tutorial.
+We are checking that we reached the end time of the simulation
+with the correct number of cells.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">84u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, we follow the instructions above for the first simulation, ensuring that we open the
+test output from the new folder, <tt>Test2DVertexMonolayerSimulationForVisualizing</tt>.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestVisualizingWithParaviewTutorial.hpp">File name <tt>TestVisualizingWithParaviewTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "StochasticDurationCellCycleModel.hpp"
+#include "FixedDurationGenerationBasedCellCycleModel.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "MeshBasedCellPopulationWithGhostNodes.hpp"
+#include "NodeBasedCellPopulation.hpp"
+#include "VertexBasedCellPopulation.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "SmartPointers.hpp"
+#include "VoronoiDataWriter.hpp"
+</span>
+<span class="cp">#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestVisualizingWithParaviewTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> Test2DMeshBasedMonolayerSimulationForVisualizing<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> location_indices <span class="o">=</span> generator<span class="p">.</span>GetCellLocationIndices<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> location_indices<span class="p">.</span>size<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        MeshBasedCellPopulationWithGhostNodes<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">,</span> location_indices<span class="p">);</span>
+
+        cell_population<span class="p">.</span>SetWriteVtkAsPoints<span class="p">(</span><span class="nb">false</span><span class="p">);</span>
+
+        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>VoronoiDataWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">102u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> Test2DNodeBasedMonolayerSimulationForVisualizing<span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">());</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DNodeBasedMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">100u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> Test2DVertexBasedMonolayerSimulationForVisualizing<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedDurationGenerationBasedCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasic<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">());</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"Test2DVertexMonolayerSimulationForVisualizing"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_nagai_honda_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_nagai_honda_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>cell_population<span class="p">.</span>GetNumRealCells<span class="p">(),</span> <span class="mi">84u</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>GetTime<span class="p">(),</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

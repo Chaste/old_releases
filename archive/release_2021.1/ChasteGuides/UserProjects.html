@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/UserProjects - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="UserProjects">User Projects</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#UserProjects">User Projects</a>
+    <ol>
+      <li>
+        <a href="#Prerequisites">Prerequisites</a>
+      </li>
+      <li>
+        <a href="#Obtainingthetemplateuserproject">Obtaining the template user project</a>
+        <ol>
+          <li>
+            <a href="#Recommended:importtherepositorydirectlytoyourGitHubaccount">Recommended: import the repository directly to your GitHub account</a>
+          </li>
+          <li>
+            <a href="#Alternative:mirrortherepository">Alternative: mirror the repository</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Userprojectguide">User project guide</a>
+      </li>
+      <li>
+        <a href="#ReleasingaUserProject">Releasing a User Project</a>
+      </li>
+      <li>
+        <a href="#OldSVNinformation">Old SVN information</a>
+        <ol>
+          <li>
+            <a href="#CreatingatagandtarballofanSVNprojecttoreleasewithapaper">Creating a tag and tarball of an SVN project to release with a paper</a>
+          </li>
+          <li>
+            <a href="#ConvertinganexistingSVNuserprojecttoaGitHubrepository">Converting an existing SVN user project  to a GitHub repository</a>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+There are a few ways to use Chaste's source code. Professional C++ developers may wish to link to <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html#UsingChastelikeastandardlibrary">Chaste as an external C++ library</a> rather than use the User Project framework described below. People new to C++ may be tempted to directly alter code in the Chaste source folders, this should generally be avoided as we won't know whether any problems you may run into are down to Chaste or your changes to it!
+</p>
+<p>
+Instead of these options, <strong>User Projects</strong> allow you to use Chaste source code and have the benefit of using the Chaste build/testing framework, by putting User Projects under the <a class="source" href="/trac/browser/projects">projects folder</a>. <strong>User Projects</strong> work exactly like new Chaste modules (<tt>global</tt>,<tt>heart</tt>,<tt>cell-based</tt>, etc.) and can depend on any of the Chaste modules (or indeed other User Projects). We tend to supply User Projects to accompany and reproduce research articles (some of these additionally have special wiki pages under <a class="wiki" href="/trac/wiki/PaperTutorials">PaperTutorials</a> that act as walk-throughs of the codes).
+</p>
+<h2 id="Prerequisites">Prerequisites</h2>
+<p>
+This guide assumes that you:
+</p>
+<ul><li>have already <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/InstallGuide">installed Chaste</a> on your machine
+</li><li>have a <a class="ext-link" href="https://github.com/"><span class="icon">​</span>GitHub</a> account 
+</li><li>have a version of <a class="ext-link" href="https://git-scm.com/"><span class="icon">​</span>git</a> installed on your machine
+</li></ul><h2 id="Obtainingthetemplateuserproject">Obtaining the template user project</h2>
+<p>
+We strongly recommend first obtaining the template user project, as this comes complete with the necessary CMake infrastructure.
+</p>
+<h3 id="Recommended:importtherepositorydirectlytoyourGitHubaccount">Recommended: import the repository directly to your GitHub account</h3>
+<p>
+Visit <a class="ext-link" href="https://github.com/Chaste/template_project"><span class="icon">​</span>https://github.com/Chaste/template_project</a> and click "Use as template", and github will let you choose a new name for your project.
+</p>
+<h3 id="Alternative:mirrortherepository">Alternative: mirror the repository</h3>
+<p>
+This method allows you to host your repository somewhere other than GitHub, and assumes that you have an empty repository prepared at some location called <tt>&lt;url_of_your_repo&gt;</tt>:
+</p>
+<pre class="wiki">git clone --bare https://github.com/Chaste/template_project.git
+cd template_project.git
+git push --mirror &lt;url_of_your_repo&gt;
+cd ..
+rm -rf template_project.git
+</pre><h2 id="Userprojectguide">User project guide</h2>
+<ol><li>Navigate to the Chaste projects folder:
+<pre class="wiki">cd /path/to/Chaste/projects
+</pre></li></ol><ol start="2"><li>Clone your new version of the template project. To do this from the command line, run
+<pre class="wiki">git clone https://github.com/[YourGitHubUserName]/[YourProjectName].git
+</pre></li></ol><p>
+where you should replace <tt>[YourGitHubUserName]</tt> with your user name on GitHub, and <tt>[YourProjectName]</tt> with the name you chose for your project repository.
+</p>
+<ol start="3"><li>Navigate to your cloned user project repository at the command line, and run 
+<pre class="wiki">python setup_project.py
+</pre></li></ol><p>
+answering the prompts given.
+</p>
+<ol start="4"><li>To check that your user project compiles correctly, at the command line navigate to a build folder (outside the Chaste or project source folder - see <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CmakeBuildGuide.html">ChasteGuides/CmakeBuildGuide</a>) and run
+<pre class="wiki">ccmake path/to/Chaste
+</pre></li></ol><p>
+Type <tt>c</tt> to configure; when this process is complete, type <tt>e</tt> to exit the configuration.
+You should find that four additional lines have been added to <tt>cmake</tt>.
+These are
+</p>
+<ul><li><tt>Chaste_ENABLE_project_[YourProjectName]</tt>
+</li><li><tt>Chaste_ENABLE_project_[YourProjectName]_APPS</tt>
+</li><li><tt>Chaste_ENABLE_project_[YourProjectName]_INSTALL</tt>
+</li><li><tt>Chaste_ENABLE_project_[YourProjectName]_TESTING</tt>
+</li></ul><p>
+Type <tt>c</tt> to configure once more, then <tt>e</tt> to exit and <tt>g</tt> to generate. When this process is complete, type
+</p>
+<pre class="wiki">make TestHello
+ctest -R TestHello$
+</pre><p>
+and check that <tt>TestHello</tt> passes.
+</p>
+<p>
+You can now start altering the code, adding your own tests, source and updating the Readme!
+</p>
+<h2 id="ReleasingaUserProject">Releasing a User Project</h2>
+<p>
+See <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/UserProjects/ReleasingUserProjects.html">ChasteGuides/UserProjects/ReleasingUserProjects</a>.
+</p>
+<h2 id="OldSVNinformation">Old SVN information</h2>
+<p>
+<a class="wiki" href="/trac/wiki/ChasteGuides/UserProjects?version=51#Oldinformation">old strategy</a> for user projects on the subversion repository and sconscript build system.
+</p>
+<h3 id="CreatingatagandtarballofanSVNprojecttoreleasewithapaper">Creating a tag and tarball of an SVN project to release with a paper</h3>
+<p>
+See <a class="missing wiki">MakingARelease?</a>.
+</p>
+<h3 id="ConvertinganexistingSVNuserprojecttoaGitHubrepository">Converting an existing SVN user project  to a GitHub repository</h3>
+<p>
+This guide is a strategy for converting an existing old-style svn user project to a GitHub repository, keeping all commit history and author contributions.
+</p>
+<p>
+It assumes you have <tt>git svn</tt> installed, and that you have a personal GitHub account.
+</p>
+<ol><li>Set up an empty GitHub repository of the same name as the user project you wish to convert.
+</li></ol><ol start="2"><li>An 'authors file' maps svn user names with git users' email addresses. If you have access to the main Chaste <tt>users.txt</tt> file, place this in a temporary directory.
+<ol class="loweralpha"><li>If you do not have the Chaste <tt>users.txt</tt>, create one in a temporary directory.  It should contain a line for each contributor to your user project:
+<pre class="wiki">SvnUsername = Firstname Lastname &lt;email_address@cs.ox.ac.uk&gt;
+</pre></li></ol></li></ol><ol start="3"><li>Run the following
+<pre class="wiki">git svn clone https://chaste.cs.ox.ac.uk/svn/chaste/projects/&lt;UserProjectName&gt; --authors-file=users.txt
+cd &lt;UserProjectName&gt;
+git remote add origin git@github.com:&lt;YourGitHubName&gt;/&lt;UserProjectName&gt;.git
+git push -u origin master
+</pre></li></ol><ol start="4"><li>Clone this new git repository, and follow <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/UserProjects#Userprojectguide">user project guide above</a> to check everything is working.
+</li></ol></div>
+          
+
+    </div>
+  </body>
+</html>

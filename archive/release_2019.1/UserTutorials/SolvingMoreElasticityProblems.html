@@ -1,0 +1,605 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SolvingMoreElasticityProblems - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file continuum_mechanics/test/TestSolvingMoreElasticityProblemsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/196f6e705993/git_repo" title="Copyright Mayhem!
+">196f6e705993/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this second solid mechanics tutorial, we illustrate some other possibilities: using tractions
+that are defined with a function, or tractions that depend on the deformed body (eg normal pressure
+boundary conditions), specifying non-zero displacement boundary conditions, and then
+displacement boundary conditions only in some directions, and doing compressible solves.
+</p>
+<p>
+These includes are the same as before
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span></pre></div><p>
+The incompressible solver
+</p>
+<div class="code"><pre><span class="cp">#include "IncompressibleNonlinearElasticitySolver.hpp"
+</span></pre></div><p>
+An incompressible material law
+</p>
+<div class="code"><pre><span class="cp">#include "ExponentialMaterialLaw.hpp"
+</span></pre></div><p>
+These two are specific to compressible problems
+</p>
+<div class="code"><pre><span class="cp">#include "CompressibleNonlinearElasticitySolver.hpp"
+#include "CompressibleMooneyRivlinMaterialLaw.hpp"
+</span></pre></div><p>
+This include should generally go last to avoid issues on old library versions
+</p>
+<div class="code"><pre><span class="cp">#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+This function is used in the first test
+</p>
+<div class="code"><pre>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> MyTraction<span class="p">(</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> time<span class="p">)</span>
+<span class="p">{</span>
+    c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> traction <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    traction<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> rX<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">return</span> traction<span class="p">;</span>
+<span class="p">}</span>
+
+</pre></div><div class="code"><pre><span class="k">class</span> <span class="nc">TestSolvingMoreElasticityProblemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Incompressibledeformation:non-zerodisplacementboundaryconditionsfunctionaltractions">Incompressible deformation: non-zero displacement boundary conditions, functional tractions</h2>
+<p>
+We now consider a more complicated example. We prescribe particular new locations for the nodes
+on the Dirichlet boundary, and also show how to prescribe a traction that is given in functional form
+rather than prescribed for each boundary element.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestIncompressibleProblemMoreComplicatedExample</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+Create a mesh
+</p>
+<div class="code"><pre>        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="cm">/*stepsize*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+</pre></div><p>
+Use a different material law this time, an exponential material law.
+The material law needs to inherit from <tt>AbstractIncompressibleMaterialLaw</tt>,
+and there are a few implemented, see <tt>continuum_mechanics/src/problem/material_laws</tt>
+</p>
+<div class="code"><pre>        ExponentialMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c1">// First parameter is 'a', second 'b', in W=a*exp(b(I1-3))
+</span></pre></div><p>
+Now specify the fixed nodes, and their new locations. Create <tt>std::vector</tt>s for each.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> locations<span class="p">;</span>
+</pre></div><p>
+Loop over the mesh nodes
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+If the node is on the Y=0 surface (the LHS)
+</p>
+<div class="code"><pre>            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+</pre></div><p>
+Add it to the list of fixed nodes
+</p>
+<div class="code"><pre>                fixed_nodes<span class="p">.</span>push_back<span class="p">(</span>i<span class="p">);</span>
+</pre></div><p>
+and define a new position x=(X,0.1*X<sup>2</sup>)
+</p>
+<div class="code"><pre>                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> new_location<span class="p">;</span>
+                <span class="kt">double</span> X <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+                new_location<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> X<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">*</span>X<span class="o">*</span>X<span class="p">;</span>
+                locations<span class="p">.</span>push_back<span class="p">(</span>new_location<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Now collect all the boundary elements on the top surface, as before, except
+here we don't create the tractions for each element
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+If Y=1, have found a boundary element
+</p>
+<div class="code"><pre>            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+                BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+                boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Create a problem definition object, and this time calling <tt>SetFixedNodes</tt>
+which takes in the new locations of the fixed nodes.
+</p>
+<div class="code"><pre>        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetFixedNodes<span class="p">(</span>fixed_nodes<span class="p">,</span> locations<span class="p">);</span>
+</pre></div><p>
+Now call <tt>SetTractionBoundaryConditions</tt>, which takes in a vector of
+boundary elements as in the previous test. However this time the second argument
+is a <em>function pointer</em> (just the name of the function) to a
+function returning traction in terms of position (and time [see below]).
+This function is defined above, before the tests. It has to take in a <tt>c_vector</tt> (position)
+and a double (time), and returns a <tt>c_vector</tt> (traction), and will only be called
+using points in the boundary elements being passed in. The function <tt>MyTraction</tt>
+(defined above, before the tests) above defines a horizontal traction (ie a shear stress, since it is
+applied to the top surface) which increases in magnitude across the object.
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetTractionBoundaryConditions<span class="p">(</span>boundary_elems<span class="p">,</span> MyTraction<span class="p">);</span>
+</pre></div><p>
+Note: You can also call <tt>problem_defn.SetBodyForce(MyBodyForce)</tt>, passing in a function
+instead of a vector, although isn't really physically useful, it is only really useful
+for constructing problems with exact solutions.
+</p>
+<p>
+Create the solver as before
+</p>
+<div class="code"><pre>        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"IncompressibleElasticityMoreComplicatedExample"</span><span class="p">);</span>
+
+</pre></div><p>
+Call <tt>Solve()</tt>
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+Another quick check
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">6u</span><span class="p">);</span>
+</pre></div><p>
+Visualise as before.
+</p>
+<p>
+<strong>Advanced:</strong> Note that the function <tt>MyTraction</tt> takes in time, which it didn't use. In the above it would have been called
+with t=0. The current time can be set using <tt>SetCurrentTime()</tt>. The idea is that the user may want to solve a
+sequence of static problems with time-dependent tractions (say), for which they should allow <tt>MyTraction</tt> to
+depend on time, and put the solve inside a time-loop, for example:
+</p>
+<div class="code"><pre>        <span class="c1">//for (double t=0; t&lt;T; t+=dt)
+</span>        <span class="c1">//{
+</span>        <span class="c1">//    solver.SetCurrentTime(t);
+</span>        <span class="c1">//    solver.Solve();
+</span>        <span class="c1">//}
+</span></pre></div><p>
+In this the current time would be passed through to <tt>MyTraction</tt>
+</p>
+<p>
+Create Cmgui output
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+</pre></div><p>
+This is just to check that nothing has been accidentally changed in this test
+</p>
+<div class="code"><pre>        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">98</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.4543</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">98</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.5638</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="Slidingboundaryconditions">Sliding boundary conditions</h2>
+<p>
+It is common to require a Dirichlet boundary condition where the displacement/position in one dimension
+is fixed, but the displacement/position in the others are free. This can be easily done when
+collecting the new locations for the fixed nodes, as shown in the following example. Here, we
+take a unit square, apply gravity downward, and suppose the Y=0 surface is like a frictionless boundary,
+so that, for the nodes on Y=0, we specify y=0 but leave x free (Here (X,Y)=old position, (x,y)=new position).
+(Note though that this wouldn't be enough to uniquely specify the final solution - an arbitrary
+translation in the Y direction could be added a solution to obtain another valid solution, so we
+fully fix the node at the origin.)
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestWithSlidingDirichletBoundaryConditions</span><span class="p">()</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="cm">/*stepsize*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+        ExponentialMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c1">// First parameter is 'a', second 'b', in W=a*exp(b(I1-3))
+</span>
+</pre></div><p>
+Create fixed nodes and locations...
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> locations<span class="p">;</span>
+
+</pre></div><p>
+Fix node 0 (the node at the origin)
+</p>
+<div class="code"><pre>        fixed_nodes<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+        locations<span class="p">.</span>push_back<span class="p">(</span>zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+
+</pre></div><p>
+For the rest, if the node is on the Y=0 surface..
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">1</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+</pre></div><p>
+..add it to the list of fixed nodes..
+</p>
+<div class="code"><pre>                fixed_nodes<span class="p">.</span>push_back<span class="p">(</span>i<span class="p">);</span>
+</pre></div><p>
+..and define y to be 0 but x is fixed
+</p>
+<div class="code"><pre>                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> new_location<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>FREE<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+                locations<span class="p">.</span>push_back<span class="p">(</span>new_location<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Set the material law and fixed nodes, add some gravity, and solve
+</p>
+<div class="code"><pre>        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetFixedNodes<span class="p">(</span>fixed_nodes<span class="p">,</span> locations<span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> gravity <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        gravity<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">;</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>gravity<span class="p">);</span>
+
+        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"ElasticitySlidingBcsExample"</span><span class="p">);</span>
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+</pre></div><p>
+Check the node at (1,0) has moved but has stayed on Y=0
+</p>
+<div class="code"><pre>        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">10</span><span class="p">](</span><span class="mi">0</span><span class="p">));</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">10</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="Compressibledeformationandotherbitsandpieces">Compressible deformation, and other bits and pieces</h2>
+<p>
+In this test, we will show the (very minor) changes required to solve a compressible nonlinear
+elasticity problem, we will describe and show how to specify 'pressure on deformed body'
+boundary conditions, we illustrate how a quadratic mesh can be generated using a linear mesh
+input files, and we also illustrate how <tt>Solve()</tt> can be called repeatedly, with loading
+changing between the solves.
+</p>
+<p>
+Note: for other examples of compressible solves, including problems with an exact solution, see the
+file <tt>continuum_mechanics/test/TestCompressibleNonlinearElasticitySolver.hpp</tt>
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestSolvingCompressibleProblem</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+All mechanics problems must take in quadratic meshes, but the mesh files for
+(standard) linear meshes in <a class="missing wiki">Triangles/Tetgen?</a> can be automatically converted
+to quadratic meshes, by simply doing the following. (The mesh loaded here is a disk
+centred at the origin with radius 1).
+</p>
+<div class="code"><pre>        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> reader<span class="p">(</span><span class="s">"mesh/test/data/disk_522_elements"</span><span class="p">);</span>
+        mesh<span class="p">.</span>ConstructFromLinearMeshReader<span class="p">(</span>reader<span class="p">);</span>
+
+</pre></div><p>
+Compressible problems require a compressible material law, ie one that
+inherits from <tt>AbstractCompressibleMaterialLaw</tt>. The <tt>CompressibleMooneyRivlinMaterialLaw</tt>
+is one such example; instantiate one of these
+</p>
+<div class="code"><pre>        CompressibleMooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span>
+
+</pre></div><p>
+For this problem, we fix the nodes on the surface for which Y &lt; -0.9
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+              iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+              <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> Y <span class="o">=</span> <span class="p">(</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span>Y <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">)</span>
+            <span class="p">{</span>
+                fixed_nodes<span class="p">.</span>push_back<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>GetIndex<span class="p">());</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+We will (later) apply Neumann boundary conditions to surface elements which lie below Y=0,
+and these are collected here. (Minor, subtle, comment: we don't bother here checking Y&gt;-0.9,
+so the surface elements collected here include the ones on the Dirichlet boundary. This doesn't
+matter as the Dirichlet boundary conditions to the nonlinear system essentially overwrite
+an Neumann-related effects).
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter
+              <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+            iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+            <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+           BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+           <span class="k">if</span> <span class="p">(</span>p_element<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.0</span><span class="p">)</span>
+           <span class="p">{</span>
+               boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+           <span class="p">}</span>
+        <span class="p">}</span>
+        assert<span class="p">(</span>boundary_elems<span class="p">.</span>size<span class="p">()</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">);</span>
+
+</pre></div><p>
+Create the problem definition class, and set the law again, this time
+stating that the law is compressible
+</p>
+<div class="code"><pre>        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>COMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+
+</pre></div><p>
+Set the fixed nodes and gravity
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+
+</pre></div><p>
+The elasticity solvers have two nonlinear solvers implemented, one hand-coded and one which uses PETSc's SNES
+solver. The latter is not the default but can be more robust (and will probably be the default in later
+versions). This is how it can be used. (This option can also be called if the compiled binary is run from
+the command line (see <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/RunningBinariesFromCommandLine.html">ChasteGuides/RunningBinariesFromCommandLine</a>) using the option "-mech_use_snes").
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetSolveUsingSnes<span class="p">();</span>
+</pre></div><p>
+This line tells the solver to output info about the nonlinear solve as it progresses, and can be used with
+or without the SNES option above. The corresponding command line option is "-mech_verbose"
+</p>
+<div class="code"><pre>        problem_defn<span class="p">.</span>SetVerboseDuringSolve<span class="p">();</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> gravity<span class="p">;</span>
+        gravity<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        gravity<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>gravity<span class="p">);</span>
+
+</pre></div><p>
+Declare the compressible solver, which has the same interface as the incompressible
+one, and call <tt>Solve()</tt>
+</p>
+<div class="code"><pre>        CompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                        problem_defn<span class="p">,</span>
+                                                        <span class="s">"CompressibleSolidMechanicsExample"</span><span class="p">);</span>
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+Now we call add additional boundary conditions, and call `Solve() again. Firstly: these
+Neumann conditions here are not specified traction boundary conditions (such BCs are specified
+on the undeformed body), but instead, the (more natural) specification of a pressure
+exactly in the <em>normal direction on the deformed body</em>. We have to provide a set of boundary
+elements of the mesh, and a pressure to act on those elements. The solver will automatically
+compute the deformed normal directions on which the pressure acts. Note: with this type of
+BC, the ordering of the nodes on the boundary elements needs to be consistent, otherwise some
+normals will be computed to be inward and others outward. The solver will check this on the
+original mesh and throw an exception if this is not the case. (The required ordering is such that:
+in 2D, surface element nodes are ordered anticlockwise (looking at the whole mesh); in 3D, looking
+at any surface element from outside the mesh, the three nodes are ordered anticlockwise. (Triangle/tetgen
+automatically create boundary elements like this)).
+</p>
+<div class="code"><pre>        <span class="kt">double</span> external_pressure <span class="o">=</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">;</span> <span class="c1">// negative sign =&gt; inward pressure
+</span>        problem_defn<span class="p">.</span>SetApplyNormalPressureOnDeformedSurface<span class="p">(</span>boundary_elems<span class="p">,</span> external_pressure<span class="p">);</span>
+</pre></div><p>
+Call <tt>Solve()</tt> again, so now solving with fixed nodes, gravity, and pressure. The solution from
+the previous solve will be used as the initial guess. Although at the moment the solution from the
+previous call to <tt>Solve()</tt> will be over-written, calling <tt>Solve()</tt> repeatedly may be useful for
+some problems: sometimes, Newton's method will fail to converge for given force/pressures etc, and it can
+be (very) helpful to <em>increment</em> the loading. For example, set the gravity to be (0,-9.81/3), solve,
+then set it to be (0,-2*9.81/3), solve again, and finally set it to be (0,-9.81) and solve for a
+final time
+</p>
+<div class="code"><pre>        solver<span class="p">.</span>Solve<span class="p">();</span>
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestSolvingMoreElasticityProblemsTutorial.hpp">File name <tt>TestSolvingMoreElasticityProblemsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+#include "IncompressibleNonlinearElasticitySolver.hpp"
+#include "ExponentialMaterialLaw.hpp"
+#include "CompressibleNonlinearElasticitySolver.hpp"
+#include "CompressibleMooneyRivlinMaterialLaw.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> MyTraction<span class="p">(</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rX<span class="p">,</span> <span class="kt">double</span> time<span class="p">)</span>
+<span class="p">{</span>
+    c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> traction <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    traction<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> rX<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">return</span> traction<span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">TestSolvingMoreElasticityProblemsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestIncompressibleProblemMoreComplicatedExample<span class="p">()</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="cm">/*stepsize*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+        ExponentialMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c1">// First parameter is 'a', second 'b', in W=a*exp(b(I1-3))
+</span>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> locations<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+                fixed_nodes<span class="p">.</span>push_back<span class="p">(</span>i<span class="p">);</span>
+                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> new_location<span class="p">;</span>
+                <span class="kt">double</span> X <span class="o">=</span> mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+                new_location<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> X<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">*</span>X<span class="o">*</span>X<span class="p">;</span>
+                locations<span class="p">.</span>push_back<span class="p">(</span>new_location<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+             iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+                BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+                boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetFixedNodes<span class="p">(</span>fixed_nodes<span class="p">,</span> locations<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetTractionBoundaryConditions<span class="p">(</span>boundary_elems<span class="p">,</span> MyTraction<span class="p">);</span>
+        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"IncompressibleElasticityMoreComplicatedExample"</span><span class="p">);</span>
+
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>solver<span class="p">.</span>GetNumNewtonIterations<span class="p">(),</span> <span class="mi">6u</span><span class="p">);</span>
+        <span class="c1">//for (double t=0; t&lt;T; t+=dt)
+</span>        <span class="c1">//{
+</span>        <span class="c1">//    solver.SetCurrentTime(t);
+</span>        <span class="c1">//    solver.Solve();
+</span>        <span class="c1">//}
+</span>        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">98</span><span class="p">](</span><span class="mi">0</span><span class="p">),</span> <span class="mf">1.4543</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">98</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.5638</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestWithSlidingDirichletBoundaryConditions<span class="p">()</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span><span class="mf">0.1</span> <span class="cm">/*stepsize*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">1.0</span> <span class="cm">/*height*/</span><span class="p">);</span>
+
+        ExponentialMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span> <span class="c1">// First parameter is 'a', second 'b', in W=a*exp(b(I1-3))
+</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span> locations<span class="p">;</span>
+
+        fixed_nodes<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+        locations<span class="p">.</span>push_back<span class="p">(</span>zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">1</span><span class="p">;</span> i<span class="o">&lt;</span>mesh<span class="p">.</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>fabs<span class="p">(</span>mesh<span class="p">.</span>GetNode<span class="p">(</span>i<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span>
+            <span class="p">{</span>
+                fixed_nodes<span class="p">.</span>push_back<span class="p">(</span>i<span class="p">);</span>
+                c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> new_location<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>FREE<span class="p">;</span>
+                new_location<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+                locations<span class="p">.</span>push_back<span class="p">(</span>new_location<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>INCOMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetFixedNodes<span class="p">(</span>fixed_nodes<span class="p">,</span> locations<span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> gravity <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        gravity<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">;</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>gravity<span class="p">);</span>
+
+        IncompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                          problem_defn<span class="p">,</span>
+                                                          <span class="s">"ElasticitySlidingBcsExample"</span><span class="p">);</span>
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+
+        TS_ASSERT_LESS_THAN<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">10</span><span class="p">](</span><span class="mi">0</span><span class="p">));</span>
+        TS_ASSERT_DELTA<span class="p">(</span>solver<span class="p">.</span>rGetDeformedPosition<span class="p">()[</span><span class="mi">10</span><span class="p">](</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestSolvingCompressibleProblem<span class="p">()</span>
+    <span class="p">{</span>
+        QuadraticMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> reader<span class="p">(</span><span class="s">"mesh/test/data/disk_522_elements"</span><span class="p">);</span>
+        mesh<span class="p">.</span>ConstructFromLinearMeshReader<span class="p">(</span>reader<span class="p">);</span>
+
+        CompressibleMooneyRivlinMaterialLaw<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> law<span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> fixed_nodes<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span> TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryNodeIterator iter <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorBegin<span class="p">();</span>
+              iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryNodeIteratorEnd<span class="p">();</span>
+              <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> Y <span class="o">=</span> <span class="p">(</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span>Y <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">)</span>
+            <span class="p">{</span>
+                fixed_nodes<span class="p">.</span>push_back<span class="p">((</span><span class="o">*</span>iter<span class="p">)</span><span class="o">-&gt;</span>GetIndex<span class="p">());</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*&gt;</span> boundary_elems<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;::</span>BoundaryElementIterator iter
+              <span class="o">=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorBegin<span class="p">();</span>
+            iter <span class="o">!=</span> mesh<span class="p">.</span>GetBoundaryElementIteratorEnd<span class="p">();</span>
+            <span class="o">++</span>iter<span class="p">)</span>
+        <span class="p">{</span>
+           BoundaryElement<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_element <span class="o">=</span> <span class="o">*</span>iter<span class="p">;</span>
+           <span class="k">if</span> <span class="p">(</span>p_element<span class="o">-&gt;</span>CalculateCentroid<span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.0</span><span class="p">)</span>
+           <span class="p">{</span>
+               boundary_elems<span class="p">.</span>push_back<span class="p">(</span>p_element<span class="p">);</span>
+           <span class="p">}</span>
+        <span class="p">}</span>
+        assert<span class="p">(</span>boundary_elems<span class="p">.</span>size<span class="p">()</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">);</span>
+
+        SolidMechanicsProblemDefinition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> problem_defn<span class="p">(</span>mesh<span class="p">);</span>
+        problem_defn<span class="p">.</span>SetMaterialLaw<span class="p">(</span>COMPRESSIBLE<span class="p">,</span><span class="o">&amp;</span>law<span class="p">);</span>
+
+        problem_defn<span class="p">.</span>SetZeroDisplacementNodes<span class="p">(</span>fixed_nodes<span class="p">);</span>
+
+        problem_defn<span class="p">.</span>SetSolveUsingSnes<span class="p">();</span>
+        problem_defn<span class="p">.</span>SetVerboseDuringSolve<span class="p">();</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> gravity<span class="p">;</span>
+        gravity<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        gravity<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">;</span>
+        problem_defn<span class="p">.</span>SetBodyForce<span class="p">(</span>gravity<span class="p">);</span>
+
+        CompressibleNonlinearElasticitySolver<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> solver<span class="p">(</span>mesh<span class="p">,</span>
+                                                        problem_defn<span class="p">,</span>
+                                                        <span class="s">"CompressibleSolidMechanicsExample"</span><span class="p">);</span>
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+
+        <span class="kt">double</span> external_pressure <span class="o">=</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">;</span> <span class="c1">// negative sign =&gt; inward pressure
+</span>        problem_defn<span class="p">.</span>SetApplyNormalPressureOnDeformedSurface<span class="p">(</span>boundary_elems<span class="p">,</span> external_pressure<span class="p">);</span>
+        solver<span class="p">.</span>Solve<span class="p">();</span>
+        solver<span class="p">.</span>CreateCmguiOutput<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

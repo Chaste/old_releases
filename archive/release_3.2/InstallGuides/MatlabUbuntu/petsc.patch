@@ -1,0 +1,20 @@
+diff -c include/petscsys-old.h include/petscsys.h
+*** include/petscsys.h	2012-05-14 18:09:30.570875037 +0100
+--- include/petscsys.h	2012-05-10 10:25:18.589602010 +0100
+***************
+*** 202,208 ****
+  .seealso: PetscMPIInt, PetscInt
+  
+  M*/
+! typedef int PetscBLASInt;
+  
+  /*MC
+      PetscMPIInt - datatype used to represent 'int' parameters to MPI functions.
+--- 202,208 ----
+  .seealso: PetscMPIInt, PetscInt
+  
+  M*/
+! typedef ptrdiff_t PetscBLASInt;
+  
+  /*MC
+      PetscMPIInt - datatype used to represent 'int' parameters to MPI functions.

@@ -1,0 +1,376 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningMeshBasedSimulations - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.0/">Release 3.0</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.0/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningMeshBasedSimulations" href="/chaste/tutorials/release_3.0/UserTutorials/RunningMeshBasedSimulations.html">RunningMeshBasedSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningMeshBasedSimulationsTutorial.hpp at revision <a class="changeset" href="/cgi-bin/trac.cgi/changeset/14532" title="Fixing whitespace again.">r14532</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Examplesshowinghowtocreaterunandvisualizemesh-basedsimulations">Examples showing how to create, run and visualize mesh-based simulations</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial we show how Chaste can be used to create, run and visualize mesh-based simulations.
+Full details of the mathematical model can be found in van Leeuwen <i>et al.</i> (2009) [doi:10.1111/j.1365-2184.2009.00627.x].
+</p>
+<h2 id="Thetest">The test</h2>
+<p>
+We begin by including the necessary header files. The first thing to do is include the
+following header file, which allows us to use certain methods in our test. This header
+file must be included in any Chaste test.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+Any test in which the <tt>GetIdentifier()</tt> method is used, even via the main
+<tt>cell_based</tt> code (through calls to <tt>AbstractCellPopulation</tt> output methods),
+must also include <tt>CheckpointArchiveTypes.hpp</tt> or <tt>CellBasedSimulationArchiver.hpp</tt>
+as the first Chaste header file.
+</p>
+<div class="code"><pre><span class="cp">#include "CheckpointArchiveTypes.hpp"
+</span></pre></div><p>
+The next header includes the Boost shared_ptr smart pointer, and defines some useful
+macros to save typing when using it.
+</p>
+<div class="code"><pre><span class="cp">#include "SmartPointers.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell population
+simulation test. The first defines a helper class for generating a suitable collection
+of cells.
+</p>
+<div class="code"><pre><span class="cp">#include "CellsGenerator.hpp"
+</span></pre></div><p>
+The next header file defines a stochastic cell-cycle model class.
+</p>
+<div class="code"><pre><span class="cp">#include "StochasticDurationCellCycleModel.hpp"
+</span></pre></div><p>
+The next header file defines a helper class for generating a suitable mesh.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombMeshGenerator.hpp"
+</span></pre></div><p>
+The next header file defines the class that simulates the evolution of an off-lattice <tt>CellPopulation</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "OffLatticeSimulation.hpp"
+</span></pre></div><p>
+The next header files define classes for mesh-based <tt>CellPopulation</tt>s with and without ghost nodes.
+</p>
+<div class="code"><pre><span class="cp">#include "MeshBasedCellPopulation.hpp"
+#include "MeshBasedCellPopulationWithGhostNodes.hpp"
+</span></pre></div><p>
+The next header file defines a force law for describing the mechanical interactions
+between neighbouring cells in the cell population.
+</p>
+<div class="code"><pre><span class="cp">#include "GeneralisedLinearSpringForce.hpp"
+</span></pre></div><p>
+Next, we define the test class, which inherits from <tt>CxxTest::TestSuite</tt>
+and defines some test methods.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningMeshBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><h2 id="Test1-abasicmesh-basedsimulation">Test 1 - a basic mesh-based simulation</h2>
+<p>
+In the first test, we run a simple mesh-based simulation, in which we create a monolayer
+of cells, using a mutable mesh. Each cell is assigned a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+In all cell-based Chaste tests, we begin by setting up the start time.
+In later tutorials (<a class="wiki" href="/chaste/tutorials/release_3.0/UserTutorials/RunningNodeBasedSimulations.html">UserTutorials/RunningNodeBasedSimulations</a>) you will see a way to do this automatically.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+Next, we generate a mutable mesh. To create a <tt>MutableMesh</tt>, we can use
+the <tt>HoneycombMeshGenerator</tt>. This generates a honeycomb-shaped mesh,
+in which all nodes are equidistant. Here the first and second arguments
+define the size of the mesh - we have chosen a mesh that is 2 nodes (i.e.
+cells) wide, and 2 nodes high.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we the <tt>CellsGenerator</tt> helper class, which is templated over the type
+of cell cycle model required (here <tt>StochasticDurationCellCycleModel</tt>)
+and the dimension.
+For a list of possible cell cycle models see subclasses of <tt>AbstractCellCycleModel</tt>.
+These can be found in the inheritance diagram, here, <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.0/classAbstractCellCycleModel.html" title="Documentation for the AbstractCellCycleModel class"><span class="icon">&nbsp;</span>AbstractCellCycleModel</a>.
+Note that some of these models will require information on the surrounding medium such as Oxygen concentration to work,
+see specific class documentation for details. Some of these will be covered in later tutorials (<a class="wiki" href="/chaste/tutorials/release_3.0/UserTutorials/RunningContactInhibitionSimulations.html">UserTutorials/RunningContactInhibitionSimulations</a>,
+<a class="wiki" href="/chaste/tutorials/release_3.0/UserTutorials/RunningDeltaNotchSimulations.html">UserTutorials/RunningDeltaNotchSimulations</a>, and <a class="wiki" href="/chaste/tutorials/release_3.0/UserTutorials/RunningTumourSpheroidSimulations.html">UserTutorials/RunningTumourSpheroidSimulations</a>).
+We create an empty vector of cells and pass this into the
+method along with the mesh. The second argument represents the size of that the vector
+<tt>cells</tt> should become - one cell for each node, the third argument specifies
+the proliferative type of the cell STEM, TRANSIT or DIFFERENTIATED.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span>TRANSIT<span class="p">);</span>
+</pre></div><p>
+Now we have a mesh and a set of cells to go with it, we can create a <tt>CellPopulation</tt>.
+In general, this class associates a collection of cells with a mesh.
+For this test, because we have a <tt>MutableMesh</tt>, we use a particular type of
+cell population called a <tt>MeshBasedCellPopulation</tt>.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"MeshBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+</pre></div><p>
+For longer simulations, we may not want to output the results
+every time step. In this case we can use the following method,
+to print results every 12 time steps instead. As the default time step
+used by the simulator, is 30 seconds, this method will cause the
+simulator to print results every 6 minutes (or 0.1 hours).
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+</pre></div><p>
+We must now create one or more force laws, which determine the mechanics of the centres
+of each cell in a cell population. For this test, we use one force law, based on the
+spring based model, and pass it to the <tt>OffLatticeSimulation</tt>.
+For a list of possible forces see subclasses of <tt>AbstractForce</tt>.
+These can be found in the inheritance diagram, here, <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_3.0/classAbstractForce.html" title="Documentation for the AbstractForce class"><span class="icon">&nbsp;</span>AbstractForce</a>.
+Note that some of these forces are not compatible with mesh-based simulations see the specific class documentation for details,
+if you try to use an incompatible class then you will receive a warning.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+<tt>SimulationTime::Destroy()</tt> <strong>must</strong> be called at the end of the test.
+If not, when <tt>SimulationTime::Instance()-&gt;SetStartTime(0.0);</tt> is called
+at the beginning of the next test in this file, an assertion will be triggered.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/MeshBasedMonolayer/results_from_time_0</tt>.
+We may have to do: <tt>javac Visualize2dCentreCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+For further details on visualization, see <a class="wiki" href="/chaste/tutorials/release_3.0/ChasteGuides/RunningCellBasedVisualization.html">ChasteGuides/RunningCellBasedVisualization</a>.
+</p>
+<p>
+You will notice that half of each cell cell around the edge is missing.
+This is because the Voronoi region for nodes on the edge of the mesh can be
+infinite, therefore we only visualise the part inside the mesh.
+This also means there may be "long" edges in the mesh which can cause the cells
+to move due long range interactions resulting in an artificially rounded shape.
+</p>
+<p>
+There are two solutiona to this. The first is to define a cut off length on the force,
+which can be done by using the command
+<tt>p_force-&gt;SetCutOffLength(1.5);</tt>
+on the <tt>GeneralisedLinearSpringForce</tt>. Here there will be no forces exerted
+on any "springs" which are longer than 1.5 cell radii.
+</p>
+<p>
+The second solution is to use 'ghost nodes'. Ghost nodes can be added to mesh-based
+simulations to remove infinite voronoi regions and long edges. To do this, a set of
+nodes (known as ghost nodes) are added around the original mesh which exert forces
+on each other but do not exert forces on the nodes of the original mesh (known as
+real nodes). In addition real nodes exert forces on ghost nodes so the ghost nodes
+remain surrounding the cell population.
+</p>
+<h2 id="Test2-abasicmesh-basedsimulationwithghostnodes">Test 2 - a basic mesh-based simulation with ghost nodes</h2>
+<p>
+In the second test, we run a simple mesh-based simulation with ghost nodes, in which we
+create a monolayer of cells, using a mutable mesh.
+Each cell is assigned a stochastic cell-cycle model.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestMonolayerWithGhostNodes<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+Once again, we begin by setting up the start time.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div><p>
+Next, we generate a mutable mesh. To create a <tt>MutableMesh</tt>, we can use
+the <tt>HoneycombMeshGenerator</tt> as before. Here the first and second arguments
+define the size of the mesh - we have chosen a mesh that is 2 nodes (i.e.
+cells) wide, and 2 nodes high.The third argument specifies the number of layers
+of ghost nodes to make.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+We only want to create cells to attach to real nodes, so we
+use the method <tt>GetCellLocationIndices</tt> to get the indices
+of the real nodes in the mesh. This will be passed in to the
+cell population later on.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> location_indices <span class="o">=</span> generator<span class="p">.</span>GetCellLocationIndices<span class="p">();</span>
+</pre></div><p>
+Having created a mesh, we now create a <tt>std::vector</tt> of <tt>CellPtr</tt>s.
+To do this, we the <tt>CellsGenerator</tt> helper class again. This time the second
+argument is different and is the number of real nodes in the mesh.
+As before all cells are TRANSIT cells.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> location_indices<span class="p">.</span>size<span class="p">(),</span> TRANSIT<span class="p">);</span>
+</pre></div><p>
+Now we have a mesh and a set of cells to go with it, we can create a <tt>CellPopulation</tt>.
+In general, this class associates a collection of cells with a set of elements or a mesh.
+For this test, because we have a <tt>MutableMesh</tt>, and ghost nodes we use a particular type of
+cell population called a <tt>MeshBasedCellPopulationWithGhostNodes</tt>. The third
+argument of the constructor takes a vector of the indices of the real nodes and should be the
+same length as the vector of cell pointers.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulationWithGhostNodes<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">,</span> location_indices<span class="p">);</span> <span class="c">//**Changed**//
+</span></pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"MeshBasedMonolayerWithGhostNodes"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+</pre></div><p>
+Again we create a force law, and pass it to the <tt>OffLatticeSimulation</tt>. This
+force law ensures that ghost nodes don't exert forces on real nodes but real nodes
+exert forces on ghost nodes.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+</pre></div><p>
+We conclude by calling <tt>SimulationTime::Destroy()</tt> as before.
+</p>
+<div class="code"><pre>        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/MeshBasedMonolayerWithGhostNodes/results_from_time_0</tt>.
+</p>
+<div class="code"><pre><span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningMeshBasedSimulationsTutorial.hpp">File name <tt>TestRunningMeshBasedSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "SmartPointers.hpp"
+#include "CellsGenerator.hpp"
+#include "StochasticDurationCellCycleModel.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "MeshBasedCellPopulation.hpp"
+#include "MeshBasedCellPopulationWithGhostNodes.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+</span><span class="k">class</span> <span class="nc">TestRunningMeshBasedSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestMonolayer<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>    <span class="c">// Parameters are: cells across, cells up
+</span>        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">(),</span>TRANSIT<span class="p">);</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"MeshBasedMonolayer"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestMonolayerWithGhostNodes<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        SimulationTime<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetStartTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> location_indices <span class="o">=</span> generator<span class="p">.</span>GetCellLocationIndices<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>StochasticDurationCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> location_indices<span class="p">.</span>size<span class="p">(),</span> TRANSIT<span class="p">);</span>
+
+        MeshBasedCellPopulationWithGhostNodes<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">,</span> location_indices<span class="p">);</span> <span class="c">//**Changed**//
+</span>
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"MeshBasedMonolayerWithGhostNodes"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+
+        SimulationTime<span class="o">::</span>Destroy<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

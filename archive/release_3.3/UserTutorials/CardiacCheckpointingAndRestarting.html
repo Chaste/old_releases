@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacCheckpointingAndRestarting - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file trunk/heart/test/tutorials/TestCardiacCheckpointingAndRestartingTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Checkpointingandrestartingcardiacsimulations">Checkpointing and restarting cardiac simulations</h1>
+<p>
+In this tutorial we show how to save and reload cardiac simulations
+</p>
+<p>
+<tt>CardiacSimulationArchiver</tt> is the main class that takes care of checkpointing
+cardiac simulations.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CardiacSimulationArchiver.hpp"
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestCardiacCheckpointingAndRestartingTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+</pre></div><p>
+First, the checkpointing test.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestCheckpointing</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We set up exactly the same simulation as in <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/AnotherBidomainSimulation.html">UserTutorials/AnotherBidomainSimulation</a>
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Reset<span class="p">();</span>
+
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">2000000</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainCheckpointingTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+
+        <span class="kt">double</span> scale <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">0.19</span><span class="o">*</span>scale<span class="p">));</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+To save the entire simulation, use the <tt>CardiacSimulationArchiver</tt> class, as shown in the following.
+Note the <tt>BidomainProblem&lt;2&gt;</tt> as the template parameter. The output directory is relative to
+CHASTE_TEST_OUTPUT.
+</p>
+<div class="code"><pre>        CardiacSimulationArchiver<span class="o">&lt;</span>BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;::</span>Save<span class="p">(</span>bidomain_problem<span class="p">,</span> <span class="s">"BidomainCheckpointingTutorial/saved_simulation"</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+This is how to restart the test.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestRestarting</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+To restart from the saved simulation directory we  use the <tt>CardiacSimulationArchiver</tt> class, as shown in the following.
+Note the <tt>BidomainProblem&lt;2&gt;</tt> as the template parameter again.  The dimension (2) must match the one given in the
+saved archive directory.
+The output directory is again relative to CHASTE_TEST_OUTPUT.
+</p>
+<div class="code"><pre>        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bidomain_problem <span class="o">=</span> CardiacSimulationArchiver<span class="o">&lt;</span>BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;::</span>Load<span class="p">(</span><span class="s">"BidomainCheckpointingTutorial/saved_simulation"</span><span class="p">);</span>
+
+</pre></div><p>
+The simulation duration has to be amended.
+Note that the duration is always given with respect to the origin of the first solve.
+This means that we are running from <tt>t=5 ms</tt> (the end of the previous simulation) to <tt>t=10 ms</tt>.
+The output files are concatenated so that they appear to be made by a single simulation running from
+<tt>t=0 ms</tt> to <tt>t=10 ms</tt>.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">10</span><span class="p">);</span> <span class="c1">//ms
+</span>
+</pre></div><p>
+One point of checkpointing and restarting is that there may be something which we want to change
+during the course of experiment.  Here we change the conductivity.
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">));</span>
+
+        p_bidomain_problem<span class="o">-&gt;</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h2 id="Notes">Notes</h2>
+<ul><li>Making a checkpoint does add a significant overhead at present, in particular because the mesh is
+written out to disk at each checkpoint. This is to ensure that each checkpoint directory contains everything
+needed to resume the simulation. The mesh written out will be in permuted form if it was
+partitioned for a parallel simulation.
+</li><li>To make this process slightly more efficient, Chaste will copy the original mesh files if the mesh was loaded
+from disk and hasn't been modified (e.g. by permuting).  Because of this, if you modify the mesh in memory,
+e.g. by setting element attributes in <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/BidomainWithBath.html">bidomain-with-bath simulations</a>, then
+you need to inform Chaste by calling <tt>mesh.SetMeshHasChangedSinceLoading()</tt>, so your modifications aren't lost.
+</li><li>Meshes written in checkpoints use a binary form of the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Triangle/Tetgen.html" rel="nofollow">Triangle/Tetgen?</a> mesh format. This makes checkpoints
+significantly smaller but will cause portability problems if checkpoints are moved between little-endian systems
+(e.g. x86) and big-endian systems (e.g. PowerPC).
+</li><li>Checkpoints may be resumed on any number of processes &mdash; you are not restricted to the number on which it was
+saved. However, the mesh will not be re-partitioned if loaded on a different number of processes, so the parallel
+efficiency of the simulation may be significantly reduced in this case.
+</li><li>Resuming a checkpoint will attempt to extend the original results h5 file, if present, so that the file contains
+the complete simulation results. If this file does not exist, a new file will be created to contain just the
+results from the resume point.
+</li><li>When checkpointing, the <tt>progress_status.txt</tt> file only reports the percentage of time to
+go until the <em>next</em> checkpoint, not until the end of the simulation.  This makes it slightly less
+useful; however, the presence of the checkpoint directories (<tt>1ms</tt>, <tt>2ms</tt>, etc.) provides overall
+progress information instead.
+</li><li>On older versions of Boost (before 1.37) there are some restrictions on what may be successfully checkpointed.
+Firstly, checkpointing a simulation that uses a dynamically loaded cell model is impossible.
+Secondly, if you are using a "non-standard" cell model, i.e. one that is hard-coded but not one of those available
+via the XML configuration file, then you may get an error "terminate called after throwing an instance of
+'boost::archive::archive_exception' what():  unregistered class".  To resolve this you unfortunately have to
+include the header for the relevant cell model in <tt>CardiacSimulationArchiver.cpp</tt>; after the inclusion of
+<tt>HeartConfigRelatedCellFactory.hpp</tt> is a sensible location.
+</li><li>Related to the above point, on all Boost versions if you are saving and loading a simulation in different
+source or test files, ensure that you have the same list of includes in both cases, or the serialization code
+may not know about all classes when loading, and give the "unregistered class" error.
+</li></ul><p>
+ 
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCardiacCheckpointingAndRestartingTutorial.hpp">File name <tt>TestCardiacCheckpointingAndRestartingTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CardiacSimulationArchiver.hpp"
+#include "BidomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "PlaneStimulusCellFactory.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestCardiacCheckpointingAndRestartingTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestCheckpointing<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Reset<span class="p">();</span>
+
+        PlaneStimulusCellFactory<span class="o">&lt;</span>CellLuoRudy1991FromCellML<span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> cell_factory<span class="p">(</span><span class="o">-</span><span class="mi">2000000</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainCheckpointingTutorial"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">,</span> cp<span class="o">::</span>media_type<span class="o">::</span>Orthotropic<span class="p">);</span>
+
+        <span class="kt">double</span> scale <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">1.75</span><span class="o">*</span>scale<span class="p">,</span> <span class="mf">0.19</span><span class="o">*</span>scale<span class="p">));</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> bidomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        bidomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        bidomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        CardiacSimulationArchiver<span class="o">&lt;</span>BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;::</span>Save<span class="p">(</span>bidomain_problem<span class="p">,</span> <span class="s">"BidomainCheckpointingTutorial/saved_simulation"</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestRestarting<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
+    <span class="p">{</span>
+        BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;*</span> p_bidomain_problem <span class="o">=</span> CardiacSimulationArchiver<span class="o">&lt;</span>BidomainProblem<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;::</span>Load<span class="p">(</span><span class="s">"BidomainCheckpointingTutorial/saved_simulation"</span><span class="p">);</span>
+
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">10</span><span class="p">);</span> <span class="c1">//ms
+</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetIntracellularConductivities<span class="p">(</span>Create_c_vector<span class="p">(</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">));</span>
+
+        p_bidomain_problem<span class="o">-&gt;</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

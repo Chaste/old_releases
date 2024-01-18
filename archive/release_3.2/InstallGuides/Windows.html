@@ -1,0 +1,169 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Windows - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/Windows" href="/chaste/tutorials/release_3.2/InstallGuides/Windows.html">Windows</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="InstallingChasteonWindows">Installing Chaste on Windows</h1>
+<p>
+<i>Note: the Windows installation is new, and has not yet been tested end-to-end on a clean machine. We would welcome feedback on whether it works for you! </i>
+</p>
+<p>
+The latest development version of Chaste has support for building on Windows using Microsoft Visual Studio and CMake.
+Currently we run <a href="/trac/tests.py/recent?type=nightly&amp;start=0&amp;machine=scratch.cs.ox.ac.uk">automated tests</a> on a Windows 7 machine using Visual Studio 2010.
+</p>
+<p>
+<strong>Ozzy is testing this on Windows 8.1 With Visual Studio 2012</strong>
+</p>
+<p>
+There is a document giving background to the Windows port at <a class="source" href="/trac/browser/trunk/docs/Windows">source:trunk/docs/Windows</a>.
+The instructions below are a newer (and somewhat experimental) version, and are more streamlined.
+</p>
+<p>
+Chaste's third party dependencies need to be built with compatible compiler &amp; linker flags or Chaste will fail to link.
+However, this is largely taken care of for you by a set of CMake scripts that build everything.
+</p>
+<p>
+<strong>NB.</strong> Building Chaste and all its third party dependencies requires a <i>lot</i> of disk space - roughly 100GB on our machine!
+</p>
+<h2 id="Installbuildtools">Install build tools</h2>
+<p>
+You will need:
+</p>
+<ol><li>CMake (from <a class="ext-link" href="http://www.cmake.org"><span class="icon">&nbsp;</span>http://www.cmake.org</a>, at least version 2.8)
+<ul><li> <strong> I used the cmake-2.8.12.1-win32-x86.exe installer and added CMake to the system PATH for current user</strong>
+</li></ul></li><li>A command-line SVN client (e.g. free SlikSVN from <a class="ext-link" href="http://www.sliksvn.com/en/download/"><span class="icon">&nbsp;</span>http://www.sliksvn.com/en/download/</a>)
+<ul><li><strong>I used Slik-Subversion-1.8.5-x64.exe</strong>
+</li></ul></li><li>Visual Studio C++ compiler (2010 or 2012 version)
+<ul><li><strong> I'm using Visual Studio 2013</strong>
+</li></ul></li><li>Python 2.7.x (from <a class="ext-link" href="http://python.org/download/"><span class="icon">&nbsp;</span>http://python.org/download/</a>)
+<ul><li><strong> I'm using python-2.7.6.amd64.exe with default settings</strong>
+</li></ul></li><li>(Optional) Cygwin (from <a class="ext-link" href="http://cygwin.com"><span class="icon">&nbsp;</span>http://cygwin.com</a>, for PETSc configuration)
+<ul><li><strong> I haven't installed this </strong>
+</li></ul></li></ol><p>
+The Chaste CMake scripts can install Cygwin for you if desired, using the <tt>-DAUTO_INSTALL_CYGWIN:BOOL=ON</tt> flag.
+If installing it yourself, make sure that you include the following packages: <tt>mingw64-i686-gcc-core, gendef, python, cmake, make</tt>.
+</p>
+<p>
+Note that the native Windows Python <strong>must</strong> appear before Cygwin's Python on your (Windows) PATH, or the PETSc configuration will fail.
+</p>
+<h2 id="InstallMPI">Install MPI</h2>
+<p>
+Download the relevant stand-alone, and redistributable, installer for the Microsoft MPI implementation from <a class="ext-link" href="http://www.microsoft.com/en-gb/download/details.aspx?id=36045"><span class="icon">&nbsp;</span>http://www.microsoft.com/en-gb/download/details.aspx?id=36045</a>
+</p>
+<p>
+For a 64-bit build (the only supported option for Chaste) install mpi_x64.msi.
+</p>
+<p>
+A typical install path is "<tt>C:\Program Files\Microsoft HPC Pack 2012\</tt>".
+Note however that PETSc will not be able to find MPI if the path supplied contains spaces!
+We recommend circumventing this problem by creating a soft link to the MPI installation, for example by running the following command from a Windows command prompt (<strong>Opening the command prompt as administrator</strong>):
+</p>
+<pre class="wiki">C:\&gt; mklink /D MS_HPC_PACK_2012 "C:\Program Files\Microsoft HPC Pack 2012"
+</pre><p>
+This creates a soft link named <tt>MS_HPC_PACK_2012</tt> at the root of the C: drive, that points at the Microsoft MPI installation directory.
+</p>
+<ul><li><strong> I installed the mpi_x64.msi file </strong>
+</li></ul><h2 id="DownloadSourcecodeandchoosepaths">Download Source code and choose paths</h2>
+<p>
+Decide where you're going to build Chaste, and where you'll put the source.
+These should be near the root folder of a drive, since MSVC (especially version 10) has a relatively short limit on compiler command line lengths!
+</p>
+<p>
+<strong> Add instructions to get chaste source code using SilkSVN</strong>
+</p>
+<p>
+The instructions below assume you've created an empty folder <tt>D:\Chaste\build</tt> in which to build everything, and have unpacked the Chaste source tree in <tt>D:\Chaste\source</tt>.
+Change the relevant paths to suit your setup.
+</p>
+<h2 id="BuildremainingdependenciesandChaste">Build remaining dependencies and Chaste</h2>
+<p>
+You'll want to launch the Visual Studio Command Prompt (called 'Developer Command Prompt' in VS2013) in order to run the following commands, and may need administrator privileges:
+</p>
+<pre class="wiki">D:
+cd \Chaste\build
+cmake -G "Visual Studio 10 Win64" D:/Chaste/source/cmake
+# or cmake -G "Visual Studio 10 Win64" -DAUTO_INSTALL_CYGWIN:BOOL=ON D:/Chaste/source/cmake
+cmake --build .
+</pre><p>
+Note that the above <strong>will not</strong> work if run from Cygwin.  Note also that you <strong>do</strong> need forward slashes in the cmake command arguments.
+</p>
+<p>
+<strong>Ozzy Modified cmake\third_party_libs\CMakeLists.txt to comment out the conditional on AUTO_INSTALL_CYGWIN and 
+used </strong>
+</p>
+<pre class="wiki">cmake -G "Visual Studio 11 Win64" C:/Chaste/source/trunk/cmake
+</pre><p>
+<strong>due to the different VS version and path.  VS2013 needs '12' instead of '11'.</strong>
+</p>
+<p>
+<i>You may need to specify the version of MSVC used to the Boost build, by editing cmake/third_party_libs/CMakeLists.txt about line 243 and appending a version to the 'toolset=msvc' argument, e.g. 'toolset=msvc-12.0' for VS2013.</i>
+</p>
+<p>
+<i>At present there appears to be an issue where the VTK install partially fails.  However, it does install sufficiently that the Chaste build works, i.e. you can continue with the next section.</i>
+</p>
+<h2 id="BuildChasteitself">Build Chaste itself</h2>
+<p>
+Once the initial install of dependencies is complete, you can just build (and test) Chaste by itself, for example using:
+</p>
+<pre class="wiki">D:
+cd \Chaste\build\chaste
+# If the VTK install gave errors, you'll also need the following line. It shouldn't hurt to include it in case...
+cmake -G "Visual Studio 10 Win64" D:/Chaste/source   # Adjust the '10' as above
+cmake --build .
+</pre><p>
+Other flags may be supplied to the cmake invocations as follows (note the trailing full stops are part of the command):
+</p>
+<ul><li><tt>cmake -DRUN_TESTS:BOOL=OFF -DTEST_MPIEXEC_ENABLED:BOOL=ON .</tt> : configure Chaste to build the tests and set them to run on 2 processes rather than 1.  You then need to use "<tt>cmake --build .</tt>" to do the actual building.
+</li><li><tt>cmake -DRUN_TESTS:BOOL=ON -DTEST_FAMILY:STRING="Continuous" .</tt> : this will run tests within the given test family that have previously been built.
+</li></ul><p>
+Once you've used CMake to configure Chaste (i.e. running one of the commands that doesn't include <tt>--build</tt>) you can use the Visual Studio GUI to build Chaste, and also run/debug individual tests.
+Load <tt>D:\Chaste\build\chaste\Chaste.sln</tt> as the solution file.
+</p>
+<p>
+Running debug just by hitting F5 never does the right thing - generally it tries to run 'ALL_BUILD' and hence will ask to build everything that's not up-to-date, then give an error because there's no such executable. Instead, right-click on the test you want then select Debug-&gt;Start new instance. 
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

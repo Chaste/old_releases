@@ -1,0 +1,667 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/RunningContactInhibitionSimulations - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningContactInhibitionSimulations" href="/chaste/tutorials/release_3.2/UserTutorials/RunningContactInhibitionSimulations.html">RunningContactInhibitionSimulations</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <p>
+This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningContactInhibitionSimulationsTutorial.hpp at revision <a class="changeset" href="/trac/changeset/21413" title="#2441 - split `CellBetaCateninWriter` into .cpp and .hpp files, and rename ...">r21413</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtouseacontactinhibitioncellcyclemodelandvolumetrackingsimulationmodifier">An example showing how to use a contact inhibition cell cycle model and volume tracking simulation modifier</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial, we will show how to use a simple implementation of the contact inhibition cell-cycle model,
+which prevents a cell from undergoing division when its volume is smaller than a critical value.
+</p>
+<p>
+We first consider two mesh-based populations in 2D with cells trapped in a square box. In the first population,
+all the cells are contact inhibited and we study the effect of the critical volume upon the global cell density. In the
+second population, we consider a mix of 'normal' cells (contact inhibited) and 'tumour' cells (not inhibited) and study the growth of the
+tumour cells within the box.
+</p>
+<p>
+We then go on to consider the behaviour of a vertex-based population in a box that experiences contact inhibition.
+</p>
+<h2 id="Includingheaderfiles">Including header files</h2>
+<p>
+We begin by including the necessary header files.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+</span></pre></div><p>
+This header needs to be included here to ensure archiving of <tt>CelwiseData</tt> works on all Boost versions.
+</p>
+<div class="code"><pre><span class="cp">#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span></pre></div><p>
+The next header includes the Boost <tt>shared_ptr</tt> smart pointer, and defines some useful
+macros to save typing when using it.
+</p>
+<div class="code"><pre><span class="cp">#include "SmartPointers.hpp"
+</span></pre></div><p>
+The next header include the <tt>NEVER_REACHED</tt> macro, which is used in one of the methods below.
+</p>
+<div class="code"><pre><span class="cp">#include "Exception.hpp"
+</span></pre></div><p>
+The next header file defines the contact inhibition cell-cycle model that inherits from <tt>AbstractSimpleCellCycleModel</tt>.
+The duration of the G1 phase depends on the deviation from a 'target' volume (or area/length in 2D/1D): if a cell's volume is
+lower than a given fraction of its target volume, the G1 phase continues.
+This model of cell-cycle progression allows for quiescence imposed by transient periods of high stress, followed by relaxation. Note that
+in this cell cycle model, quiescence is implemented only by extending the G1 phase. Therefore, if a cell
+is compressed during G2 or S phases then it will still divide, and thus cells whose volumes are smaller
+than the given threshold may still divide.
+</p>
+<p>
+The target volume and the critical fraction are specified using the methods <tt>SetEquilibriumVolume()</tt> and <tt>SetQuiescentVolumeFraction()</tt> respectively.
+Within the <tt>ContactInhibitionCellCycleModel</tt>'s <tt>UpdateCellCyclePhase()</tt> method these parameters are compared to the actual cell volumes, which are stored
+using the cell property <tt>CellData</tt>.
+</p>
+<div class="code"><pre><span class="cp">#include "ContactInhibitionCellCycleModel.hpp"
+</span></pre></div><p>
+The next header defines the simulation class modifier corresponding to the contact inhibition cell-cycle model.
+This modifier updates the <tt>CellData</tt> cell property at each timestep with the volume of each cell.
+</p>
+<div class="code"><pre><span class="cp">#include "VolumeTrackingModifier.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be also be used and are presented in other tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "OffLatticeSimulation.hpp"
+#include "MeshBasedCellPopulation.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "StochasticDurationCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "OutputFileHandler.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "SimulationTime.hpp"
+#include "CellLabel.hpp"
+#include "MutableMesh.hpp"
+#include "MutableVertexMesh.hpp"
+#include "PlaneBoundaryCondition.hpp"
+#include "FakePetscSetup.hpp"
+</span></pre></div><p>
+We first define the global test class that inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestRunningContactInhibitionSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+</pre></div><h2 id="Testinghealthycellcontactinhibitionwithmesh-basedpopulation">Testing healthy cell contact inhibition with mesh-based population</h2>
+<p>
+In this first test we show how to simulate the behaviour of cells healthy cells trapped in a box.
+Each cell will only divide if there is sufficient room.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestContactInhibitionInBox<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We use the honeycomb mesh generator to create a honeycomb mesh and
+the associated mutable mesh.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+We now create a vector of cell pointers.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+</pre></div><p>
+We then define the mutation state of the cells we are working with. We will just consider
+wild type mutations here.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+</pre></div><p>
+We now create a cell-cycle (only contact inhibited) model for these cells and loop over the
+nodes of the mesh to create as many elements in the vector of cell pointers as there are
+in the initial mesh.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+            p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i<span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+</pre></div><p>
+We now create a cell population, that takes several inputs: the mesh (for the position); and
+the vector of cell pointers (for cycles and states)
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+In order to visualize labelled cells (i.e. those that are inhibited from division) you need to use the following command.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+</pre></div><p>
+Here we create a simulation as before. We also set up the output directory, the end time and the output multiple.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestContactInhibitionInBox"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+</pre></div><p>
+Then, we define the modifier class, which automatically updates the volumes of the cells in <tt>CellData</tt> and passes it to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+</pre></div><p>
+Next, we create a force law (springs) to be applied between cell centres and set up a
+cut-off length beyond which cells stop interacting. We then pass this to the <tt>VolumeTrackedOffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+To study the behaviour of the cells with varying volume, we trap them in the square domain [0,2.5]x[0,2.5].
+This is implemented using four <tt>PlaneBoundaryCondition</tt> objects.
+These planes are indicated by a point and a normal and then passed to the <tt>VolumeTrackedOffLatticeSimulation</tt>.
+The domain is chosen to be quite small so as to make the test run in a short amount of time.
+</p>
+<p>
+First we impose a wall at x=0:
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc1<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc1<span class="p">);</span>
+</pre></div><p>
+Then we impose a wall at x&lt;=2.5:
+</p>
+<div class="code"><pre>        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc2<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc2<span class="p">);</span>
+</pre></div><p>
+Then we impose a wall at y&gt;0:
+</p>
+<div class="code"><pre>        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc3<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc3<span class="p">);</span>
+</pre></div><p>
+Finally we impose a wall at y&lt;2.5:
+</p>
+<div class="code"><pre>        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc4<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc4<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestContactInhibitionInBox/results_from_time_0</tt>.
+We may have to do: <tt>javac Visualize2dCentreCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+You will notice that once the cells are below a certain size they no longer proliferate and turn dark blue in the visualisation.
+</p>
+<h2 id="Testingnormalandtumourcellswithmesh-basedpopulation">Testing normal and tumour cells with mesh-based population</h2>
+<p>
+We now test the behaviour of a mixture of healthy and tumour cells in a Box. In this test healthy cells will only
+divide if there is sufficient room whereas tumour cells will divide regardless.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestContactInhibitionInBoxWithMutants<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+Just as before we create a simple mesh.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+We again create the cells. The difference here is that one of the cells is not contact-inhibited, but rather
+is defined by a <tt>StochasticDurationCellCycleModel</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>i<span class="o">==</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">{</span>
+                StochasticDurationCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> StochasticDurationCellCycleModel<span class="p">();</span>
+                p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">14.0</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+                CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+                p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+                p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+                cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+                p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i<span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.8</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+                CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+                p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+                p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+                cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+</pre></div><p>
+We now create a cell population, that takes several inputs: the mesh; and
+the vector of cell pointers
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+</pre></div><p>
+In order to visualize labelled cells (i.e those that are inhibited from division) you need to use the following command.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+</pre></div><p>
+Here we create a simulation as before. We also set up the output directory, the end time and the output multiple.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestContactInhibitionTumourInBox"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+</pre></div><p>
+Then, we define the modifier class, which automatically updates the volumes of the cells in <tt>CellData</tt> and passes it to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+</pre></div><p>
+Next, we create a force law (springs) to be applied between cell centres and set up a
+cut-off length beyond which cells stop interacting. We then pass this to the <tt>VolumeTrackedOffLatticeSimulation</tt>
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+</pre></div><p>
+As in the previous test, we trap the cells in the square domain [0,2.5]x[0,2.5]:
+</p>
+<div class="code"><pre>        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc1<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc1<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc2<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc2<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc3<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc3<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc4<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc4<span class="p">);</span>
+</pre></div><p>
+Finally, to run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestContactInhibitionTumourInBox/results_from_time_0</tt>.
+We may have to do: <tt>javac Visualize2dCentreCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+You will notice that once the healthy cells (yellow) are below a certain size they no longer proliferate and turn dark blue in the visualisation.
+Whereas Tumour cells (light blue) on the other hand will continue to proliferate. You may want to run the simulation for longer to see this more clearly.
+</p>
+<h2 id="Testingcontactinhibitioninvertex-basedmonolayer">Testing contact inhibition in vertex-based monolayer</h2>
+<p>
+We now test the behaviour of normal contact inhibited cells for a vertex-based population.
+The example we use is a growing monolayer.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> TestContactInhibitionWithVertex<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+First we create a simple 2D <a class="missing wiki" href="/trac/wiki/MutableVertexMesh" rel="nofollow">MutableVertexMesh?</a>.
+</p>
+<div class="code"><pre>        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+</pre></div><p>
+We then create cells as before, only this time we need one per element. We also create the cell population (a <tt>VertexBasedCellPopulation</tt>).
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+            p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i <span class="o">-</span> <span class="mf">2.0</span><span class="p">);</span> <span class="c">// So all out of M phase
+</span>            p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.9</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+</pre></div><p>
+Here we create a simulation as before. We also set up the output directory, the end time and the output multiple.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexContactInhibition"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+</pre></div><p>
+Then, we define the modifier class, which automatically updates the volumes of the cells in <tt>CellData</tt> and passes it to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+</pre></div><p>
+Next, we create a force law, <tt>NagaiHondaForce</tt>, to be applied to vertices.
+We then pass this to the <tt>VolumeTrackedOffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_nagai_honda_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_nagai_honda_force<span class="p">);</span>
+</pre></div><p>
+A <tt>NagaiHondaForce</tt> assumes that each cell has a target area assigned to it. In order to
+assign target areas to each cell and define how they grow, we add a <tt>SimpleTargetAreaModifier</tt>
+to the simulator.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+To visualize the results, open a new terminal, <tt>cd</tt> to the Chaste directory,
+then <tt>cd</tt> to <tt>anim</tt>. Then do: <tt>java Visualize2dVertexCells /tmp/$USER/testoutput/TestVertexContactInhibition/results_from_time_0</tt>.
+We may have to do: <tt>javac Visualize2dVertexCells.java</tt> beforehand to create the
+java executable.
+</p>
+<p>
+You will notice that once the healthy cells (yellow) are below a certain size they no longer proliferate and turn dark blue in the visualisation.
+If you run the simulation for a long time these cells occur primarily towards the centre of the monolayer.
+</p>
+<div class="code"><pre><span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestRunningContactInhibitionSimulationsTutorial.hpp">File name <tt>TestRunningContactInhibitionSimulationsTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+
+#include "SmartPointers.hpp"
+#include "Exception.hpp"
+
+#include "ContactInhibitionCellCycleModel.hpp"
+
+#include "VolumeTrackingModifier.hpp"
+
+#include "OffLatticeSimulation.hpp"
+#include "MeshBasedCellPopulation.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "StochasticDurationCellCycleModel.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "OutputFileHandler.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "NagaiHondaForce.hpp"
+#include "SimpleTargetAreaModifier.hpp"
+#include "SimulationTime.hpp"
+#include "CellLabel.hpp"
+#include "MutableMesh.hpp"
+#include "MutableVertexMesh.hpp"
+#include "PlaneBoundaryCondition.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestRunningContactInhibitionSimulationsTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="kt">void</span> TestContactInhibitionInBox<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+            p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i<span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.5</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestContactInhibitionInBox"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc1<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc1<span class="p">);</span>
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc2<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc2<span class="p">);</span>
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc3<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc3<span class="p">);</span>
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc4<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc4<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> TestContactInhibitionInBoxWithMutants<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>StemCellProliferativeType<span class="p">,</span> p_stem_type<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span>i<span class="o">==</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">{</span>
+                StochasticDurationCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> StochasticDurationCellCycleModel<span class="p">();</span>
+                p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">14.0</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetStemCellG1Duration<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+                CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+                p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_stem_type<span class="p">);</span>
+                p_cell<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="mf">0.0</span><span class="p">);</span>
+                cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span>
+            <span class="p">{</span>
+                ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+                p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i<span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.8</span><span class="p">);</span>
+                p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+                CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+                p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+                p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+                cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestContactInhibitionTumourInBox"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        p_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> point <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        c_vector<span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> normal <span class="o">=</span> zero_vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc1<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc1<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc2<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc2<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc3<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc3<span class="p">);</span>
+
+        point<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">;</span>
+        normal<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+        MAKE_PTR_ARGS<span class="p">(</span>PlaneBoundaryCondition<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_bc4<span class="p">,</span> <span class="p">(</span><span class="o">&amp;</span>cell_population<span class="p">,</span> point<span class="p">,</span> normal<span class="p">));</span>
+        simulator<span class="p">.</span>AddCellPopulationBoundaryCondition<span class="p">(</span>p_bc4<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+    <span class="kt">void</span> TestContactInhibitionWithVertex<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombVertexMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        MutableVertexMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+
+        MAKE_PTR<span class="p">(</span>WildTypeCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> i<span class="o">=</span><span class="mi">0</span><span class="p">;</span> i<span class="o">&lt;</span>p_mesh<span class="o">-&gt;</span>GetNumElements<span class="p">();</span> i<span class="o">++</span><span class="p">)</span>
+        <span class="p">{</span>
+            ContactInhibitionCellCycleModel<span class="o">*</span> p_cycle_model <span class="o">=</span> <span class="k">new</span> ContactInhibitionCellCycleModel<span class="p">();</span>
+            p_cycle_model<span class="o">-&gt;</span>SetDimension<span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetBirthTime<span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="kt">double</span><span class="p">)</span>i <span class="o">-</span> <span class="mf">2.0</span><span class="p">);</span> <span class="c">// So all out of M phase
+</span>            p_cycle_model<span class="o">-&gt;</span>SetQuiescentVolumeFraction<span class="p">(</span><span class="mf">0.9</span><span class="p">);</span>
+            p_cycle_model<span class="o">-&gt;</span>SetEquilibriumVolume<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+
+            CellPtr p_cell<span class="p">(</span><span class="k">new</span> Cell<span class="p">(</span>p_state<span class="p">,</span> p_cycle_model<span class="p">));</span>
+            p_cell<span class="o">-&gt;</span>SetCellProliferativeType<span class="p">(</span>p_transit_type<span class="p">);</span>
+            p_cell<span class="o">-&gt;</span>InitialiseCellCycleModel<span class="p">();</span>
+            cells<span class="p">.</span>push_back<span class="p">(</span>p_cell<span class="p">);</span>
+        <span class="p">}</span>
+
+        VertexBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+        cell_population<span class="p">.</span>AddPopulationWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestVertexContactInhibition"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>VolumeTrackingModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>NagaiHondaForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_nagai_honda_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_nagai_honda_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>SimpleTargetAreaModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_growth_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_growth_modifier<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>

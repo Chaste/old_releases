@@ -1,0 +1,582 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/CodeGenerationFromCellML - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="UsingCellMLelectrophysiologymodelsinCardiacChaste">Using CellML electrophysiology models in Cardiac Chaste</h1>
+<p>
+</p><div class="wiki-toc">
+<ol>
+  <li>
+    <a href="#UsingCellMLelectrophysiologymodelsinCardiacChaste">Using CellML electrophysiology models in Cardiac Chaste</a>
+    <ol>
+      <li>
+        <a href="#UseofCellMLinthecardiacexecutable">Use of CellML in the cardiac executable</a>
+      </li>
+      <li>
+        <a href="#UsingdynamicallyloadedCellMLmodelsinChastetestsorprojects">Using dynamically loaded CellML models in Chaste tests or projects</a>
+      </li>
+      <li>
+        <a href="#UsingCellMLfilesassourcesdirectlyinChaste">Using CellML files as sources directly in Chaste</a>
+        <ol>
+          <li>
+            <a href="#Model-specificconversionoptions">Model-specific conversion options</a>
+          </li>
+          <li>
+            <a href="#Project-specificconversionoptions">Project-specific conversion options</a>
+          </li>
+          <li>
+            <a href="#Dynamicloading">Dynamic loading</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#Usingthehelperscript">Using the helper script</a>
+        <ol>
+          <li>
+            <a href="#GenerateCVODEcells">Generate CVODE cells</a>
+          </li>
+          <li>
+            <a href="#GenerateCVODEcellswithdataclamp">Generate CVODE cells with data clamp</a>
+          </li>
+          <li>
+            <a href="#GeneratingAnalyticJacobiansforBackwardEulerandCVODEsolvers">Generating Analytic Jacobians for Backward Euler and CVODE solvers</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#ModelannotationwithRDF">Model annotation with RDF</a>
+        <ol>
+          <li>
+            <a href="#Standardisednames">Standardised names</a>
+          </li>
+          <li>
+            <a href="#Modifiableparameters">Modifiable parameters</a>
+          </li>
+          <li>
+            <a href="#Derivedquantities">Derived quantities</a>
+          </li>
+          <li>
+            <a href="#Variablerangechecking">Variable range checking</a>
+          </li>
+          <li>
+            <a href="#Self-excitatorymodels">Self-excitatory models</a>
+          </li>
+          <li>
+            <a href="#Namedattributes">Named attributes</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#ThePyCmlconfigurationfile">The PyCml configuration file</a>
+        <ol>
+          <li>
+            <a href="#Supplyingcommand-lineargumentsviatheconfigurationfile">Supplying command-line arguments via the configuration file</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#InvokingPyCmldirectly">Invoking PyCml directly</a>
+        <ol>
+          <li>
+            <a href="#GeneratingastandardAbstractCardiacCellsubclass">Generating a standard <tt>AbstractCardiacCell</tt> subclass</a>
+          </li>
+          <li>
+            <a href="#GeneratingoptimisedAbstractCardiacCellsubclasses">Generating optimised <tt>AbstractCardiacCell</tt> subclasses</a>
+          </li>
+          <li>
+            <a href="#GeneratinganAbstractBackwardEulerCardiacCellsubclass">Generating an <tt>AbstractBackwardEulerCardiacCell</tt> subclass</a>
+          </li>
+          <li>
+            <a href="#GeneratinganoptimisedAbstractBackwardEulerCardiacCellsubclass">Generating an optimised <tt>AbstractBackwardEulerCardiacCell</tt> subclass</a>
+          </li>
+        </ol>
+      </li>
+      <li>
+        <a href="#InstallingPyCml">Installing PyCml</a>
+      </li>
+    </ol>
+  </li>
+</ol>
+</div><p>
+</p>
+<p>
+This page contains some notes on generating Chaste code for cardiac cell models from CellML files, using <a href="https://chaste.cs.ox.ac.uk/cellml/">PyCml</a>, the Chaste CellML toolkit.  PyCml is included with the Chaste source release, in the folder <tt>python/pycml</tt>.
+</p>
+<p>
+The process is mostly automatic, although some of the options require some human intervention, and the CellML file itself may need to be <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotated</a> in order to allow successful conversion (for example, to indicate which variables represent the transmembrane potential and stimulus current).  Many annotated CellML files may be found in the Chaste repository, either in the <a class="source" href="/trac/browser/trunk/heart/src/odes/cellml">heart/src/odes/cellml</a> folder, or the <a class="ext-link" href="https://github.com/Chaste/cellml"><span class="icon">​</span>cellml project</a>.
+</p>
+<p>
+There are two main ways of using CellML within Chaste.  If you are a cardiac executable user, then providing you compiled the executable from source yourself, CellML files may be loaded on the fly, as <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UseofCellMLinthecardiacexecutable">described below</a>.  If however you are using the source release of Chaste directly, the sections on <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UsingdynamicallyloadedCellMLmodelsinChastetestsorprojects">using dynamically loaded CellML models</a> and <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UsingCellMLfilesassourcesdirectlyinChaste">using CellML files as sources in Chaste</a> will be relevant.
+</p>
+<h2 id="UseofCellMLinthecardiacexecutable">Use of CellML in the cardiac executable</h2>
+<p>
+As of release 2.0 of Chaste, the cardiac executable has gained the ability to automatically load cell models encoded as CellML files at run-time, rather than needing them to be incorporated within Chaste when it is compiled.  In order to take advantage of this, you need (at present) to have built the executable from source yourself, as it uses your Chaste source tree to convert the CellML file into runnable code.
+</p>
+<p>
+This change means that the definition of ionic models within the parameters file has changed.  To specify one of the models included within Chaste, you now need to wrap it in a <tt>&lt;Hardcoded&gt;</tt> element, e.g.
+</p>
+<div class="code"><pre>    <span class="nt">&lt;Hardcoded&gt;</span>FaberRudy2000<span class="nt">&lt;/Hardcoded&gt;</span>
+</pre></div><p>
+Specify a dynamically loaded model using the <tt>&lt;Dynamic&gt;</tt> element instead, e.g.
+</p>
+<div class="code"><pre>    <span class="nt">&lt;Dynamic&gt;</span>
+        <span class="nt">&lt;Path</span> <span class="na">relative_to=</span><span class="s">"chaste_source_root"</span><span class="nt">&gt;</span>heart/dynamic/libDynamicallyLoadableLr91.so<span class="nt">&lt;/Path&gt;</span>
+    <span class="nt">&lt;/Dynamic&gt;</span>
+</pre></div><p>
+The path may either point to a pre-compiled shared library (as in the example), or a CellML file.  If the latter, a shared library will be created in the same folder as the CellML file, and loaded by the executable at run-time. See <a class="source" href="/trac/browser/trunk/heart/test/data/xml/ChasteParametersFullFormat.xml">source:trunk/heart/test/data/xml/ChasteParametersFullFormat.xml</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/heart/test/data/xml/ChasteParametersFullFormat.xml" title="Download">​</a> for a full example parameters file.
+</p>
+<p>
+In release 2.1 of Chaste, support for CellML has been extended to allow you to modify certain parameters of the models within user-defined regions of the tissue.  This is incorporated within the cell heterogeneity support in the parameters file:
+</p>
+<div class="code"><pre><span class="nt">&lt;CellHeterogeneity&gt;</span>
+        <span class="nt">&lt;Location</span> <span class="na">unit=</span><span class="s">"cm"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Cuboid&gt;</span>
+                        <span class="nt">&lt;LowerCoordinates</span> <span class="na">x=</span><span class="s">"-2.0"</span> <span class="na">y=</span><span class="s">"-0.1"</span> <span class="na">z=</span><span class="s">"-1.0"</span><span class="nt">/&gt;</span>
+                        <span class="nt">&lt;UpperCoordinates</span> <span class="na">x=</span><span class="s">"-0.5"</span> <span class="na">y=</span><span class="s">"0.1"</span> <span class="na">z=</span><span class="s">"1.0"</span><span class="nt">/&gt;</span>
+                <span class="nt">&lt;/Cuboid&gt;</span>
+        <span class="nt">&lt;/Location&gt;</span>
+        <span class="nt">&lt;SetParameter</span> <span class="na">name=</span><span class="s">"example"</span> <span class="na">value=</span><span class="s">"0.0"</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;SetParameter</span> <span class="na">name=</span><span class="s">"example2"</span> <span class="na">value=</span><span class="s">"2.0"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/CellHeterogeneity&gt;</span>    
+</pre></div><p>
+Parameters to be modified in this way must be annotated specially in the CellML file - you cannot just modify any variable in the model.  Each variable must have a <tt>cmeta:id</tt> specified (this gives the name used in the <tt>SetParameter</tt> element) and an RDF annotation added, e.g.
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#example"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;modifiable-parameter</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/modifiable-parameter&gt;</span>
+        <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><p>
+Such a block may be placed inside any CellML element, but placing it within or next to the annotated variable is recommended.
+See <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">below</a> for more about RDF annotations.
+</p>
+<p>
+The older scale factor support, which was hardcoded for a few of the models shipped with Chaste, can also be implemented for your own models using named parameters.  If you have a parameter named <tt>ScaleFactorIto</tt> this will be given the value specified in the <tt>ScaleFactorIto</tt> element, for example.  Using <tt>SetParameter</tt> instead is encouraged, however, as the explicit scale factor elements will be removed in the future.
+</p>
+<p>
+Variable annotation as a <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Modifiableparameters">parameter</a> or <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">derived quantity</a> is also important to support the <tt>OutputVariables</tt> functionality in the executable.  Any variable thus annotated, or any state variable, may be specified to be included in the output data along with <em>V</em> and <em>phi_e</em>.
+</p>
+<p>
+Options controlling the code generation process for the CellML file may be specified using a file-specific configuration file, as described <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UsingCellMLfilesassourcesdirectlyinChaste">below</a>.  This may be used to apply optimisations to generate faster code, for example.
+</p>
+<h2 id="UsingdynamicallyloadedCellMLmodelsinChastetestsorprojects">Using dynamically loaded CellML models in Chaste tests or projects</h2>
+<p>
+Your own code built on Chaste may also use dynamically compiled and loaded CellML models.  There is now a helper class <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2018.1/classCellMLLoader.html" title="Documentation for the CellMLLoader class"><span class="icon">​</span>CellMLLoader</a> to simplify this process, but all the functionality it uses was already in release 3.0.  See <a class="ext-link" href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2018.1/classCellMLLoader.html" title="Documentation for the CellMLLoader class"><span class="icon">​</span>that class' documentation</a> for details of usage, but note that it allows you to pass options for the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Usingthehelperscript">helper script described below</a> to the model loading process.
+</p>
+<p>
+The <a class="ext-link" href="https://github.com/Chaste/cellml"><span class="icon">​</span>cellml project</a> contains many annotated CellML files which you may use in this fashion.
+</p>
+<h2 id="UsingCellMLfilesassourcesdirectlyinChaste">Using CellML files as sources directly in Chaste</h2>
+<p>
+The Chaste build system uses the <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Usingthehelperscript">helper script</a> described below to generate source code from CellML files 'on the fly'.  CellML files located within <tt>src</tt> or <tt>test</tt> folders will generate code that can be used like normal C++ classes. 
+It can be very helpful to have access to a range of models, by using the <a class="ext-link" href="https://github.com/Chaste/cellml"><span class="icon">​</span>Chaste cellml project</a>. This project contains many of the common models, pre-annotated with metadata for automatic conversion, and tagging of many of the common parameters you may wish to vary/investigate. See the README.txt at the previous link for instructions on including this project within your own project.
+</p>
+<p>
+By default, all possible variants will be supplied to the helper script, i.e. it will generate CVODE code if your build is using CVODE, and Backward Euler code if a <tt>.out</tt> file is available.  
+</p>
+<h3 id="Model-specificconversionoptions">Model-specific conversion options</h3>
+<p>
+This can be fine-tuned by providing a file-specific configuration file.  For a CellML file called "<tt>MyModel.cellml</tt>", this is a file "<tt>MyModel-conf.xml</tt>" located in the same folder.  It may contain any content allowable in the main PyCml configuration file (see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#ThePyCmlconfigurationfile">below</a>, especially <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Supplyingcommand-lineargumentsviatheconfigurationfile">the section on command-line arguments</a>), and will override any options specified therein.  See <a class="source" href="/trac/browser/trunk/heart/src/odes/cellml/TenTusscher2006Epi-conf.xml">source:trunk/heart/src/odes/cellml/TenTusscher2006Epi-conf.xml</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/heart/src/odes/cellml/TenTusscher2006Epi-conf.xml" title="Download">​</a> for an example. 
+</p>
+<h3 id="Project-specificconversionoptions">Project-specific conversion options</h3>
+<p>
+You can also provide project-wide arguments for conversion of any cellml files within that project.
+</p>
+<p>
+<strong>1. New  build system (CMake)</strong>
+</p>
+<p>
+Add the following line to your project's CMakeLists.txt
+</p>
+<pre class="wiki"># Here we add extra arguments to force PyCML to use this extra argument (make Get and Set methods for
+# all metadata annotated variables). 
+set(Chaste_PYCML_EXTRA_ARGS "--expose-annotated-variables")
+</pre><p>
+<strong>2. Old build system (Scons)</strong>
+</p>
+<p>
+Add flag to your project's  SConscript file. For example, insert:
+</p>
+<pre class="wiki"># Change some flags just for this project 
+env = SConsTools.CloneEnv(env) 
+env['PYCML_EXTRA_ARGS'] = ['--expose-annotated-variables'] 
+</pre><p>
+before the <tt>DoProjectSConscript()</tt> call, to generate cell models that have parameters available for all metadata tagged variables.
+</p>
+<h3 id="Dynamicloading">Dynamic loading</h3>
+<p>
+If the CellML file is placed within a <tt>dynamic</tt> folder (e.g. <a class="source" href="/trac/browser/trunk/heart/dynamic">source:trunk/heart/dynamic</a>), however, it will be compiled to a shared library suitable for loading dynamically by the executable.  In this case, only a single output variant (.hpp &amp; .cpp pair) can be generated, and so an error will be produced if you supply arguments to the helper script (via a model-specific config file) that imply generating multiple variants.  This functionality is used by the executable itself as described <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UseofCellMLinthecardiacexecutable">above</a>.
+</p>
+<p>
+See the CellML files in <a class="source" href="/trac/browser/trunk/heart/src/odes/cellml">source:trunk/heart/src/odes/cellml</a> for examples.
+</p>
+<h2 id="Usingthehelperscript">Using the helper script</h2>
+<p>
+The script <a class="source" href="/trac/browser/trunk/python/ConvertCellModel.py">source:trunk/python/ConvertCellModel.py</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/python/ConvertCellModel.py" title="Download">​</a> should ease the process of using PyCml.  Run the script supplying CellML files as arguments.  Extra options for PyCml can also be supplied.  It will generate both normal and 'fully' optimised versions of models (i.e. with both partial evaluation and lookup tables done).
+</p>
+<p>
+Examples:
+</p>
+<pre class="wiki">./python/ConvertCellModel.py --assume-valid heart/src/odes/cellml/LuoRudy1991.cellml
+./python/ConvertCellModel.py heart/src/odes/cellml/AnotherCellModel.cellml --no-member-vars
+</pre><p>
+Some options are specified implicitly.  At the time of writing these are <tt>--conf=config.xml --use-chaste-stimulus --convert-interfaces --row-lookup-method -c -o</tt>.  You can use
+</p>
+<pre class="wiki">./python/pycml/translate.py --help
+</pre><p>
+to see a full list of options to PyCml itself (<tt>--Wu</tt> is possibly the most useful - it demotes dimensional inconsistency errors to warnings).  The helper script also defines some options, primarily <tt>--cvode</tt>, <tt>--normal</tt>, and <tt>--opt</tt> (run <tt>./python/ConvertCellModel.py -h</tt> to see the full list).  These control whether to create code for solving with CVODE or Euler's method, and whether to use PyCml's optimisation techniques.  It defaults to <tt>--normal --opt</tt>, and hence generates two sets of source code: one with optimisation, and one without.
+</p>
+<p>
+Common ones you might want to do:
+</p>
+<h3 id="GenerateCVODEcells">Generate CVODE cells</h3>
+<p>
+CVODE cells are certainly the best option for single cell electrophysiology studies, and in many cases perform very well in tissue simulations too. To create the necessary <tt>.hpp</tt> and <tt>.cpp</tt> files, simply do (e.g.):
+</p>
+<pre class="wiki">./python/ConvertCellModel.py --cvode [--opt] heart/src/odes/cellml/LuoRudy1991.cellml
+</pre><p>
+This will use an analytic Jacobian if the maple output file is available, see below for how to generate these. The <tt>--opt</tt> is optional and will generate lookup tables for nonlinear functions for additional speed, with a very small approximation error.
+</p>
+<h3 id="GenerateCVODEcellswithdataclamp">Generate CVODE cells with data clamp</h3>
+<p>
+A subclass <tt>AbstractCvodeCellWithDataClamp</tt> allows the 'data clamp' proposed by <a class="ext-link" href="http://www.ncbi.nlm.nih.gov/pubmed/15142755"><span class="icon">​</span>Dokos &amp; Lovell (2004)</a> to be applied to any CellML model.
+</p>
+<p>
+This adds an additional current to the model, specified by:
+</p>
+<pre class="wiki">I_data = g_data*(V - V_data);
+</pre><p>
+<strong>Note:</strong> this current affects dV/dt for single cell simulations only. It is not reported by GetIIonic() so it <strong>I_data=0 in tissue sims</strong>!
+</p>
+<p>
+You can generate the files as follows:
+</p>
+<pre class="wiki">./python/ConvertCellModel.py --cvode-data-clamp [--opt] heart/src/odes/cellml/LuoRudy1991.cellml
+</pre><p>
+These don't use an analytic Jacobian, since the data clamp current can't easily be added to the Jacobian.
+</p>
+<p>
+This can be used via the methods:
+</p>
+<pre class="wiki">AbstractCvodeCellWithDataClamp::SetExperimentalData(std::vector&lt;double&gt; times, std::vector&lt;double&gt; voltages);
+AbstractCvodeCellWithDataClamp::SetDataClampOn(double conductance);
+AbstractCvodeCellWithDataClamp::SetDataClampOff();
+</pre><h3 id="GeneratingAnalyticJacobiansforBackwardEulerandCVODEsolvers">Generating Analytic Jacobians for Backward Euler and CVODE solvers</h3>
+<p>
+In release 2.1 support was added for generating Backward Euler style cell models using the helper script.  
+In release 3.2 support was added for generating 'Analytic Jacobians' for CVODE cells in the same way (CVODE will run fine with numerical Jacobians if this step is not done, but usually slightly faster with analytic, see <a class="wiki" href="/trac/wiki/PaperTutorials">PaperTutorials</a>/Frontiers2014 for full benchmarking details).
+This is a multi-stage process, as the analysis uses Maple to perform symbolic differentiation.  First run PyCml directly to generate a Maple script, then run Maple on this script (again you may need to add the <tt>--Wu</tt> option to PyCml):
+</p>
+<pre class="wiki">./python/pycml/translate.py -J --conf=python/pycml/config.xml &lt;cellml_file.cellml&gt;
+maple -i &lt;cellml_file.mpl&gt; &gt; &lt;cellml_file.out&gt;
+</pre><p>
+Finally, place the resulting <tt>.out</tt> file adjacent to the CellML file.  Supplying the <tt>--backward-euler</tt> option to the helper script will then generate a backward Euler class.  As of <a class="changeset" href="/trac/changeset/17984/chaste" title=" #1795 - should stop Maple complaining about negative numbers.">r17984</a> this process should now be fully automatic.
+</p>
+<p>
+The helper script will name output files and classes based on the input CellML file name.  For example, with an input file '<tt>MyModel</tt>.cellml' and all variations generated (i.e. <tt>--normal --opt --cvode --backward-euler</tt>) the following files will be produced, which define the relevant classes:
+</p>
+<ul><li><tt>MyModel.hpp</tt>, <tt>MyModel.cpp</tt>: class <tt>CellMyModelFromCellML</tt> with no optimisation
+</li><li><tt>MyModelOpt.hpp</tt>, <tt>MyModelOpt.cpp</tt>: class <tt>CellMyModelFromCellMLOpt</tt> PyCml optimisations
+</li><li><tt>MyModelCvode.hpp</tt>, <tt>MyModelCvode.cpp</tt>: class <tt>CellMyModelFromCellMLCvode</tt> which can be solved with CVODE
+</li><li><tt>MyModelCvodeOpt.hpp</tt>, <tt>MyModelCvodeOpt.cpp</tt>: class <tt>CellMyModelFromCellMLCvodeOpt</tt> which can be solved with CVODE and uses PyCml optimisations
+</li><li><tt>MyModelBackwardEuler.hpp</tt>, <tt>MyModelBackwardEuler.cpp</tt>: class <tt>CellMyModelFromCellMLBackwardEuler</tt> which is solved using backward Euler, and uses PyCml optimisations.
+</li></ul><p>
+By default the helper script will use the PyCml shipped with Chaste.  If, however, you have the environment variable <tt>PYCML_DIR</tt> set, the script will assume this points to an installation of PyCml that you want to use instead.
+</p>
+<h2 id="ModelannotationwithRDF">Model annotation with RDF</h2>
+<p>
+CellML files may include metadata through the use of <a class="ext-link" href="http://en.wikipedia.org/wiki/Resource_Description_Framework"><span class="icon">​</span>RDF</a>, the Resource Description Framework (see the <a class="ext-link" href="http://www.cellml.org/specifications/metadata"><span class="icon">​</span>CellML metadata specification</a> for more information).  PyCml makes use of several different annotations when generating C++ source code for Chaste.
+</p>
+<p>
+Some annotations may be required to enable successful code generation.  In particular, PyCml needs to know which variables represent the transmembrane potential and stimulus current, in order to link the models into the mono/bi-domain equations.  (If the model does not have a stimulus current because it represents a self-excitatory cell, it must be <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Self-excitatorymodels">annotated to indicate this</a>.)  Many common naming conventions are supported by the default configuration file (<a class="source" href="/trac/browser/trunk/python/pycml/config.xml">source:trunk/python/pycml/config.xml</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/python/pycml/config.xml" title="Download">​</a>), but <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Standardisednames">name annotations</a> can be used for unrecognised cases.  You may also need to annotate the membrane capacitance if its value is required for automatic units conversions (if the model uses amps as the dimensions of transmembrane currents).
+</p>
+<p>
+All metadata annotations must occur within an <tt>&lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;</tt> element.  Such an element may occur within any CellML element, so you may place annotations next to the variable being annotated, or in a single <tt>rdf:RDF</tt> element at the top level of the model, as you prefer.  Variables to be annotated must have a <tt>cmeta:id</tt> attribute, which is used to identify the variable in the annotation.
+</p>
+<p>
+Each annotation takes the form of an <tt>rdf:Description</tt> element:
+</p>
+<div class="code"><pre>        <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#cmeta_id"</span><span class="nt">&gt;</span>
+                <span class="c">&lt;!-- Annotation element goes here --&gt;</span>
+        <span class="nt">&lt;/rdf:Description&gt;</span>
+</pre></div><p>
+where "<tt>cmeta_id</tt>" is replaced by the value of the <tt>cmeta:id</tt> attribute on the variable being annotated.
+</p>
+<p>
+The following annotations are understood by PyCml.  See the CellML files in <a class="source" href="/trac/browser/trunk/heart/src/odes/cellml">source:trunk/heart/src/odes/cellml</a> for examples of their use.
+</p>
+<h3 id="Standardisednames">Standardised names</h3>
+<div class="code"><pre><span class="nt">&lt;bqbiol:is</span> <span class="na">xmlns:bqbiol=</span><span class="s">"http://biomodels.net/biology-qualifiers/"</span>
+           <span class="na">rdf:resource=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/oxford-metadata#standard-name"</span><span class="nt">/&gt;</span>
+</pre></div><p>
+This can be used to specify the 'standard' (to PyCml) name of this variable.  Replace '<tt>standard-name</tt>' with the name in question.  
+</p>
+<p>
+<strong>The full list of allowed names can be found within the <tt>oxford-metadata.ttl</tt> file in the <a class="source" href="/trac/browser/trunk/python/pycml/oxford-metadata.ttl">PyCml source code</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/python/pycml/oxford-metadata.ttl" title="Download">​</a></strong>.  (In release 3.2 and earlier, they were hardcoded in the <tt>cellml_metadata.py</tt> file instead.)
+</p>
+<p>
+To update the 'official' metadata list -- Check with Gary first! -- you need to update the .ttl file, and then run a build on a machine with a newish version of python rdflib installed (to ensure that <tt>oxford-metadata.rdf</tt> is also updated to match). Note that even Ubuntu 14.04 doesn't come with a new enough one, so you may need to download and install it yourself from <a class="ext-link" href="https://pypi.python.org/pypi/rdflib"><span class="icon">​</span>https://pypi.python.org/pypi/rdflib</a>, version 4.1.2 worked nicely.
+</p>
+<p>
+If you have your own metadata tags that are model-specific and not generally applicable/reusable then you can force conversion of the model with these using the option <tt>--assume-valid</tt>. This shouldn't be your default approach as it won't then pick up typos!
+</p>
+<p>
+Currently only a few of these names, shown below, have special meaning to the Chaste CellML translation process, but this will be expanded in the future.
+</p>
+<ul><li><tt>membrane_voltage</tt> - the transmembrane potential
+</li><li><tt>membrane_capacitance</tt> - this is useful if converting the model current units to those expected by Chaste requires knowledge of the cell's membrane capacitance
+</li><li><tt>cytosolic_calcium_concentration</tt> - if this variable is present, the generated class will define the <tt>GetIntracellularCalciumConcentration</tt> method
+</li><li><tt>membrane_stimulus_current</tt> - specifies which variable represents the intracellular stimulus current
+</li><li><tt>membrane_stimulus_current_amplitude</tt>, <tt>membrane_stimulus_current_duration</tt>, <tt>membrane_stimulus_current_period</tt>, <tt>membrane_stimulus_current_offset</tt> - if the stimulus coded in the model is a regular square wave, the relevant parameters may be annotated to allow PyCml to define the <tt>UseCellMLDefaultStimulus</tt> method that uses a <tt>RegularStimulus</tt> class.  The presence of <tt>membrane_stimulus_current_offset</tt> is optional.
+</li></ul><p>
+Supplying the <tt>--expose-annotated-variables</tt> options to PyCml will also ensure that all non-state-variables, annotated in this way, are accessible as <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Modifiableparameters">parameters</a> or <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Derivedquantities">derived quantities</a>, as appropriate.  This will thus make them accessible via the <tt>GetAnyVariable</tt> and <tt>OutputVariables</tt> functionality.
+</p>
+<p>
+Full example:
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#voltage"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;bqbiol:is</span> <span class="na">xmlns:bqbiol=</span><span class="s">"http://biomodels.net/biology-qualifiers/"</span>
+            <span class="na">rdf:resource=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/oxford-metadata#membrane_voltage"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><p>
+We also use these standardised names to interface between models and protocol definitions in the <a class="wiki" href="/trac/wiki/FunctionalCuration">FunctionalCuration</a> system.
+</p>
+<h3 id="Modifiableparameters">Modifiable parameters</h3>
+<div class="code"><pre><span class="nt">&lt;modifiable-parameter</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/modifiable-parameter&gt;</span>
+</pre></div><p>
+This specifies that the variable should become a named parameter within the C++ class, with name given by its <tt>cmeta:id</tt> (unless it has a <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Standardisednames">standardised name</a>, in which case that is used).  The variable can then be altered at run-time, via calls to the <tt>SetParameter</tt> method.  Such parameters can also be set via the <tt>ChasteParameters</tt> XML file, as described <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#UseofCellMLinthecardiacexecutable">above</a>, and selected for output using the <tt>OutputVariables</tt> functionality.
+</p>
+<p>
+Full example:
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#max_conductance"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;modifiable-parameter</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/modifiable-parameter&gt;</span>
+    <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><h3 id="Derivedquantities">Derived quantities</h3>
+<div class="code"><pre><span class="nt">&lt;derived-quantity</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/derived-quantity&gt;</span>
+</pre></div><p>
+This specifies that the variable should become a derived quantity within the C++ class, with name given by its <tt>cmeta:id</tt> (unless it has a <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html#Standardisednames">standardised name</a>, in which case that is used).  Derived quantities may be computed using the <tt>ComputeDerivedQuantities</tt> and <tt>ComputeDerivedQuantitiesFromCurrentState</tt> methods, and selected for output using the <tt>OutputVariables</tt> functionality.  This is useful for quantities which are not necessary for computing the time evolution of the model, but still of interest.
+</p>
+<p>
+Full example:
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#ionic_current"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;derived-quantity</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/derived-quantity&gt;</span>
+    <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><h3 id="Variablerangechecking">Variable range checking</h3>
+<p>
+Chaste has the ability to check at each time step that cell model variables have not gone out of an expected range.  This is especially useful for gating variables, which must lie between 0 and 1, being probabilities.  In order to take advantage of this, you must annotate your model to specify the expected range, using the <tt>pycml:range-low</tt> and <tt>pycml:range-high</tt> annotations, e.g.
+</p>
+<div class="code"><pre><span class="nt">&lt;range-low</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>0<span class="nt">&lt;/range-low&gt;</span>
+<span class="nt">&lt;range-high</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>1<span class="nt">&lt;/range-high&gt;</span>
+</pre></div><p>
+The range specified is treated as a closed interval.
+</p>
+<p>
+Full example:
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#gating_variable"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;range-low</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>0<span class="nt">&lt;/range-low&gt;</span>
+        <span class="nt">&lt;range-high</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>1<span class="nt">&lt;/range-high&gt;</span>
+    <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><h3 id="Self-excitatorymodels">Self-excitatory models</h3>
+<p>
+This stops PyCml looking for a stimulus current in the model, so that sino-atrial node models can be used in Chaste.
+In this case, you need to annotate the model itself, i.e. the <tt>cmeta:id</tt> used should be that on the <tt>model</tt> element.  For example,
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#demir_model_1994"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;is-self-excitatory</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/is-self-excitatory&gt;</span>
+    <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><h3 id="Namedattributes">Named attributes</h3>
+<p>
+After release 2.1 Chaste has gained the ability to use real-valued named attributes associated with ODE classes.  PyCml can use this functionality to transfer named attributes from a CellML into Chaste, so they are available for querying by other Chaste code.  This will not typically be of use to executable users, but developers working with Chaste may find it useful.  For example, such annotations could specify various "typical values" for the cell model, such as normal cycle length, or suggested forward Euler time step.
+</p>
+<p>
+These are model annotations, i.e. the <tt>cmeta:id</tt> used should be that on the <tt>model</tt> element.  For example,
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:RDF</span> <span class="na">xmlns:rdf=</span><span class="s">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span><span class="nt">&gt;</span>
+   <span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#luo_rudy_1991"</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;named-attribute</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>
+         <span class="nt">&lt;rdf:Description&gt;</span>
+            <span class="nt">&lt;name</span> <span class="na">rdf:datatype=</span><span class="s">"http://www.w3.org/2000/10/XMLSchema#string"</span><span class="nt">&gt;</span>SuggestedCycleLength<span class="nt">&lt;/name&gt;</span>
+            <span class="nt">&lt;value</span> <span class="na">rdf:datatype=</span><span class="s">"http://www.w3.org/2000/10/XMLSchema#double"</span><span class="nt">&gt;</span>750<span class="nt">&lt;/value&gt;</span>
+         <span class="nt">&lt;/rdf:Description&gt;</span>
+      <span class="nt">&lt;/named-attribute&gt;</span>
+      <span class="nt">&lt;named-attribute</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>
+         <span class="nt">&lt;rdf:Description&gt;</span>
+            <span class="nt">&lt;name</span> <span class="na">rdf:datatype=</span><span class="s">"http://www.w3.org/2000/10/XMLSchema#string"</span><span class="nt">&gt;</span>SuggestedForwardEulerTimestep<span class="nt">&lt;/name&gt;</span>
+            <span class="nt">&lt;value</span> <span class="na">rdf:datatype=</span><span class="s">"http://www.w3.org/2000/10/XMLSchema#double"</span><span class="nt">&gt;</span>0.005<span class="nt">&lt;/value&gt;</span>
+         <span class="nt">&lt;/rdf:Description&gt;</span>
+      <span class="nt">&lt;/named-attribute&gt;</span>
+   <span class="nt">&lt;/rdf:Description&gt;</span>
+<span class="nt">&lt;/rdf:RDF&gt;</span>
+</pre></div><h2 id="ThePyCmlconfigurationfile">The PyCml configuration file</h2>
+<p>
+Various parts of PyCml's functionality may not work properly without a configuration file being specified.  Notably this is used to define typical names for the variables in the model which represent the transmembrane potential, stimulus current, and other transmembrane ionic currents.  This removes the need to annotate these variables (as described above) in common cases.  The configuration file also specifies which variable(s) are used to index lookup tables, and the ranges over which these vary.  Model-specific configuration files can also be used to change the command-line options supplied to PyCml.
+</p>
+<p>
+The configuration file is XML, and contains both general and model-specific settings.  A sample file is provided with PyCml (<a class="source" href="/trac/browser/trunk/python/pycml/config.xml">source:trunk/python/pycml/config.xml</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/trunk/python/pycml/config.xml" title="Download">​</a>).  This may be modified to add new model-specific configuration, or change the global settings.
+</p>
+<p>
+Further information on the configuration file is given in the documentation for <tt>ConfigurationStore.read_configuration_file</tt> in <tt>translate.py</tt>.  The key settings are as follows.
+</p>
+<p>
+Global options are specified in a <tt>global</tt> element, for example:
+</p>
+<div class="code"><pre><span class="nt">&lt;global&gt;</span>
+  <span class="nt">&lt;lookup_tables&gt;</span>
+    <span class="nt">&lt;lookup_table&gt;</span>
+      <span class="c">&lt;!-- Only one var allowed here --&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'config-name'</span><span class="nt">&gt;</span>transmembrane_potential<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;min&gt;</span>-100.0001<span class="nt">&lt;/min&gt;</span>
+      <span class="nt">&lt;max&gt;</span>59.9999<span class="nt">&lt;/max&gt;</span>
+      <span class="nt">&lt;step&gt;</span>0.01<span class="nt">&lt;/step&gt;</span>
+    <span class="nt">&lt;/lookup_table&gt;</span>
+  <span class="nt">&lt;/lookup_tables&gt;</span>
+  <span class="nt">&lt;currents&gt;</span>
+    <span class="nt">&lt;stimulus&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'oxmeta'</span><span class="nt">&gt;</span>membrane_stimulus_current<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,i_Stim<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,I_stim<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>cell,i_Stim<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,i_stim<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,I_st<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,i_st<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,i_pulse<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;/stimulus&gt;</span>
+    <span class="nt">&lt;ionic_match&gt;</span>
+      <span class="c">&lt;!-- regexp on var names --&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,i_.*<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>cell,i_.*<span class="nt">&lt;/var&gt;</span>
+      <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>cell,xi.*<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;/ionic_match&gt;</span>
+    <span class="c">&lt;!--
+      Note that the stimulus current is automatically
+      excluded from being an ionic current.
+      Also note that there are implicit ^ and $ around the regexp.
+      --&gt;</span>
+  <span class="nt">&lt;/currents&gt;</span>
+  <span class="nt">&lt;transmembrane_potential&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'oxmeta'</span><span class="nt">&gt;</span>membrane_voltage<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,V<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>cell,V<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,E<span class="nt">&lt;/var&gt;</span>
+  <span class="nt">&lt;/transmembrane_potential&gt;</span>
+  <span class="nt">&lt;membrane_capacitance&gt;</span> <span class="c">&lt;!-- TODO: say how this is used --&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'oxmeta'</span><span class="nt">&gt;</span>membrane_capacitance<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,Cm<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,C<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,C_m<span class="nt">&lt;/var&gt;</span>
+    <span class="nt">&lt;var</span> <span class="na">type=</span><span class="s">'name'</span><span class="nt">&gt;</span>membrane,C_sc<span class="nt">&lt;/var&gt;</span>
+  <span class="nt">&lt;/membrane_capacitance&gt;</span>
+<span class="nt">&lt;/global&gt;</span>
+</pre></div><p>
+There are 3 ways of specifying variables:
+</p>
+<ol><li>By name (<tt>var type='name'</tt>).
+Variable names are given in full form, i.e. "component,variable".  The component given should be that from which the variable is exported.
+</li><li>By standardised name (<tt>var type='oxmeta'</tt>).
+Use the name from the oxmeta annotations.  This is still experimental.
+</li><li>By reference to a section of this config file (for use when defining lookup table keys)
+e.g. <tt>&lt;var type='config-name'&gt;transmembrane_potential&lt;/var&gt;</tt>
+</li></ol><p>
+Where multiple options are given, the first one that matches something in the input CellML model is used.  Ionic currents are specified using a regular expression to match variable names.
+</p>
+<p>
+Model-specific settings are given in <tt>for_model</tt> or <tt>for_models</tt> elements.  They can contain the same options as in the <tt>global</tt> element.  Models can be specified by name (in the case of <tt>for_model</tt>) or by id (in both cases).  For example:
+</p>
+<div class="code"><pre><span class="nt">&lt;for_model</span> <span class="na">id=</span><span class="s">"mahajan_shiferaw_2008_version01"</span><span class="nt">&gt;</span>
+  ...
+<span class="nt">&lt;/for_model&gt;</span>
+<span class="nt">&lt;for_model</span> <span class="na">name=</span><span class="s">"fox_model_2002"</span><span class="nt">&gt;</span>
+  ...
+<span class="nt">&lt;/for_model&gt;</span>
+<span class="nt">&lt;for_models&gt;</span>
+  <span class="nt">&lt;ids&gt;</span>
+    <span class="nt">&lt;id&gt;</span>ten_tusscher_model_2004_endo<span class="nt">&lt;/id&gt;</span>
+    <span class="nt">&lt;id&gt;</span>ten_tusscher_model_2004_M<span class="nt">&lt;/id&gt;</span>
+    <span class="nt">&lt;id&gt;</span>ten_tusscher_model_2004_epi<span class="nt">&lt;/id&gt;</span>
+  <span class="nt">&lt;/ids&gt;</span>
+  ...
+<span class="nt">&lt;/for_models&gt;</span>
+</pre></div><h3 id="Supplyingcommand-lineargumentsviatheconfigurationfile">Supplying command-line arguments via the configuration file</h3>
+<p>
+The configuration file may also specify additional command line arguments for PyCml, by including a <tt>command_line_args</tt> element, e.g.
+</p>
+<div class="code"><pre><span class="nt">&lt;command_line_args&gt;</span>
+  <span class="nt">&lt;arg&gt;</span>--Wu<span class="nt">&lt;/arg&gt;</span>
+  <span class="nt">&lt;arg&gt;</span>--cvode<span class="nt">&lt;/arg&gt;</span>
+  <span class="nt">&lt;arg&gt;</span>--opt<span class="nt">&lt;/arg&gt;</span>
+<span class="nt">&lt;/command_line_args&gt;</span>
+</pre></div><p>
+The arguments provided override those specified on the command line if there are any conflicts.  Note that arguments for the helper script <tt>ConvertCellModel.py</tt> may also be provided, although an error will occur if such a configuration file is used when running <tt>translate.py</tt> directly.
+</p>
+<h2 id="InvokingPyCmldirectly">Invoking PyCml directly</h2>
+<p>
+With recent advances in PyCml integration with Chaste, as described above, it should now rarely be necessary to run PyCml directly.  However, if you do want to, this section outlines some common use cases.
+</p>
+<p>
+A general point is that, with any of the transformations, you may need to include the <tt>--Wu</tt> flag if the model does not pass units validation.  This demotes the error messages to warnings, allowing transformation to proceed (assuming no other errors were found).
+</p>
+<h3 id="GeneratingastandardAbstractCardiacCellsubclass">Generating a standard <tt>AbstractCardiacCell</tt> subclass</h3>
+<p>
+This one is easy, and the most automatic.
+</p>
+<pre class="wiki">./python/pycml/translate.py --conf=python/pycml/config.xml --use-chaste-stimulus --convert-interfaces &lt;cellml_file&gt;
+</pre><h3 id="GeneratingoptimisedAbstractCardiacCellsubclasses">Generating optimised <tt>AbstractCardiacCell</tt> subclasses</h3>
+<p>
+To apply both partial evaluation and lookup tables, use
+</p>
+<pre class="wiki">./python/pycml/translate.py --conf=python/pycml/config.xml --use-chaste-stimulus --convert-interfaces -a -p -l &lt;cellml_file&gt;
+</pre><h3 id="GeneratinganAbstractBackwardEulerCardiacCellsubclass">Generating an <tt>AbstractBackwardEulerCardiacCell</tt> subclass</h3>
+<p>
+This is a multi-stage process, as the analysis uses Maple to perform symbolic differentiation. Maple can be found on <tt>linux.cs.ox.ac.uk</tt>.
+</p>
+<pre class="wiki">./python/pycml/translate.py -J --conf=python/pycml/config.xml &lt;cellml_file.cellml&gt;
+maple -i &lt;cellml_file.mpl&gt; &gt; &lt;cellml_file.out&gt;
+./python/pycml/translate.py -j &lt;cellml_file.out&gt; --conf=python/pycml/config.xml --use-chaste-stimulus --convert-interfaces -a &lt;cellml_file.cellml&gt;
+</pre><h3 id="GeneratinganoptimisedAbstractBackwardEulerCardiacCellsubclass">Generating an optimised <tt>AbstractBackwardEulerCardiacCell</tt> subclass</h3>
+<p>
+The following commands will apply all optimisations, including the use of backward Euler.
+</p>
+<pre class="wiki">./python/pycml/translate.py -J --conf=python/pycml/config.xml &lt;cellml_file.cellml&gt;
+maple -i &lt;cellml_file.mpl&gt; &gt; &lt;cellml_file.out&gt;
+./python/pycml/translate.py -j &lt;cellml_file.out&gt; --conf=python/pycml/config.xml --use-chaste-stimulus --convert-interfaces -a -p -l &lt;cellml_file.cellml&gt;
+</pre><h2 id="InstallingPyCml">Installing PyCml</h2>
+<p>
+See <a class="wiki" href="/trac/wiki/InstallPyCml">InstallPyCml</a>.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

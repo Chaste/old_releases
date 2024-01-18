@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/DrugAction - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="Runningasimulationwithmultiple-channeldrugaction">Running a simulation with multiple-channel drug action</h1>
+<h3 id="Gettingthedata">Getting the data</h3>
+<p>
+Download and save the attached file <a class="attachment" href="/chaste/tutorials/release_2017.1/UserTutorials/CardiacExecutable/DrugAction/DrugAction.tgz" title="Attachment 'DrugAction.tgz' in UserTutorials/CardiacExecutable/DrugAction">DrugAction.tgz</a><a class="trac-rawlink" href="/chaste/tutorials/release_2017.1/UserTutorials/CardiacExecutable/DrugAction/DrugAction.tgz" title="Download">​</a>.
+Either use an Archive Manager to extract the content to disk or save it and then unpack it with
+</p>
+<div class="code"><pre>tar xvfz  DrugAction.tgz
+</pre></div><h3 id="TaggingconductancesinaCellMLfile">Tagging conductances in a CellML file</h3>
+<p>
+Before performing drug action simulations with the executable, your CellML file must have the relevant ion-channel conductances tagged.
+</p>
+<p>
+i.e. add a cmeta tag to the relevant variable:
+</p>
+<div class="code"><pre><span class="nt">&lt;variable</span> <span class="na">units=</span><span class="s">"milliS_per_cm2"</span> <span class="na">name=</span><span class="s">"g_Kmax"</span> <span class="na">public_interface=</span><span class="s">"out"</span> <span class="na">initial_value=</span><span class="s">"0.282"</span> <span class="na">cmeta:id=</span><span class="s">"IKr_conductance"</span><span class="nt">/&gt;</span>
+</pre></div><p>
+and then add the following RDF metadata description. This tells Chaste to convert the model leaving the parameter modifiable, and also tells Chaste what name to use - the name in the <tt>&lt;bqbiol:is&gt;</tt> tag is the one to use in the XML parameter file later. It MUST end in <tt>_conductance</tt> (to ensure that only conductances are modified!).
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#IKr_conductance"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;modifiable-parameter</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/modifiable-parameter&gt;</span>
+  <span class="nt">&lt;bqbiol:is</span> <span class="na">rdf:resource=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/oxford-metadata#membrane_rapid_delayed_rectifier_potassium_current_conductance"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/rdf:Description&gt;</span>
+</pre></div><h3 id="UnderstandingtheXMLparametersfile">Understanding the XML parameters file</h3>
+<p>
+This tutorial is based upon <a class="wiki" href="/chaste/tutorials/release_2017.1/UserTutorials/CardiacExecutable/Propagation1d.html">1D Propagation tutorial</a>.
+</p>
+<p>
+Open <tt>ChasteParameters.xml</tt> (it is sensible to do this in a web-browser or XML editor in order to get syntax highlighting). The file has been altered to add the following sections:
+</p>
+<ul><li>physiological parameters: 
+<ul><li>The following xml has been added, this specifies a drug concentration and IC50 values for (in this case) two ion-channels. You can use any units, but they need to be self-consistent (concentration in same units as IC50 values), if not specified the dose-response curve hill coefficient defaults to 1.
+<div class="code"><pre><span class="c">&lt;!-- Parameters for drug action model --&gt;</span>
+<span class="nt">&lt;ApplyDrug</span> <span class="na">concentration=</span><span class="s">"3"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- Current names should match those in the Oxford metadata --&gt;</span>
+    <span class="nt">&lt;IC50</span> <span class="na">current=</span><span class="s">"membrane_fast_sodium_current"</span> <span class="na">hill=</span><span class="s">"1.0"</span><span class="nt">&gt;</span>16000<span class="nt">&lt;/IC50&gt;</span>
+    
+    <span class="c">&lt;!-- Add action on a second channel --&gt;</span>
+    <span class="c">&lt;!-- Hill coefficient defaults to 1.0 --&gt;</span>
+    <span class="nt">&lt;IC50</span> <span class="na">current=</span><span class="s">"membrane_rapid_delayed_rectifier_potassium_current"</span><span class="nt">&gt;</span>5<span class="nt">&lt;/IC50&gt;</span>
+<span class="nt">&lt;/ApplyDrug&gt;</span>
+</pre></div></li><li>Here we named the currents which are to have their conductances modified - i.e. the name of the conductance tags WITHOUT <tt>_conductance</tt> on the end.
+</li></ul></li><li>post-processing:
+<ul><li>The following XML has been added:
+<div class="code"><pre><span class="c">&lt;!-- Postprocessing parameters --&gt;</span>
+<span class="nt">&lt;PostProcessing&gt;</span>            
+    <span class="c">&lt;!-- Extract nodal time trace at node 200 --&gt;</span> 
+    <span class="nt">&lt;TimeTraceAtNode</span> <span class="na">node_number=</span><span class="s">"200"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/PostProcessing&gt;</span>
+</pre></div></li></ul></li></ul><p>
+As we wish to record an action potential for comparing control and drug action.
+</p>
+<h3 id="Runningthesimulation">Running the simulation</h3>
+<p>
+Change directory to <tt>DrugAction</tt>
+</p>
+<div class="code"><pre><span class="nb">cd </span>DrugAction
+</pre></div><p>
+In this folder you will find the following files:
+</p>
+<ul><li><tt>ChasteParameters.xml</tt> -- this file describes the simulation, and can be used to override the <a href="https://chaste.cs.ox.ac.uk/chaste/docs/release_2017.1/HeartConfigDefaults_8hpp.html">default parameter values</a> (in releases of the executable up to and including version 2.0, the default parameters were read in from another xml file, <tt>ChasteDefaults.xml</tt>).
+</li><li><tt>ChasteParameters_2_3.xsd</tt> -- XML schema for input validation (in general never has to be altered or touched).
+</li></ul><p>
+Run the simulation by doing
+</p>
+<pre class="wiki">&lt;path_to_chaste&gt;/Chaste.sh ChasteParameters.xml
+</pre><p>
+A folder called <tt>testoutput</tt> will appear once the simulation has finished.
+</p>
+<h3 id="Visualisingtheresults">Visualising the results</h3>
+<p>
+Move into the newly created output folder
+</p>
+<div class="code"><pre><span class="nb">cd </span>testoutput/ChasteResults
+</pre></div><p>
+In this folder you will find the following files and folders:
+</p>
+<ul><li><tt>progress_status.txt</tt>  -- this file can be viewed whilst the simulation is running to gauge how long it will take
+</li><li><tt>DrugActionResults.h5</tt> -- the output of the simulation, in HDF5 format
+</li><li><tt>NodalTraces_V.dat</tt> -- voltage trace at node 200.
+</li><li><tt>output</tt> (folder) -- contains the following files:
+<ul><li><tt>DrugActionResults_mesh.pts</tt> -- output converted into meshalyzer format
+</li><li><tt>DrugActionResults_mesh.cnnx</tt> -- output converted into meshalyzer format
+</li><li><tt>DrugActionResults_V.dat</tt> -- output converted into meshalyzer format
+</li></ul></li></ul><p>
+   
+Move now into the Meshalyzer-compatible output folder 
+</p>
+<div class="code"><pre><span class="nb">cd </span>output
+</pre></div><p>
+Launch Meshalyzer with
+</p>
+<pre class="wiki">&lt;path_to_meshalyzer&gt;/meshalyzer DrugActionResults_mesh
+</pre><p>
+and visualise the results by loading the <tt>DrugActionResults_V.dat</tt> file.
+</p>
+<p>
+Or use gnuplot to look at the voltage trace
+</p>
+<pre class="wiki">gnuplot
+&gt; plot "NodalTraces_V.dat"
+</pre><p>
+You should then change the drug concentration to zero:
+</p>
+<div class="code"><pre><span class="c">&lt;!-- Parameters for drug action model --&gt;</span>
+<span class="nt">&lt;ApplyDrug</span> <span class="na">concentration=</span><span class="s">"0"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- Current names should match those in the Oxford metadata --&gt;</span>
+    <span class="nt">&lt;IC50</span> <span class="na">current=</span><span class="s">"membrane_fast_sodium_current"</span> <span class="na">hill=</span><span class="s">"1.0"</span><span class="nt">&gt;</span>16000<span class="nt">&lt;/IC50&gt;</span>
+    
+    <span class="c">&lt;!-- Add action on a second channel --&gt;</span>
+    <span class="c">&lt;!-- Hill coefficient defaults to 1.0 --&gt;</span>
+    <span class="nt">&lt;IC50</span> <span class="na">current=</span><span class="s">"membrane_rapid_delayed_rectifier_potassium_current"</span><span class="nt">&gt;</span>5<span class="nt">&lt;/IC50&gt;</span>
+<span class="nt">&lt;/ApplyDrug&gt;</span>
+</pre></div><p>
+then re-run the simulation and compare results. You should observe the following:
+</p>
+<p>
+<a style="padding:0; border:none" href="/chaste/tutorials/release_2017.1/UserTutorials/CardiacExecutable/DrugAction/drug_action_traces.png"><img src="/chaste/tutorials/release_2017.1/UserTutorials/CardiacExecutable/DrugAction/drug_action_traces.png" alt="Voltage trace at node 200 with and without drug action" title="Voltage trace at node 200 with and without drug action" /></a>
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

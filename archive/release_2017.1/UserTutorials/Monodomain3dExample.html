@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/Monodomain3dExample - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file heart/test/tutorials/TestMonodomain3dExampleTutorial.hpp at revision <a class="changeset" href="/trac/changeset/c3897d7/git_repo" title="remove some scons references in comments
+">c3897d7/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="a3Dmonodomainexample">3D monodomain example</h1>
+<p>
+In this tutorial we show how to run a 3D simulation using the monodomain equation.
+To go from monodomain to bidomain or vice versa is trivial, and for 2d to 3d is
+also very easy.
+</p>
+<p>
+First include the headers, <tt>MonodomainProblem</tt> this time.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "SimpleStimulus.hpp"
+#include "TetrahedralMesh.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+</pre></div><p>
+Here we define a cell factory that gives stimuli to cells in the block
+0&lt;x&lt;0.1, 0&lt;y&lt;0.1, 0&lt;z&lt;0.1. Note that it inherits from <tt>AbstractCardiacCellFactory&lt;3&gt;</tt>
+this time (not <tt>&lt;2&gt;</tt>).
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">BenchmarkCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    BenchmarkCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">100000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">((</span>x<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>z<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+Now define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestMonodomain3dExampleTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestMonodomain3d<span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We will auto-generate a mesh this time, and pass it in, rather than
+provide a mesh file name. This is how to generate a cuboid mesh with
+a given spatial stepsize h.
+</p>
+<p>
+Using a <tt>DistributedTetrahedralMesh</tt> is faster than <tt>TetrahedralMesh</tt> when running on multiple processes.
+However, it permutes the node ordering for output. Most of time time this won't matter, but later in this
+test we want to access specific node indices. One method of doing this is to ask <tt>HeartConfig</tt> to use the
+original node ordering for the output.
+</p>
+<div class="code"><pre>        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        <span class="kt">double</span> h<span class="o">=</span><span class="mf">0.02</span><span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span>h<span class="p">,</span> <span class="mf">0.8</span> <span class="cm">/*length*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*depth*/</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputUsingOriginalNodeOrdering<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div><p>
+(In 2D the call is identical, but without the depth parameter).
+</p>
+<p>
+Set the simulation duration, etc, and create an instance of the cell factory.
+One thing that should be noted for monodomain problems, the <em>intracellular
+conductivity</em> is used as the monodomain effective conductivity (not a
+harmonic mean of intra and extracellular conductivities). So if you want to
+alter the monodomain conductivity call
+<tt>HeartConfig::Instance()-&gt;SetIntracellularConductivities</tt>
+</p>
+<div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dExample"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.005</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        BenchmarkCellFactory cell_factory<span class="p">;</span>
+
+</pre></div><p>
+Now we declare the problem class, <tt>MonodomainProblem&lt;3&gt;</tt> instead of <tt>BidomainProblem&lt;2&gt;</tt>.
+The interface for both is the same.
+</p>
+<div class="code"><pre>        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+</pre></div><p>
+If a mesh-file-name hasn't been set using <tt>HeartConfig</tt>, we have to pass in
+a mesh using the <tt>SetMesh</tt> method (must be called before <tt>Initialise</tt>).
+</p>
+<div class="code"><pre>        monodomain_problem<span class="p">.</span>SetMesh<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+</pre></div><p>
+By default data for all nodes is output, but for big simulations, sometimes this
+might not be required, and the action potential only at certain nodes required.
+The following code shows how to output the results at the first, middle and last
+nodes, for example. (The output is written to the HDF5 file; regular visualisation output
+will be turned off. HDF5 files can be read using Matlab). We are not using this in this
+simulation however (hence the boolean being set to false).
+</p>
+<div class="code"><pre>        <span class="kt">bool</span> partial_output <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span>partial_output<span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> nodes_to_be_output<span class="p">;</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">((</span><span class="kt">unsigned</span><span class="p">)</span>round<span class="p">(</span> <span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="p">));</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+            monodomain_problem<span class="p">.</span>SetOutputNodes<span class="p">(</span>nodes_to_be_output<span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+<tt>SetWriteInfo</tt> is a useful method that means that the min/max voltage is
+printed as the simulation runs (useful for verifying that cells are stimulated
+and the wave propagating, for example)
+</p>
+<div class="code"><pre>        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+
+</pre></div><p>
+Finally, call <tt>Initialise</tt> and <tt>Solve</tt> as before
+</p>
+<div class="code"><pre>        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+This part is just to check nothing has accidentally been changed in this example
+</p>
+<div class="code"><pre>        ReplicatableVector <span class="nf">voltage</span><span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        TS_ASSERT_DELTA<span class="p">(</span>voltage<span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">34.9032</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestMonodomain3dExampleTutorial.hpp">File name <tt>TestMonodomain3dExampleTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "MonodomainProblem.hpp"
+#include "LuoRudy1991.hpp"
+#include "SimpleStimulus.hpp"
+#include "TetrahedralMesh.hpp"
+#include "PetscSetupAndFinalize.hpp"
+</span>
+<span class="k">class</span> <span class="nc">BenchmarkCellFactory</span> <span class="o">:</span> <span class="k">public</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> <span class="c1">// &lt;3&gt; here
+</span><span class="p">{</span>
+<span class="nl">private:</span>
+    boost<span class="o">::</span>shared_ptr<span class="o">&lt;</span>SimpleStimulus<span class="o">&gt;</span> mpStimulus<span class="p">;</span>
+
+<span class="nl">public:</span>
+    BenchmarkCellFactory<span class="p">()</span>
+        <span class="o">:</span> AbstractCardiacCellFactory<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="p">(),</span> <span class="c1">// &lt;3&gt; here as well!
+</span>          mpStimulus<span class="p">(</span><span class="k">new</span> SimpleStimulus<span class="p">(</span><span class="o">-</span><span class="mf">100000.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    AbstractCardiacCell<span class="o">*</span> CreateCardiacCellForTissueNode<span class="p">(</span>Node<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;*</span> pNode<span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">double</span> x <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="kt">double</span> y <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="kt">double</span> z <span class="o">=</span> pNode<span class="o">-&gt;</span>rGetLocation<span class="p">()[</span><span class="mi">2</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">((</span>x<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>y<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span>z<span class="o">&lt;</span><span class="mf">0.1</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpStimulus<span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> CellLuoRudy1991FromCellML<span class="p">(</span>mpSolver<span class="p">,</span> mpZeroStimulus<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">class</span> <span class="nc">TestMonodomain3dExampleTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="kt">void</span> TestMonodomain3d<span class="p">()</span>
+    <span class="p">{</span>
+        DistributedTetrahedralMesh<span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        <span class="kt">double</span> h<span class="o">=</span><span class="mf">0.02</span><span class="p">;</span>
+        mesh<span class="p">.</span>ConstructRegularSlabMesh<span class="p">(</span>h<span class="p">,</span> <span class="mf">0.8</span> <span class="cm">/*length*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*width*/</span><span class="p">,</span> <span class="mf">0.3</span> <span class="cm">/*depth*/</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputUsingOriginalNodeOrdering<span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mi">5</span><span class="p">);</span> <span class="c1">//ms
+</span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"Monodomain3dExample"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
+        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOdePdeAndPrintingTimeSteps<span class="p">(</span><span class="mf">0.005</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">);</span>
+
+        BenchmarkCellFactory cell_factory<span class="p">;</span>
+
+        MonodomainProblem<span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span> monodomain_problem<span class="p">(</span> <span class="o">&amp;</span>cell_factory <span class="p">);</span>
+
+        monodomain_problem<span class="p">.</span>SetMesh<span class="p">(</span><span class="o">&amp;</span>mesh<span class="p">);</span>
+
+        <span class="kt">bool</span> partial_output <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span>partial_output<span class="p">)</span>
+        <span class="p">{</span>
+            std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">unsigned</span><span class="o">&gt;</span> nodes_to_be_output<span class="p">;</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">((</span><span class="kt">unsigned</span><span class="p">)</span>round<span class="p">(</span> <span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="p">));</span>
+            nodes_to_be_output<span class="p">.</span>push_back<span class="p">(</span>mesh<span class="p">.</span>GetNumNodes<span class="p">()</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+            monodomain_problem<span class="p">.</span>SetOutputNodes<span class="p">(</span>nodes_to_be_output<span class="p">);</span>
+        <span class="p">}</span>
+
+        monodomain_problem<span class="p">.</span>SetWriteInfo<span class="p">();</span>
+
+        monodomain_problem<span class="p">.</span>Initialise<span class="p">();</span>
+        monodomain_problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        ReplicatableVector <span class="nf">voltage</span><span class="p">(</span>monodomain_problem<span class="p">.</span>GetSolution<span class="p">());</span>
+        TS_ASSERT_DELTA<span class="p">(</span>voltage<span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">34.9032</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

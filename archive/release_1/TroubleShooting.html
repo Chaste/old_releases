@@ -1,0 +1,221 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+ <title>Chaste User Tutorial</title>
+ <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+ <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+
+
+ <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+</style>
+
+</head>
+<body>
+<a id="logo" href="http://www.comlab.ox.ac.uk/chaste">
+  <img src="/logos/chaste-266x60.jpg" alt="Chaste logo" />
+</a>
+<h1> TroubleShooting tutorial file </h1></div>
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   <div class="wikipage">
+    <div id="searchable"><p>
+This pages stores a list of common problem and issues that occasionally crop up, together with their solutions. Please update problems and solutions if needed, and add new problems as they crop up.
+</p>
+<p>
+<h4>Table of Contents</h4><ol><li><a href="#ChasteRunningTests">Chaste (Running Tests)</a><ol><li><a href="#Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</a></li><li>
+<a href="#Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</a></li><li>
+<a href="#Strangeerroraboutsemgetandsetnum">Strange error about semget and setnum</a></li><li>
+<a href="#Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling and running with scons) fails</a></li><li>
+<a href="#AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</a></li></ol><li><a href="#Compilationandlinkingerrors">Compilation and linking errors</a><ol><li><a href="#Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it clearly has been, in a base class</a></li><li>
+<a href="#GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be something to do with Boost (mpl or ublas)</a></li><li>
+<a href="#Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</a></li><li>
+<a href="#AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error (possibly) in a file in the CxxTest folder</a></li><li>
+<a href="#Error:voidltYOUR_TEST_CLASSgt::ltYOUR_TEST_METHODgtisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</a></li><li>
+<a href="#Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingltboost/numeric/ublas/matrix.hppgt">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if you are including &lt;boost/numeric/ublas/matrix.hpp&gt;)</a></li><li>
+<a href="#GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</a></li><li>
+<a href="#Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  Error message is MPI_COMM_RANK and code is 197"</a></li></ol></li></ol>
+</p>
+<h1 id="ChasteRunningTests">Chaste (Running Tests)</h1>
+<h2 id="Anexceptionoccursbuttheexceptionmessageisnotshown">An exception occurs but the exception message is not shown</h2>
+<p>
+Add <tt>throw(Exception)</tt> after the method declaration in the failing test, i.e.
+</p>
+<div class="code"><pre>    <span class="code-type"><B>void</span></B> TestSomething() throw(Exception)
+    {
+        <I><span class="code-comment">// test
+</span></I>    }
+</pre></div><h2 id="Thedirectoryoutputwaswrittentoseemsempty">The directory output was written to seems empty</h2>
+<p>
+If, in a terminal, you are in an output directory, and rerun a test that involves that directory being wiped and recreated, the terminal might act as if there's  nothing in the directory, i.e. an <tt>ls</tt> displays no files. Just <tt>cd</tt> out and back into the directory again.
+</p>
+<h2 id="Strangeerroraboutsemgetandsetnum">Strange error about semget and setnum</h2>
+<p>
+<strong>Problem</strong>: <i>The following error message occurs when running a test</i>
+</p>
+<pre class="wiki">Running 9 testssemget failed for setnum =  0
+</pre>
+<p>
+This happens occasionally. Rerun the test. If that fails do
+</p>
+<pre class="wiki">./mpi/sbin/cleanipcs
+</pre>
+<h2 id="Runninganalreadycompiledtestexecutablemanuallyinsteadofcompilingandrunningwithsconsfails">Running an already compiled test executable manually (instead of compiling and running with scons) fails</h2>
+<p>
+Some environment variables are setup by the SCons scripts, you need to export them yourself.
+</p>
+<pre class="wiki">cdchaste
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/lib
+./component/build/whatever/TestXRunner
+</pre>
+<p>
+Also, if files are output to the current directory rather than <tt>/tmp/chaste/testoutput/</tt>, also do 
+</p>
+<pre class="wiki">export CHASTE_TEST_OUTPUT=/tmp/chaste/testoutput/
+</pre>
+<p>
+(or <tt>/tmp/whatever/testoutput</tt>).
+</p>
+<h2 id="AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</h2>
+<p>
+If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and ConstBoundaryConditions` etc) is the value of "(D grad_u) dot n" (where n is the unit <i>outward</i> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="/cgi-bin/trac.cgi/wiki/UserTutorials/SolvingLinearPdes">UserTutorials/SolvingLinearPdes</a> for an example.
+</p>
+<h1 id="Compilationandlinkingerrors">Compilation and linking errors</h1>
+<h2 id="Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it clearly has been, in a base class</h2>
+<p>
+If class <tt>A</tt> and class <tt>B</tt> are both templated, and <tt>B&lt;DIM&gt;</tt> inherits from <tt>A&lt;DIM&gt;</tt>, then the compiler won't be able to locate variables defined in the base class if used in the child unless the base is specified. The solution is to write <tt>this-&gt;</tt> before the variable in question. i.e.
+</p>
+<div class="code"><pre>template&lt;<span class="code-type"><B>int</span></B> DIM&gt;
+class A
+{
+<B><span class="code-keyword">public</span></B>:
+  <span class="code-type"><B>double</span></B> x;
+};
+template&lt;<span class="code-type"><B>int</span></B> DIM&gt;
+class B : public A&lt;DIM&gt;
+{
+  <span class="code-type"><B>void</span></B> run()
+  {
+    <B><span class="code-keyword">std</span></B>::cout &lt;&lt; x;
+  }
+};
+</pre></div><p>
+won't compile, whereas
+</p>
+<div class="code"><pre>template&lt;<span class="code-type"><B>int</span></B> DIM&gt;
+class A
+{
+<B><span class="code-keyword">public</span></B>:
+  <span class="code-type"><B>double</span></B> x;
+};
+template&lt;<span class="code-type"><B>int</span></B> DIM&gt;
+class B : public A&lt;DIM&gt;
+{
+  <span class="code-type"><B>void</span></B> run()
+  {
+    <B><span class="code-keyword">std</span></B>::cout &lt;&lt; this-&gt;x;
+  }
+};
+</pre></div><p>
+will do.
+</p>
+<h2 id="GetamentalextremelylongsetofcompilationerrorsappearstobesomethingtodowithBoostmplorublas">Get a mental, extremely long, set of compilation errors, appears to be something to do with Boost (mpl or ublas)</h2>
+<p>
+Try putting
+</p>
+<pre class="wiki">#include &#34;UblasIncludes.hpp&#34;
+</pre>
+<p>
+as the <strong>first</strong> include in the source file being compiled (generally either a cpp file or the test being run).
+</p>
+<h2 id="Undefinedreferenceerrorsonlinking">Undefined reference errors on linking</h2>
+<p>
+<strong>Problem</strong>: <i>Undefined reference errors on linking, such as:</i>
+</p>
+<pre class="wiki">undefined reference to `Node&lt;1u&gt;::AddElement(unsigned int)'
+</pre>
+<p>
+This may mean that you are using a templated class which has been written using <i>Explicit Instantiation</i>, and you are using a value for one of the template parameters for which there isn't an instantiation.  Not all classes are instantiated for all dimensions in order to reduce compilation time.  Look at the bottom of the cpp file for the class in question (e.g. Node.cpp in the example above) and check if there is a line like
+</p>
+<pre class="wiki">template class Node&lt;1&gt;;
+</pre>
+<p>
+at the bottom of the file.  Add the missing dimension if not.
+</p>
+<p>
+Note that for some classes (e.g. <tt>SimpleDg0ParabolicAssembler</tt>) the situation is more complex, since we don't just template over dimension.  In such cases there should be a file named like <tt>SimpleDg0ParabolicAssemblerImplementation.hpp</tt> which you can include, either in the hpp file (if you do not provide a cpp) or in your cpp file (and add further explicit instantiations there).  See <tt>MonodomainDg0Assembler.cpp</tt> for an example.
+</p>
+<h2 id="AcomparisonbetweensignedandunsignedintegerexpressionserrorpossiblyinafileintheCxxTestfolder">A "comparison between signed and unsigned integer expressions" error (possibly) in a file in the CxxTest folder</h2>
+<p>
+The following error (or actually, warning, which is then taken as an error)
+</p>
+<pre class="wiki">cxxtest/cxxtest/TestSuite.h: In function 'bool CxxTest::equals(X, Y) [with X = long unsigned int, Y = int]':
+cxxtest/cxxtest/TestSuite.h:58:   instantiated from 'void CxxTest::doAssertEquals(const char*, unsigned int, const char*, X, const char*, Y, const char*) [with X = long unsigned int, Y = int]'
+.&lt;FILE_NAME&gt;:&lt;LINE_NUMBER&gt;   instantiated from here
+cxxtest/cxxtest/TestSuite.h:49: warning: comparison between signed and unsigned integer expressions
+</pre>
+<p>
+is usually due to a comparison between an <tt>unsigned</tt> variable and a hardcoded number (taken as an <tt>int</tt> by the compiler) in a TS_ASSERT_EQUALS, for example
+</p>
+<pre class="wiki">unsigned my_var = 10;
+TS_ASSERT_EQUALS(my_var, 10);
+</pre>
+<p>
+To tell the compiler to treat the (second) 10 as an <tt>unsigned</tt>, do the following
+</p>
+<pre class="wiki">TS_ASSERT_EQUALS(my_var, 10u);
+</pre>
+<h2 id="Error:voidltYOUR_TEST_CLASSgt::ltYOUR_TEST_METHODgtisprivate">"Error: <tt>void &lt;YOUR_TEST_CLASS&gt;::&lt;YOUR_TEST_METHOD&gt;()</tt> is private"</h2>
+<p>
+Remember all test methods need to be declared as <tt>public</tt>.
+</p>
+<h2 id="Compilersaysc_vectororc_matrixwasnotdeclaredperhapsevenifyouareincludingltboost/numeric/ublas/matrix.hppgt">Compiler says <tt>c_vector</tt> or <tt>c_matrix</tt> was not declared (perhaps even if you are including &lt;boost/numeric/ublas/matrix.hpp&gt;)</h2>
+<p>
+These are ublas vectors and matrices. Do
+</p>
+<div class="code"><pre>#<B><span class="code-keyword">include</span></B> <span class="code-string"><B>&quot;UblasCustomFunctions.hpp&quot;</span></B>
+</pre></div><p>
+Note that it is not enough to do
+</p>
+<div class="code"><pre>#<B><span class="code-keyword">include</span></B> <span class="code-string"><B>&lt;boost/numeric/ublas/matrix.hpp&gt;</span></B>
+</pre></div><p>
+as then you would have to write <tt>boost::numeric::ublas::c_matrix&lt;double,2,2&gt;</tt> instead of <tt>c_matrix&lt;double,2,2&gt;</tt>.
+</p>
+<h2 id="GetaAssertionpetsc_is_initialisedfailederror">Get a "<tt>Assertion 'petsc_is_initialised' failed</tt>" error</h2>
+<p>
+If the following is printed
+</p>
+<pre class="wiki">global/src/DistributedVector.cpp:47: static void DistributedVector::CheckForPetsc(): Assertion `petsc_is_initialised' failed.
+</pre>
+<p>
+it is probably because you have forgotten to do
+</p>
+<div class="code"><pre>#<B><span class="code-keyword">include</span></B> <span class="code-string"><B>&quot;PetscSetupAndFinalize.hpp&quot;</span></B>
+</pre></div><p>
+in your test.
+</p>
+<h2 id="Fatalerrorunknownerrorhandler.MaybeMPIcallbeforeMPI_INIT.ErrormessageisMPI_COMM_RANKandcodeis197">"Fatal error; unknown error handler. May be MPI call before MPI_INIT.  Error message is MPI_COMM_RANK and code is 197"</h2>
+<p>
+You may have included <tt>PetscSetupAndFinalize.hpp</tt> in a source file - it should only be included in test files (and must be included in all tests files that use Petsc).
+</p>
+</div>
+   </div>
+   
+  

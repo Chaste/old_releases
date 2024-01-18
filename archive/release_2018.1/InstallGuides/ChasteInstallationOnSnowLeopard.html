@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/ChasteInstallationOnSnowLeopard - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><h1 id="InstallingChasteonMacOSX10.6experimental">Installing Chaste on Mac OS X 10.6 (experimental)</h1>
+<p>
+<strong><em>Note</em></strong><em>: these instructions are somewhat outdated: Chaste now includes tetgen and triangle, so you do not need to install these.  It is also recommended to install parmetis using the PETSc installer if possible, and PETSc can also install CVODE for Chaste to use.  We have a local user trying this, and will update the instructions if successful...</em>
+</p>
+<p>
+These instructions are a work in progress on how to install Chaste on OS X 10.6 (Snow Leopard). It is possible to successfully install Chaste using this guide, however a significant number of Chaste unit tests are known to fail on OS X. In particular, due to a lack of parallel support for HDF5 on OS X, it is recommended that Chaste is only used on a single processor. These instructions are based on <a class="source" href="/trac/browser/tags/release_1/README_INSTALLATION.txt">source:tags/release_1/README_INSTALLATION.txt</a><a class="trac-rawlink" href="/trac/export/HEAD/chaste/tags/release_1/README_INSTALLATION.txt" title="Download">​</a>
+</p>
+<p>
+A prerequisite for this installation is to have an up to date, Snow Leopard, version of <strong><em>Xcode</em></strong> with the <strong><em>Unix Developer Tools</em></strong> installed. Xcode provides <em>gcc</em> and fundamental header files. You can find it in your Mac OS X installation DVD or download it directly from Apple. In some instances, machines updated from Leopard may not have xcode automatically updated, it must be done manually. Some users report that the version of Xcode downloaded from apple does not contain the Unix Developer Tools and that the Mac OS X install version should be used, see <a class="ext-link" href="https://trac.macports.org/ticket/21062"><span class="icon">​</span>https://trac.macports.org/ticket/21062</a>.
+</p>
+<h2 id="MacPorts">Mac Ports</h2>
+<p>
+These instructions use the Mac Ports system to install a number of command line utilities. 
+</p>
+<p>
+Download Mac Ports from <a class="ext-link" href="http://www.macports.org/install.php"><span class="icon">​</span>http://www.macports.org/install.php</a> and follow the onscreen installation instructions.
+</p>
+<h2 id="wget">wget</h2>
+<p>
+To simplify later downloads install wget:
+</p>
+<pre class="wiki">sudo port install wget
+</pre><h2 id="EnvironmentVariables">Environment Variables</h2>
+<p>
+Several environment variables are required to simplify the installation. The value of $CHASTE_LIBS should be altered by the user to reflect the desired location for chaste libraries on their machine. Edit .profile in your home directory and add lines:
+</p>
+<pre class="wiki">export CHASTE_LIBS=/Users/bordas/work/chaste-libs  
+export PATH=$CHASTE_LIBS/bin:$PATH                                              
+export PETSC_DIR=/opt/local/lib/petsc                                           
+export PETSC_ARCH=darwin
+</pre><h2 id="SCons">SCons</h2>
+<p>
+Macports has version 1.3.0 of Scons:
+</p>
+<pre class="wiki">sudo port install scons
+</pre><h2 id="Boost">Boost</h2>
+<p>
+Macports has version 1.42.0 of boost:
+</p>
+<pre class="wiki">sudo port install boost
+</pre><h2 id="OpenMPI">OpenMPI</h2>
+<p>
+Macports has version 1.3.3 of OpenMPI:
+</p>
+<pre class="wiki">sudo port install openmpi
+</pre><h2 id="Hdf5">Hdf5</h2>
+<p>
+Macports has version 1.8.4 of HDF5.  HDF5 parallel (required by Chaste) is unsupported on OS X and isn't available in macports. 
+</p>
+<p>
+To enable HDF5-parallel download the attached patch and apply it to the portfile:
+</p>
+<pre class="wiki">cd /opt/local/var/macports/sources/rsync.macports.org/release/ports/science/hdf5-18
+sudo patch -p0 &lt; ~/Desktop/Portfile-rrdtool.diff
+sudo port install hdf5-18 +parallel
+</pre><h2 id="Petsc">Petsc</h2>
+<p>
+Macports has version 3.0.0.p8 of Petsc:
+</p>
+<pre class="wiki">sudo port install petsc +hdf5
+</pre><h2 id="Xerces-c">Xerces-c</h2>
+<p>
+Xerces-c 2.8 is available under macports but doesn't build under Snow Leopard. Fortunately 3.0.1 is also available:
+</p>
+<pre class="wiki">sudo port install xercesc3
+</pre><h2 id="CodesynthesisXSD">Codesynthesis XSD</h2>
+<p>
+Codesynthesis XSD is not available in Macports and must be installed directly:
+</p>
+<pre class="wiki">cd $CHASTE_LIBS
+wget http://www.codesynthesis.com/download/xsd/3.2/macosx/i686/xsd-3.2.0-i686-macosx.tar.bz2
+bunzip2 xsd-3.2.0-i686-macosx.tar.bz2
+tar xf xsd-3.2.0-i686-macosx.tar.bz2
+mkdir $CHASTE_LIBS/bin
+ln -s $CHASTE_LIBS/xsd-3.2.0-i686-macosx/bin/xsd $CHASTE_LIBS/bin/xsd
+</pre><h2 id="tetgen">tetgen</h2>
+<p>
+Tetgen is not available in Macports and must be installed directly:
+</p>
+<pre class="wiki">cd $CHASTE_LIBS
+wget http://tetgen.berlios.de/files/tetgen1.4.3.tar.gz
+tar -zxvf tetgen1.4.3.tar.gz
+cd tetgen1.4.3
+make
+mv tetgen $CHASTE_LIBS/bin/
+cd ..
+</pre><h2 id="Parmetis">Parmetis</h2>
+<p>
+Parmetis is not available in Macports and must be installed directly:
+</p>
+<pre class="wiki">cd $CHASTE_LIBS
+wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/ParMetis-3.1.tar.gz
+tar -zxvf ParMetis-3.1.tar.gz
+cd Parmetis-3.1
+</pre><p>
+Parmetis needs some tweaking to compile it on OS X. Edit 'Makefile.in' in the Parmetis directory 
+to set:
+</p>
+<pre class="wiki">CC=/opt/local/bin/openmpicc
+COPTIONS=-m64
+LD=/opt/local/bin/openmpicc
+</pre><p>
+Edit $Parmetis/ParMETISLib/stdheaders.h and comment out '#include
+&lt;malloc.h&gt;'. Run make:
+</p>
+<pre class="wiki">make
+</pre><h2 id="triangle">triangle</h2>
+<pre class="wiki">sudo port install triangle
+</pre><h2 id="Configuration">Configuration</h2>
+<p>
+Chaste may now be checked out and installed using eclipse and the standard developer instructions. It is necessary to use a hostconfig file to tell chaste where the libraries are located. The attached file local.py should be placed in 'workspace/python/hostconfig/machines' and altered to reflect the location of $CHASTE_LIBS.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

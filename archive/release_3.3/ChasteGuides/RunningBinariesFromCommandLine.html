@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>ChasteGuides/RunningBinariesFromCommandLine - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+When scons is used to compile a test suite, it puts the compiled binary in the <tt>build</tt> folder, in a sub-folder that depends on the build options. For example, for
+</p>
+<pre class="wiki">scons test_suite=global/test/TestException.hpp
+</pre><p>
+the binary is <tt>global/build/debug/TestExceptionRunner</tt>. However, for 
+</p>
+<pre class="wiki">scons build=GccOpt_ndebug test_suite=global/test/TestException.hpp
+</pre><p>
+the binary is <tt>global/build/optimised_ndebug/TestExceptionRunner</tt>.
+</p>
+<p>
+When scons is used to run (after compiling) tests, certain environment variables are set up. If running binaries directly, you may need to set them yourself. If the binary doesn't run, from the main Chaste directory do
+</p>
+<pre class="wiki">export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/lib
+</pre><p>
+before running. Also, scons sets the environment variable <tt>CHASTE_TEST_OUTPUT</tt> if it is not already defined. If <tt>CHASTE_TEST_OUTPUT</tt> is not set when the binary is run, output will be put in the <tt>testoutput</tt> folder in the main Chaste directory, rather than your normal test output directory. So you may want to export <tt>CHASTE_TEST_OUTPUT</tt> too.
+</p>
+<p>
+Overall, we can use the following: from the main Chaste directory do:
+</p>
+<pre class="wiki">export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/lib
+export CHASTE_TEST_OUTPUT=&lt;somewhere&gt;
+scons compile_only=1 test_suite=global/test/TestException.hpp 
+./global/build/debug/TestExceptionRunner
+</pre><p>
+The exports of course just need to be done once a session, and could be put in your .bashrc file in your home directory, in order to set them for every session.
+</p>
+<h2 id="Troubleshooting">Troubleshooting</h2>
+<p>
+In case the executable throws a cryptic error about Petsc you might need to set an additional environment variable for PETSC. For this, you need to locate the PETSC installation on your computer and add the folder YOURPETSCFOLDER/linux-gnu/lib to the LD_LIBRARY_PATH variable as in the example above. If your executable was compiled using optimised compiler flags, you will need to add the folder YOURPETSCFOLDER/linux-gnu-opt/lib.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

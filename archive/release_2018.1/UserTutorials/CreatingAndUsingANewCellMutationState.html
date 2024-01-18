@@ -1,0 +1,429 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewCellMutationState - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestCreatingAndUsingANewCellMutationStateTutorial.hpp at revision <a class="changeset" href="/trac/changeset/4f69b9f/git_repo" title="Copyright Mayhem!
+">4f69b9f/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcellmutationstateanduseitinacell-basedsimulation">An example showing how to create a new cell mutation state and use it in a cell-based simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In the tumour spheroid tutorial we noted that a cell mutation state is always required
+when constructing a cell. In this tutorial, we show how to create a new cell mutation
+state class, and how this can be used in a cell-based simulation.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary
+header file and archiving headers.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The next header defines a base class for cell mutation states. Our new
+cell mutation state will inherit from this abstract class.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellMutationState.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellsGenerator.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+</pre></div><h2 id="Definingthecellmutationstateclass">Defining the cell mutation state class</h2>
+<p>
+As an example, let us consider a cell mutation state representing the p53
+172R-H gain-of-function mutant, which is equivalent to the common 175R-H
+human breast cancer mutant; for further details on this mutant, see for
+example Murphy et al, FASEB J. 14:2291-2302 (2000).
+</p>
+<p>
+Wild-type p53 has been referred to as the "guardian of the genome",
+responding to DNA damage or checkpoint failure by either arresting cell
+cycle progression to facilitate DNA repair or initiating an apoptotic
+pathway to remove damaged cells. Approximately 40% of human breast cancers
+contain alterations in p53.
+</p>
+<p>
+As we can see, apart from a serialize() method and a constructor, this class
+does not contain any member variables or methods. This is because generally
+a cell's mutation state is used, much like a flag, by other classes when
+determining a cell's behaviour (whether a cell should undergo
+apoptosis following prolonged stress, for example, or alter its proliferative
+behaviour).
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">P53GainOfFunctionCellMutationState</span> <span class="o">:</span> <span class="k">public</span> AbstractCellMutationState
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellMutationState<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+</pre></div><p>
+The only public method is a default constructor, which just calls the base
+constructor with a single unsigned parameter. This sets the value of the
+base class member variable <tt>mColour</tt>, which can be used by visualization tools
+to paint cells with this mutation state a distinct colour if required.
+</p>
+<div class="code"><pre>    P53GainOfFunctionCellMutationState<span class="p">()</span>
+        <span class="o">:</span> AbstractCellMutationState<span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+As mentioned in previous cell-based Chaste tutorials, we need to include the next block
+of code to be able to archive the cell mutation state object in a cell-based
+simulation, and to obtain a unique identifier for our new cell mutation state for writing
+results to file.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">)</span>
+
+</pre></div><p>
+This completes the code for <tt>P53GainOfFunctionCellMutationState</tt>. Note that usually this code would
+be separated out into a separate declaration in a .hpp file and definition in a .cpp file.
+</p>
+<h3 id="TheTests">The Tests</h3>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellMutationStateTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h2 id="Testingthecellmutationstate">Testing the cell mutation state</h2>
+<p>
+We begin by testing that our new cell mutation state is implemented correctly.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestP53GainOfFunctionCellMutationState</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We begin by testing that some of the base class methods work correctly.
+We typically use shared pointers to create and access cell mutation states, as
+follows. This is because it makes sense for all cells that have the same mutation
+to share a pointer to the same cell mutation state object (although strictly speaking,
+they are not required to).
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+
+</pre></div><p>
+Each cell mutation state has a member variable, <tt>mCellCount</tt>, which
+stores the number of cells with this mutation state. In fact, <tt>mCellCount</tt>
+is defined in the class <tt>AbstractCellProperty</tt>, from which
+<tt>AbstractCellMutationState</tt> inherits, as well as other cell properties
+such as <tt>CellLabel</tt>. We can test whether <tt>mCellCount</tt> is being
+updated correctly by our cell mutation state, as follows.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">0u</span><span class="p">);</span>
+        p_state<span class="o">-&gt;</span>IncrementCellCount<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+        p_state<span class="o">-&gt;</span>DecrementCellCount<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">0u</span><span class="p">);</span>
+        TS_ASSERT_THROWS_THIS<span class="p">(</span>p_state<span class="o">-&gt;</span>DecrementCellCount<span class="p">(),</span>
+                <span class="s">"Cannot decrement cell count: no cells have this cell property"</span><span class="p">);</span>
+
+</pre></div><p>
+We can also test that <tt>mColour</tt> has been set correctly by our constructor, as follows.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+</pre></div><p>
+We can also test whether our cell mutation state is of a given type, as follows.
+</p>
+<div class="code"><pre>        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>IsType<span class="o">&lt;</span>WildTypeCellMutationState<span class="o">&gt;</span><span class="p">(),</span> <span class="nb">false</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>IsType<span class="o">&lt;</span>P53GainOfFunctionCellMutationState<span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">);</span>
+
+</pre></div><p>
+We can also test that archiving is implemented correctly for our cell
+mutation state, as follows (further details on how to implement and
+test archiving can be found at <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a>).
+</p>
+<div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"p53_mutation.arch"</span><span class="p">;</span>
+
+        <span class="p">{</span>
+            AbstractCellProperty<span class="o">*</span> <span class="k">const</span> p_const_state <span class="o">=</span> <span class="k">new</span> P53GainOfFunctionCellMutationState<span class="p">();</span>
+            p_const_state<span class="o">-&gt;</span>IncrementCellCount<span class="p">();</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_const_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span><span class="k">dynamic_cast</span><span class="o">&lt;</span>AbstractCellMutationState<span class="o">*&gt;</span><span class="p">(</span>p_const_state<span class="p">)</span><span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            output_arch <span class="o">&lt;&lt;</span> p_const_state<span class="p">;</span>
+
+            <span class="k">delete</span> p_const_state<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">{</span>
+            AbstractCellProperty<span class="o">*</span> p_arch_state<span class="p">;</span>
+
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            input_arch <span class="o">&gt;&gt;</span> p_arch_state<span class="p">;</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_arch_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+
+            P53GainOfFunctionCellMutationState<span class="o">*</span> p_real_state <span class="o">=</span> <span class="k">dynamic_cast</span><span class="o">&lt;</span>P53GainOfFunctionCellMutationState<span class="o">*&gt;</span><span class="p">(</span>p_arch_state<span class="p">);</span>
+            TS_ASSERT<span class="p">(</span>p_real_state <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>p_real_state<span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+            <span class="k">delete</span> p_arch_state<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><h2 id="Usingthecellmutationstateinacell-basedsimulation">Using the cell mutation state in a cell-based simulation</h2>
+<p>
+We conclude with a brief test demonstrating how <tt>P53GainOfFunctionCellMutationState</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOffLatticeSimulationWithP53GainOfFunctionCellMutationState</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+We use the <tt>HoneycombMeshGenerator</tt> to create a honeycomb mesh covering a
+circular domain of given radius, as follows.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+</pre></div><p>
+We now create a shared pointer to our new cell mutation state, as follows.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+
+</pre></div><p>
+Next, we create some cells, as follows.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+</pre></div><p>
+We now assign the mutation to the 11th and 51st cells.
+</p>
+<div class="code"><pre>        cells<span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="o">-&gt;</span>SetMutationState<span class="p">(</span>p_state<span class="p">);</span>
+        cells<span class="p">[</span><span class="mi">50</span><span class="p">]</span><span class="o">-&gt;</span>SetMutationState<span class="p">(</span>p_state<span class="p">);</span>
+
+</pre></div><p>
+Now that we have defined the mesh and cells, we can define the cell population. The constructor
+takes in the mesh and the cells vector.
+</p>
+<div class="code"><pre>        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+</pre></div><p>
+In order to visualize labelled cells we need to use the following command.
+</p>
+<div class="code"><pre>        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+
+</pre></div><p>
+We then pass in the cell population into an <tt>OffLatticeSimulation</tt>,
+and set the output directory, output multiple, and end time.
+</p>
+<div class="code"><pre>        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithNewMutationState"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+</pre></div><p>
+We create a force law and pass it to the <tt>OffLatticeSimulation</tt>.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+</pre></div><p>
+When you visualize the results with
+</p>
+<p>
+<tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestOffLatticeSimulationWithNewMutationState/results_from_time_0</tt>
+</p>
+<p>
+you should see two cells in black which are the cells with the new mutation. If we want these cells to behave differently we
+would need to write an new <tt>CellCycleModel</tt>, <tt>CellKiller</tt>, <tt>Force</tt>, or <tt>CellPopulationBoundaryCondition</tt>
+which checks for the new mutation.
+</p>
+<div class="code"><pre><span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewCellMutationStateTutorial.hpp">File name <tt>TestCreatingAndUsingANewCellMutationStateTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "AbstractCellMutationState.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "WildTypeCellMutationState.hpp"
+#include "FixedG1GenerationalCellCycleModel.hpp"
+#include "GeneralisedLinearSpringForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellsGenerator.hpp"
+#include "SmartPointers.hpp"
+#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">P53GainOfFunctionCellMutationState</span> <span class="o">:</span> <span class="k">public</span> AbstractCellMutationState
+<span class="p">{</span>
+<span class="nl">private:</span>
+
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellMutationState<span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+    P53GainOfFunctionCellMutationState<span class="p">()</span>
+        <span class="o">:</span> AbstractCellMutationState<span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellMutationStateTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestP53GainOfFunctionCellMutationState<span class="p">()</span>
+    <span class="p">{</span>
+        MAKE_PTR<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">0u</span><span class="p">);</span>
+        p_state<span class="o">-&gt;</span>IncrementCellCount<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+        p_state<span class="o">-&gt;</span>DecrementCellCount<span class="p">();</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">0u</span><span class="p">);</span>
+        TS_ASSERT_THROWS_THIS<span class="p">(</span>p_state<span class="o">-&gt;</span>DecrementCellCount<span class="p">(),</span>
+                <span class="s">"Cannot decrement cell count: no cells have this cell property"</span><span class="p">);</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>IsType<span class="o">&lt;</span>WildTypeCellMutationState<span class="o">&gt;</span><span class="p">(),</span> <span class="nb">false</span><span class="p">);</span>
+        TS_ASSERT_EQUALS<span class="p">(</span>p_state<span class="o">-&gt;</span>IsType<span class="o">&lt;</span>P53GainOfFunctionCellMutationState<span class="o">&gt;</span><span class="p">(),</span> <span class="nb">true</span><span class="p">);</span>
+
+        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+        std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"p53_mutation.arch"</span><span class="p">;</span>
+
+        <span class="p">{</span>
+            AbstractCellProperty<span class="o">*</span> <span class="k">const</span> p_const_state <span class="o">=</span> <span class="k">new</span> P53GainOfFunctionCellMutationState<span class="p">();</span>
+            p_const_state<span class="o">-&gt;</span>IncrementCellCount<span class="p">();</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_const_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span><span class="k">dynamic_cast</span><span class="o">&lt;</span>AbstractCellMutationState<span class="o">*&gt;</span><span class="p">(</span>p_const_state<span class="p">)</span><span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+            std<span class="o">::</span>ofstream ofs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_oarchive output_arch<span class="p">(</span>ofs<span class="p">);</span>
+
+            output_arch <span class="o">&lt;&lt;</span> p_const_state<span class="p">;</span>
+
+            <span class="k">delete</span> p_const_state<span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="p">{</span>
+            AbstractCellProperty<span class="o">*</span> p_arch_state<span class="p">;</span>
+
+            std<span class="o">::</span>ifstream ifs<span class="p">(</span>archive_filename<span class="p">.</span>c_str<span class="p">());</span>
+            boost<span class="o">::</span>archive<span class="o">::</span>text_iarchive input_arch<span class="p">(</span>ifs<span class="p">);</span>
+
+            input_arch <span class="o">&gt;&gt;</span> p_arch_state<span class="p">;</span>
+
+            TS_ASSERT_EQUALS<span class="p">(</span>p_arch_state<span class="o">-&gt;</span>GetCellCount<span class="p">(),</span> <span class="mi">1u</span><span class="p">);</span>
+
+            P53GainOfFunctionCellMutationState<span class="o">*</span> p_real_state <span class="o">=</span> <span class="k">dynamic_cast</span><span class="o">&lt;</span>P53GainOfFunctionCellMutationState<span class="o">*&gt;</span><span class="p">(</span>p_arch_state<span class="p">);</span>
+            TS_ASSERT<span class="p">(</span>p_real_state <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+            TS_ASSERT_EQUALS<span class="p">(</span>p_real_state<span class="o">-&gt;</span>GetColour<span class="p">(),</span> <span class="mi">5u</span><span class="p">);</span>
+
+            <span class="k">delete</span> p_arch_state<span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithP53GainOfFunctionCellMutationState<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        MutableMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_mesh <span class="o">=</span> generator<span class="p">.</span>GetCircularMesh<span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>P53GainOfFunctionCellMutationState<span class="p">,</span> p_state<span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        CellsGenerator<span class="o">&lt;</span>FixedG1GenerationalCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> p_mesh<span class="o">-&gt;</span>GetNumNodes<span class="p">());</span>
+
+        cells<span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="o">-&gt;</span>SetMutationState<span class="p">(</span>p_state<span class="p">);</span>
+        cells<span class="p">[</span><span class="mi">50</span><span class="p">]</span><span class="o">-&gt;</span>SetMutationState<span class="p">(</span>p_state<span class="p">);</span>
+
+        MeshBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span><span class="o">*</span>p_mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        cell_population<span class="p">.</span>AddCellPopulationCountWriter<span class="o">&lt;</span>CellMutationStatesCountWriter<span class="o">&gt;</span><span class="p">();</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithNewMutationState"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>GeneralisedLinearSpringForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_linear_force<span class="p">);</span>
+        p_linear_force<span class="o">-&gt;</span>SetCutOffLength<span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_linear_force<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

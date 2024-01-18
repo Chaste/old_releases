@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CreatingAndUsingANewCellBasedSimulationModifier - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file cell_based/test/tutorial/TestCreatingAndUsingANewCellBasedSimulationModifierTutorial.hpp at revision <a class="changeset" href="/trac/changeset/5e8c8d7218a9/git_repo" title="Copyright mayhem!">5e8c8d7218a9/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocreateanewcell-basedsimulationmodifieranduseitinasimulation">An example showing how to create a new cell-based simulation modifier and use it in a simulation</h1>
+<h2 id="Introduction">Introduction</h2>
+<p>
+In this tutorial, we show how to create a new cell-based simulation modifier
+and use this in a cell-based simulation. The simulation modifier class
+hierarchy is used to implement setup, update and finalise methods in cell-based
+simulations.
+</p>
+<h2 id="a1.Includingheaderfiles">1. Including header files</h2>
+<p>
+As in previous cell-based Chaste tutorials, we begin by including the necessary
+header file and archiving headers.
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+</pre></div><p>
+The next header defines a base class for cell-based simulation modifiers.
+Our new modifier class will inherit from this abstract class.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractCellBasedSimulationModifier.hpp"
+</span></pre></div><p>
+The remaining header files define classes that will be used in the cell-based
+simulation test. We have encountered each of these header files in previous cell-based
+Chaste tutorials.
+</p>
+<div class="code"><pre><span class="cp">#include "AbstractForce.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "NodesOnlyMesh.hpp"
+#include "CellsGenerator.hpp"
+#include "UniformCellCycleModel.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "RepulsionForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+</span><span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+</pre></div><h2 id="Definingthecell-basedsimulationmodifierclass">Defining the cell-based simulation modifier class</h2>
+<p>
+As an example, let us consider a simulation modifier that, at each simulation
+time step, calculates each cell's height (y coordinate) in a two-dimensional
+domain and stores it in in the <a class="missing wiki">CellData?</a> property as "height". This might be
+used, for example in cell-based simulations where cell behaviour is dictated
+through some form of positional information along a tissue axis.
+</p>
+<p>
+Note that usually this code would be separated out into a separate declaration
+in a .hpp file and definition in a .cpp file.
+Also, while the abstract simulation modifier class is templated over dimensions,
+for simplicity we hardcode this concrete modifier class to work in 2D only.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">CellHeightTrackingModifier</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The first public method is a default constructor, which simply calls the base
+constructor.
+</p>
+<div class="code"><pre><span class="nl">public:</span>
+
+    CellHeightTrackingModifier<span class="p">()</span>
+        <span class="o">:</span> AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">()</span>
+    <span class="p">{}</span>
+
+</pre></div><p>
+The next public method is a destructor, which calls the base destructor.
+</p>
+<div class="code"><pre>    <span class="o">~</span>CellHeightTrackingModifier<span class="p">()</span>
+    <span class="p">{}</span>
+
+</pre></div><p>
+Next, we override the <tt>UpdateAtEndOfTimeStep()</tt> method, which specifies what
+to do to the simulation at the end of each time step. In this class, we simply
+call the method <tt>UpdateCellData()</tt> on the cell population; this method is
+defined later in the class definition.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">UpdateAtEndOfTimeStep</span><span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        UpdateCellData<span class="p">(</span>rCellPopulation<span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+The next overridden method, <tt>SetupSolve()</tt>, specifies what to do to the
+simulation before the start of the time loop. In this class, we call
+<tt>UpdateCellData()</tt> on the cell population, just as in
+<tt>UpdateAtEndOfTimeStep()</tt>. This is needed because otherwise
+<tt>CellData</tt> will not have been fully initialised when we enter
+the main time loop of the simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">SetupSolve</span><span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">,</span> std<span class="o">::</span>string outputDirectory<span class="p">)</span>
+    <span class="p">{</span>
+
+        UpdateCellData<span class="p">(</span>rCellPopulation<span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Next, we define the <tt>UpdateCellData()</tt> method itself. This is a helper
+method that computes the height (y coordinate) of each cell in the population
+and stores this in the <tt>CellData</tt> property.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">UpdateCellData</span><span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+</pre></div><p>
+We begin by calling <tt>Update()</tt> on the cell population, which ensures that
+it is in a coherent state.
+</p>
+<div class="code"><pre>        rCellPopulation<span class="p">.</span>Update<span class="p">();</span>
+
+</pre></div><p>
+Next, we iterate over the cell population...
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> rCellPopulation<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> rCellPopulation<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+</pre></div><p>
+...find its height...
+</p>
+<div class="code"><pre>            <span class="kt">double</span> cell_height <span class="o">=</span> rCellPopulation<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+</pre></div><p>
+...and store this in the <tt>CellData</tt> item "height".
+</p>
+<div class="code"><pre>            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"height"</span><span class="p">,</span> cell_height<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</pre></div><p>
+Finally, we must override the <tt>OutputSimulationModifierParameters()</tt> method, which
+outputs to file any parameters that are defined in the class. In this class, there are
+no such parameters to output, so we simply call the method defined on the direct
+parent class (in this case, the abstract class).
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">OutputSimulationModifierParameters</span><span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputSimulationModifierParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><p>
+This concludes the definition of the <tt>CellHeightTrackingModifier</tt> class.
+</p>
+<p>
+As mentioned in previous cell-based Chaste tutorials, we need to include the next block
+of code to be able to archive the simulation modifier object in a cell-based simulation,
+and to obtain a unique identifier for our new class for when writing results to file.
+</p>
+<p>
+The identifiers for this class are defined together here, since we can only have each
+#include once in this source file. Normally the first include and export would go in
+the class's header file, and the second #include and export would go in in the .cpp file.
+</p>
+<div class="code"><pre><span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>CellHeightTrackingModifier<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>CellHeightTrackingModifier<span class="p">)</span>
+
+</pre></div><h2 id="TheTests">The Tests</h2>
+<p>
+We now define the test class, which inherits from <tt>AbstractCellBasedTestSuite</tt>.
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellBasedSimulationModifierTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+</pre></div><h3 id="Usingthemodifierinacell-basedsimulation">Using the modifier in a cell-based simulation</h3>
+<p>
+We conclude with a brief test demonstrating how <tt>CellHeightTrackingModifier</tt> can be used
+in a cell-based simulation.
+</p>
+<div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestOffLatticeSimulationWithCellHeightTrackingModifier</span><span class="p">()</span>
+    <span class="p">{</span>
+</pre></div><p>
+In this case, we choose to create a small <tt>NodeBasedCellPopulation</tt> comprising 25 cells.
+We choose a cut-off for mechanical interactions between cells of 1.5 units and add a
+simple <tt>ReplusionForce</tt> to the simulation. We use a <tt>UniformCellCycleModel</tt>
+to implement some random proliferation in the simulation.
+</p>
+<div class="code"><pre>        HoneycombMeshGenerator <span class="nf">generator</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithCellHeightTrackingModifier"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>RepulsionForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+</pre></div><p>
+Finally, we add a <tt>CellHeightTrackingModifier</tt> to the simulation.
+</p>
+<div class="code"><pre>        MAKE_PTR<span class="p">(</span>CellHeightTrackingModifier<span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+</pre></div><p>
+To run the simulation, we call <tt>Solve()</tt>.
+</p>
+<div class="code"><pre>        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div><p>
+It is most straightforward to visualize the results of this simulation in Paraview.
+Load the file <tt>/tmp/$USER/testoutput/TestOffLatticeSimulationWithCellHeightTrackingModifier/results_from_time_0/results.pvd</tt>,
+and add glyphs to represent cells.
+</p>
+<h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestCreatingAndUsingANewCellBasedSimulationModifierTutorial.hpp">File name <tt>TestCreatingAndUsingANewCellBasedSimulationModifierTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "CheckpointArchiveTypes.hpp"
+#include "AbstractCellBasedTestSuite.hpp"
+</span>
+<span class="cp">#include "AbstractCellBasedSimulationModifier.hpp"
+#include "AbstractForce.hpp"
+#include "HoneycombMeshGenerator.hpp"
+#include "NodesOnlyMesh.hpp"
+#include "CellsGenerator.hpp"
+#include "UniformCellCycleModel.hpp"
+#include "TransitCellProliferativeType.hpp"
+#include "RepulsionForce.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "SmartPointers.hpp"
+</span><span class="c1">//This test is always run sequentially (never in parallel)
+</span><span class="cp">#include "FakePetscSetup.hpp"
+</span>
+<span class="k">class</span> <span class="nc">CellHeightTrackingModifier</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span>
+<span class="p">{</span>
+    <span class="k">friend</span> <span class="k">class</span> <span class="nc">boost</span><span class="o">::</span>serialization<span class="o">::</span>access<span class="p">;</span>
+    <span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">Archive</span><span class="o">&gt;</span>
+    <span class="kt">void</span> serialize<span class="p">(</span>Archive <span class="o">&amp;</span> archive<span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">int</span> version<span class="p">)</span>
+    <span class="p">{</span>
+        archive <span class="o">&amp;</span> boost<span class="o">::</span>serialization<span class="o">::</span>base_object<span class="o">&lt;</span>AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span> <span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="nl">public:</span>
+
+    CellHeightTrackingModifier<span class="p">()</span>
+        <span class="o">:</span> AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">()</span>
+    <span class="p">{}</span>
+
+    <span class="o">~</span>CellHeightTrackingModifier<span class="p">()</span>
+    <span class="p">{}</span>
+
+    <span class="kt">void</span> UpdateAtEndOfTimeStep<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        UpdateCellData<span class="p">(</span>rCellPopulation<span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> SetupSolve<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">,</span> std<span class="o">::</span>string outputDirectory<span class="p">)</span>
+    <span class="p">{</span>
+
+        UpdateCellData<span class="p">(</span>rCellPopulation<span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> UpdateCellData<span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;&amp;</span> rCellPopulation<span class="p">)</span>
+    <span class="p">{</span>
+        rCellPopulation<span class="p">.</span>Update<span class="p">();</span>
+
+        <span class="k">for</span> <span class="p">(</span>AbstractCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>Iterator cell_iter <span class="o">=</span> rCellPopulation<span class="p">.</span>Begin<span class="p">();</span>
+             cell_iter <span class="o">!=</span> rCellPopulation<span class="p">.</span>End<span class="p">();</span>
+             <span class="o">++</span>cell_iter<span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">double</span> cell_height <span class="o">=</span> rCellPopulation<span class="p">.</span>GetLocationOfCellCentre<span class="p">(</span><span class="o">*</span>cell_iter<span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+            cell_iter<span class="o">-&gt;</span>GetCellData<span class="p">()</span><span class="o">-&gt;</span>SetItem<span class="p">(</span><span class="s">"height"</span><span class="p">,</span> cell_height<span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">void</span> OutputSimulationModifierParameters<span class="p">(</span>out_stream<span class="o">&amp;</span> rParamsFile<span class="p">)</span>
+    <span class="p">{</span>
+        AbstractCellBasedSimulationModifier<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;::</span>OutputSimulationModifierParameters<span class="p">(</span>rParamsFile<span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="cp">#include "SerializationExportWrapper.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>CellHeightTrackingModifier<span class="p">)</span>
+<span class="cp">#include "SerializationExportWrapperForCpp.hpp"
+</span>CHASTE_CLASS_EXPORT<span class="p">(</span>CellHeightTrackingModifier<span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestCreatingAndUsingANewCellBasedSimulationModifierTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+    <span class="kt">void</span> TestOffLatticeSimulationWithCellHeightTrackingModifier<span class="p">()</span>
+    <span class="p">{</span>
+        HoneycombMeshGenerator generator<span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="o">&gt;*</span> p_generating_mesh <span class="o">=</span> generator<span class="p">.</span>GetMesh<span class="p">();</span>
+        NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
+        MAKE_PTR<span class="p">(</span>TransitCellProliferativeType<span class="p">,</span> p_transit_type<span class="p">);</span>
+        CellsGenerator<span class="o">&lt;</span>UniformCellCycleModel<span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span> cells_generator<span class="p">;</span>
+        cells_generator<span class="p">.</span>GenerateBasicRandom<span class="p">(</span>cells<span class="p">,</span> mesh<span class="p">.</span>GetNumNodes<span class="p">(),</span> p_transit_type<span class="p">);</span>
+
+        NodeBasedCellPopulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> cell_population<span class="p">(</span>mesh<span class="p">,</span> cells<span class="p">);</span>
+
+        OffLatticeSimulation<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> simulator<span class="p">(</span>cell_population<span class="p">);</span>
+        simulator<span class="p">.</span>SetOutputDirectory<span class="p">(</span><span class="s">"TestOffLatticeSimulationWithCellHeightTrackingModifier"</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetSamplingTimestepMultiple<span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+        simulator<span class="p">.</span>SetEndTime<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>RepulsionForce<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> p_force<span class="p">);</span>
+        simulator<span class="p">.</span>AddForce<span class="p">(</span>p_force<span class="p">);</span>
+
+        MAKE_PTR<span class="p">(</span>CellHeightTrackingModifier<span class="p">,</span> p_modifier<span class="p">);</span>
+        simulator<span class="p">.</span>AddSimulationModifier<span class="p">(</span>p_modifier<span class="p">);</span>
+
+        simulator<span class="p">.</span>Solve<span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

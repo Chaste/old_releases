@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/SimpleImpedanceProblem - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+This tutorial is automatically generated from the file lung/test/tutorials/TestSimpleImpedanceProblemTutorial.hpp at revision <a class="changeset" href="/trac/changeset/8af276d/git_repo" title="#2933 #2935 Remove dynamic exception specifications [ throw(Exception) ...">8af276d/git_repo</a>.
+Note that the code is given in full at the bottom of the page.
+</p>
+<h1 id="Anexampleshowinghowtocalculatetransferimpedanceofanairwaytreeusingasimpleimpedancemodel">An example showing how to calculate transfer impedance of an airway tree using a simple impedance model</h1>
+<p>
+In this tutorial we demonstrate the use of SimpleImpedanceProblem to calculate transfer impedance on an
+airway tree model. We further demonstrate post-processing of the output using ImpedancePostProcessor to
+calculate a number of clinically relevant measures.
+</p>
+<p>
+Note that SimpleImpedanceProblem uses Poiseuille formulas to calculate impedance
+rather than more accurate acoustic impedance equations. For the more accurate version see ImpedanceProblem.
+</p>
+<p>
+The usual headers are included
+</p>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+</pre></div><p>
+SimpleImpedanceProblem does most of the work in calculating impedance.
+</p>
+<div class="code"><pre><span class="cp">#include "SimpleImpedanceProblem.hpp"
+</span>
+</pre></div><p>
+ImpedancePostProcessor allows easy calculation of a number of clinically relevant measures.
+</p>
+<div class="code"><pre><span class="cp">#include "ImpedancePostProcessor.hpp"
+</span>
+</pre></div><p>
+Define the test
+</p>
+<div class="code"><pre><span class="k">class</span> <span class="nc">TestSimpleImpedanceProblemTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestCalculateImpedance<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+</pre></div><p>
+First, we load up a mesh containing the centre lines and radii of the a complete conducting airway tree.
+The mesh will typically have been developed using a combination of computed tomography (CT) image segmentation
+and algorithmic airway generation.
+</p>
+<div class="code"><pre>        TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"lung/test/data/TestSubject002"</span><span class="p">);</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+
+</pre></div><p>
+Note that the mesh defined above was developed using a CT scan taken at full inspiration. Impedance is more
+commonly recorded during tidal breathing. Here we use a simple scaling to bring the airway radii down into the
+tidal breathing range.
+</p>
+<div class="code"><pre>        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            node_iter<span class="o">-&gt;</span>rGetNodeAttributes<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.7</span><span class="p">;</span>
+        <span class="p">}</span>
+
+</pre></div><p>
+Setup a SimpleImpedanceProblem and tell it that the given mesh is defined in millimetres
+</p>
+<div class="code"><pre>        SimpleImpedanceProblem <span class="nf">problem</span><span class="p">(</span>mesh<span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+        problem<span class="p">.</span>SetMeshInMilliMetres<span class="p">();</span>
+
+</pre></div><p>
+This vector lists the input frequencies at which to calculate impedance. They must be
+monotonically increasing.
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> test_frequencies<span class="p">;</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">30.0</span><span class="p">);</span>
+        problem<span class="p">.</span>SetFrequencies<span class="p">(</span>test_frequencies<span class="p">);</span>               <span class="c1">//Set &amp; get frequencies for coverage
+</span>
+</pre></div><p>
+The simple impedance model defines a linear spring at each terminal of the airway tree.
+This method allows us to set the elastance of the whole lung (in Pa/m<sup>3). This elastance
+is then evenly distributed over the terminals.
+</sup></p>
+<div class="code"><pre>        problem<span class="p">.</span>SetElastance<span class="p">(</span><span class="mf">5.8</span><span class="o">*</span><span class="mf">98.0665</span><span class="o">*</span><span class="mf">1e3</span><span class="p">);</span>
+
+</pre></div><p>
+Calculates the impedance at the given frequencies
+</p>
+<div class="code"><pre>        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+</pre></div><p>
+Get the calculated impedances. The impedance at each frequency is
+made up of a real component (the resistance) and a complex component
+(the elastance).
+</p>
+<div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>std<span class="o">::</span>complex<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="o">&gt;</span> impedances <span class="o">=</span> problem<span class="p">.</span>rGetImpedances<span class="p">();</span>
+
+</pre></div><p>
+The impedances calculated above could at this stage be written to a file
+and plotted. Instead, we make use of ImpedancePostProcessor to calculate
+a number of common clinical summary statistics from the data.
+</p>
+<div class="code"><pre>        ImpedancePostProcessor <span class="nf">processor</span><span class="p">(</span>test_frequencies<span class="p">,</span> impedances<span class="p">);</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R5       = "</span> <span class="o">&lt;&lt;</span> real<span class="p">(</span>impedances<span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R20      = "</span> <span class="o">&lt;&lt;</span> real<span class="p">(</span>impedances<span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R5 - R20 = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetR5MinusR20<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Rrs      = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetRrs<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"X5       = "</span> <span class="o">&lt;&lt;</span> imag<span class="p">(</span>impedances<span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Fres     = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetResonantFrequency<span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">" Hz "</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Ax       = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetAx<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div><h1 id="Code">Code</h1>
+<p>
+The full code is given below
+</p>
+<h2 id="FilenameTestSimpleImpedanceProblemTutorial.hpp">File name <tt>TestSimpleImpedanceProblemTutorial.hpp</tt></h2>
+<div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
+#include "TrianglesMeshReader.hpp"
+</span>
+<span class="cp">#include "SimpleImpedanceProblem.hpp"
+</span>
+<span class="cp">#include "ImpedancePostProcessor.hpp"
+</span>
+<span class="k">class</span> <span class="nc">TestSimpleImpedanceProblemTutorial</span> <span class="o">:</span> <span class="k">public</span> CxxTest<span class="o">::</span>TestSuite
+<span class="p">{</span>
+<span class="nl">public:</span> <span class="c1">// Tests should be public!
+</span>
+    <span class="kt">void</span> TestCalculateImpedance<span class="p">()</span>
+    <span class="p">{</span>
+        EXIT_IF_PARALLEL<span class="p">;</span>
+
+        TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh<span class="p">;</span>
+        TrianglesMeshReader<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;</span> mesh_reader<span class="p">(</span><span class="s">"lung/test/data/TestSubject002"</span><span class="p">);</span>
+        mesh<span class="p">.</span>ConstructFromMeshReader<span class="p">(</span>mesh_reader<span class="p">);</span>
+
+        <span class="k">for</span> <span class="p">(</span>TetrahedralMesh<span class="o">&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="o">&gt;::</span>NodeIterator node_iter <span class="o">=</span> mesh<span class="p">.</span>GetNodeIteratorBegin<span class="p">();</span>
+             node_iter <span class="o">!=</span> mesh<span class="p">.</span>GetNodeIteratorEnd<span class="p">();</span>
+             <span class="o">++</span>node_iter<span class="p">)</span>
+        <span class="p">{</span>
+            node_iter<span class="o">-&gt;</span>rGetNodeAttributes<span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.7</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        SimpleImpedanceProblem problem<span class="p">(</span>mesh<span class="p">,</span> <span class="mi">0u</span><span class="p">);</span>
+        problem<span class="p">.</span>SetMeshInMilliMetres<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> test_frequencies<span class="p">;</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">1.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">10.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+        test_frequencies<span class="p">.</span>push_back<span class="p">(</span><span class="mf">30.0</span><span class="p">);</span>
+        problem<span class="p">.</span>SetFrequencies<span class="p">(</span>test_frequencies<span class="p">);</span>               <span class="c1">//Set &amp; get frequencies for coverage
+</span>
+        problem<span class="p">.</span>SetElastance<span class="p">(</span><span class="mf">5.8</span><span class="o">*</span><span class="mf">98.0665</span><span class="o">*</span><span class="mf">1e3</span><span class="p">);</span>
+
+        problem<span class="p">.</span>Solve<span class="p">();</span>
+
+        std<span class="o">::</span>vector<span class="o">&lt;</span>std<span class="o">::</span>complex<span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span> <span class="o">&gt;</span> impedances <span class="o">=</span> problem<span class="p">.</span>rGetImpedances<span class="p">();</span>
+
+        ImpedancePostProcessor <span class="nf">processor</span><span class="p">(</span>test_frequencies<span class="p">,</span> impedances<span class="p">);</span>
+
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R5       = "</span> <span class="o">&lt;&lt;</span> real<span class="p">(</span>impedances<span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R20      = "</span> <span class="o">&lt;&lt;</span> real<span class="p">(</span>impedances<span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"R5 - R20 = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetR5MinusR20<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Rrs      = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetRrs<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"X5       = "</span> <span class="o">&lt;&lt;</span> imag<span class="p">(</span>impedances<span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.s.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Fres     = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetResonantFrequency<span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">" Hz "</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"Ax       = "</span> <span class="o">&lt;&lt;</span> processor<span class="p">.</span>GetAx<span class="p">()</span><span class="o">*</span><span class="mf">1e-6</span> <span class="o">&lt;&lt;</span> <span class="s">" kPa.L^-1"</span> <span class="o">&lt;&lt;</span> std<span class="o">::</span>endl<span class="p">;</span>
+        std<span class="o">::</span>cout <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+</pre></div></div>
+          
+
+    </div>
+  </body>
+</html>

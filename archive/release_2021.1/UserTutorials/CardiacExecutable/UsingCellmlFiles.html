@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>UserTutorials/CardiacExecutable/UsingCellmlFiles - Chaste</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <div class="wikipage searchable">
+        
+          <div id="wikipage" class="trac-content"><p>
+The executable can be used with a general CellML file to specify the cell model, rather than just choosing from the list of hardcoded cell model options (although some names in the CellML file have to match the names Chaste is expecting). However, in order to run Chaste with CellML files, a full developer installation is (currently) required, as !chaste_codegen is used to convert the CellML into code which is then compiled and dynamically loaded, all when running the executable.
+</p>
+<p>
+To run a simulation with this, you have to provide the path and name of the CellML model as follows.
+</p>
+<div class="code"><pre><span class="nt">&lt;IonicModels&gt;</span>
+    <span class="nt">&lt;Default&gt;&lt;Dynamic&gt;&lt;Path</span> <span class="na">relative_to=</span><span class="s">"cwd"</span><span class="nt">&gt;</span>LuoRudy1991.cellml<span class="nt">&lt;/Path&gt;&lt;/Dynamic&gt;&lt;/Default&gt;</span>
+<span class="nt">&lt;/IonicModels&gt;</span>
+</pre></div><p>
+In this example, the file <tt>LuoRudy1991.cellml</tt> should be placed in the same folder as the <tt>UsingCellmlFiles.xml</tt> file,
+which should be your current directory when running the simulation.
+</p>
+<p>
+The executable can also output any of the variables that are used in the cell model. The following block needs to be added to the <tt>Simulation</tt> block of <tt>UsingCellmlFiles.xml</tt>. 
+</p>
+<div class="code"><pre><span class="nt">&lt;OutputVariables&gt;</span>
+    <span class="nt">&lt;Var</span> <span class="na">name=</span><span class="s">"Cai"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Var</span> <span class="na">name=</span><span class="s">"Nai"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/OutputVariables&gt;</span>
+</pre></div><p>
+The name should match the name of the variable in the CellML file. Also, you have to alter the CellML file to tell !chaste_codegen which variables or quantities can be selected for output. Each variable must have a <tt>cmeta:id</tt> specified 
+</p>
+<div class="code"><pre><span class="nt">&lt;variable</span> <span class="na">units=</span><span class="s">"millimolar"</span> <span class="na">public_interface=</span><span class="s">"out"</span> <span class="na">name=</span><span class="s">"Cai"</span> <span class="na">initial_value=</span><span class="s">"0.0002"</span> <span class="na">cmeta:id=</span><span class="s">"Cai"</span><span class="nt">/&gt;</span>
+</pre></div><p>
+and an RDF annotation added, e.g.
+</p>
+<div class="code"><pre><span class="nt">&lt;rdf:Description</span> <span class="na">rdf:about=</span><span class="s">"#Cai"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;derived-quantity</span> <span class="na">xmlns=</span><span class="s">"https://chaste.comlab.ox.ac.uk/cellml/ns/pycml#"</span><span class="nt">&gt;</span>yes<span class="nt">&lt;/derived-quantity&gt;</span>
+<span class="nt">&lt;/rdf:Description&gt;</span>
+</pre></div><p>
+which for convenience can be placed at the end of the CellML file.  See <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for full details of the functionality available.  The <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/TroubleShooting.html#chaste_codegenErrors">chaste_codegen section of the TroubleShooting page</a> may be useful if you experience problems.
+</p>
+<p>
+The attached files run a simple one-dimensional simulation, with the <tt>LuoRudy1991.cellml</tt> file modified in order to allow the output ot the intracellular calcium and sodium concentrations. Ionic currents and other quantities of interest can be also selected in the same way.
+</p>
+</div>
+          
+
+    </div>
+  </body>
+</html>

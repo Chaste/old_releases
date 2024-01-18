@@ -1,0 +1,156 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>InstallGuides/Oerc - Chaste</title>
+    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
+    <style type="text/css">
+/* Link styles */
+:link, :visited, a em {
+ text-decoration: none;
+ color: #283f6b;
+ border-bottom: 1px dotted #bbb;
+}
+/*
+:link:hover, :visited:hover {
+ background-color: #eee;
+ color: #555;
+}
+*/
+    </style>
+
+  </head>
+  <body>
+    <div id="banner">
+      <div id="header">
+        <p>
+          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
+          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+        </p>
+      </div>
+    </div>
+    <p>&nbsp;</p>
+    <div id="content" class="wiki">
+      <p class="path noprint">
+        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/Oerc" href="/chaste/tutorials/release_3.2/InstallGuides/Oerc.html">Oerc</a>
+        <br style="clear: both" />
+      </p>
+      <div class="wikipage searchable">
+        
+          <h1 id="OnOeRCOxfordSupercomputingClusterssuchasHALandSAL">On OeRC (Oxford Supercomputing Clusters) such as HAL and SAL</h1>
+<h2 id="Gettingontothemachine">Getting onto the machine</h2>
+<p>
+For access to HAL, SAL, or any of the other OeRC machines, you will need to register with <a class="ext-link" href="http://www.arc.ox.ac.uk/content/home"><span class="icon">&nbsp;</span>Advanced Research Computing</a> (ARC, formerly the Oxford Supercomputing Centre).
+The easiest way to join is to register for a user account with an existing project - take a look at the list of projects on the <a class="ext-link" href="http://www.arc.ox.ac.uk/content/registration"><span class="icon">&nbsp;</span>registration page</a> and talk to the person responsible for the one you would like to join.
+</p>
+<p>
+ARC runs a few training courses each year for new users. The notes for these courses are available <a class="ext-link" href="http://www.arc.ox.ac.uk/content/training-courses-0"><span class="icon">&nbsp;</span>online</a>, and might be worth a look.
+</p>
+<h2 id="Settingtheenvironment">Setting the environment</h2>
+<p>
+You will need <tt>SCons</tt> and the Intel compiler to compile code and RNV for compiling CellML files into Chaste compatible cell models.
+</p>
+<p>
+As of February 2014, the Intel compiler was automatically set up, but <tt>SCons</tt> will still need to be added. Another required dependency, Amara, is available if you load the <tt>Python</tt> 2.6 module.
+</p>
+<p>
+For these add the following to your <tt>$HOME/.bashrc</tt> file:
+</p>
+<pre class="wiki">module add scons
+module add python/2.6
+
+#Path for PyCML Python helper 
+export PATH=${PATH}:/system/software/hal/lib/rnv-1.7.8/
+
+#Libraries for running Chaste
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/system/software/redqueen/libs/boost-1_45_0/lib:/system/software/hal/lib/xerces-c/lib:/home/system/software/redqueen/libs/szip-2.1/lib
+:${DATA}/Chaste/lib:/system/software/linux-x86_64/lib/vtk/5.10.1/lib/vtk-5.10
+</pre><p>
+The <tt>.bashrc</tt> file won't run automatically when you log in, so make sure you remember to do so.
+</p>
+<h2 id="GettingChaste">Getting Chaste</h2>
+<p>
+It makes sense to download Chaste in your $DATA area where there is ample space to store code, meshes and output.
+</p>
+<pre class="wiki">cd $DATA
+# Check out code base (takes a few minutes)
+svn co https://chaste.cs.ox.ac.uk/svn/chaste/trunk Chaste --username jmpf@comlab.ox.ac.uk
+#                                                         (the last bit will, of course, be your Chaste login)
+# Check out a user project
+svn co https://chaste.cs.ox.ac.uk/svn/chaste/projects/jmpf Chaste/projects/jmpf
+#                                                    (the last parts will, of course, be your Chaste project name)
+</pre><h2 id="Compilingatest">Compiling a test</h2>
+<p>
+It's important to <i>compile only</i> and not to attempt to run programs on the head-node.  As of <a class="changeset" href="/trac/changeset/15416" title="Update OeRC configuration">r15416</a> the SCons build system should automatically pick up a configuration file based on previous configurations written by Nejib and Joe. 
+</p>
+<pre class="wiki">cd $DATA/Chaste
+
+# Compiling a simple parallel test
+scons build=Intel compile_only=1 test_suite=global/test/TestPetscTools.hpp
+# Compiling PyCml test
+scons b=Intel co=1 ts=heart/test/ionicmodels/TestPyCml.hpp
+# Compiling a user project test
+scons b=Intel co=1 ts=projects/jmpf/test/TestVtk.hpp
+
+#Compiling the main Chaste executable
+scons b=Intel co=1 exe=1 chaste_libs=1 apps
+</pre><h2 id="Runningcode">Running code</h2>
+<p>
+Here is an example script which runs the above test and the Chaste executable.  Save as, for example, <tt>run_Chaste</tt>.
+</p>
+<pre class="wiki">#!/bin/bash --login
+
+# Name of the job 
+#PBS -N TestChaste
+
+# Use 1 node with 8 cores = 8 MPI legs 
+#PBS -l nodes=1:ppn=8
+
+# Kill after one hour 
+#PBS -l walltime=01:00:00
+
+# Send me email at the beginning and the end of the run
+#PBS -m be
+#PBS -M jmpf@cs.ox.ac.uk 
+
+# Join output and error files
+#PBS -j oe
+
+# Copy all environmental variables
+#PBS -V 
+
+# Set up MPI
+cd $PBS_O_WORKDIR
+. enable_hal_mpi.sh
+
+#Switch to Chaste directory
+cd ${DATA}/Chaste
+
+# A parallel test
+mpirun $MPI_HOSTS ./global/build/intel/TestPetscToolsRunner
+# A PyCML test
+mpirun $MPI_HOSTS ./heart/build/intel/ionicmodels/TestPyCmlRunner
+# A user project test
+mpirun $MPI_HOSTS ./projects/jmpf/build/intel/TestVtkRunner
+
+# A test of the executable
+mpirun $MPI_HOSTS apps/src/Chaste apps/texttest/weekly/Propagation1d/ChasteParameters.xml
+</pre><p>
+Submit script and see state of the queue
+</p>
+<pre class="wiki">qsub run_Chaste.sh
+qstat
+</pre><p>
+More information on the Torque job scheduler is available <a class="ext-link" href="http://www.arc.ox.ac.uk/content/torque-job-scheduler"><span class="icon">&nbsp;</span>here</a>.
+</p>
+
+        
+        
+      </div>
+
+    </div>
+  </body>
+</html>
