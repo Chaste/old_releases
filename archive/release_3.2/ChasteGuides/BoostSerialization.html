@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ChasteGuides/BoostSerialization - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/BoostSerialization" href="/chaste/tutorials/release_3.2/ChasteGuides/BoostSerialization.html">BoostSerialization</a>
+        <a class="pathentry" title="View ChasteGuides" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/BoostSerialization" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/BoostSerialization.html">BoostSerialization</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -65,14 +65,14 @@ All header files of the form <tt>&lt;boost/archive/*archive.hpp&gt;</tt> are <st
 </p>
 <pre class="wiki">#include "CheckpointArchiveTypes.hpp"
 </pre><p>
-first, then include Chaste classes.  See <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/BoostSerialization.html#Derivedclasses">below</a> for details on how to use the export header.
+first, then include Chaste classes.  See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/BoostSerialization.html#Derivedclasses">below</a> for details on how to use the export header.
 </p>
 <p>
 The main header file that classes with serialization methods will need is
 </p>
 <pre class="wiki">#include "ChasteSerialization.hpp"
 </pre><p>
-Other headers are also needed for dealing with <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/BoostSerialization.html#Classhierarchies">abstract and derived classes; see below</a>.
+Other headers are also needed for dealing with <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/BoostSerialization.html#Classhierarchies">abstract and derived classes; see below</a>.
 </p>
 <p>
 For serializing vectors, add <tt>#include &lt;boost/serialization/vector.hpp&gt;</tt>.  Similar headers exist for other STL collections.

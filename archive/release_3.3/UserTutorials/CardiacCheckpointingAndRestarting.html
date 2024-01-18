@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/CardiacCheckpointingAndRestarting - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.3/">Release 3.3</a>.</em>
         </p>
       </div>
     </div>
@@ -48,7 +48,7 @@ First, the checkpointing test.
 <div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestCheckpointing</span><span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
     <span class="p">{</span>
 </pre></div><p>
-We set up exactly the same simulation as in <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/AnotherBidomainSimulation.html">UserTutorials/AnotherBidomainSimulation</a>
+We set up exactly the same simulation as in <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/AnotherBidomainSimulation.html">UserTutorials/AnotherBidomainSimulation</a>
 </p>
 <div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>Reset<span class="p">();</span>
 
@@ -112,9 +112,9 @@ needed to resume the simulation. The mesh written out will be in permuted form i
 partitioned for a parallel simulation.
 </li><li>To make this process slightly more efficient, Chaste will copy the original mesh files if the mesh was loaded
 from disk and hasn't been modified (e.g. by permuting).  Because of this, if you modify the mesh in memory,
-e.g. by setting element attributes in <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/BidomainWithBath.html">bidomain-with-bath simulations</a>, then
+e.g. by setting element attributes in <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/BidomainWithBath.html">bidomain-with-bath simulations</a>, then
 you need to inform Chaste by calling <tt>mesh.SetMeshHasChangedSinceLoading()</tt>, so your modifications aren't lost.
-</li><li>Meshes written in checkpoints use a binary form of the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Triangle/Tetgen.html" rel="nofollow">Triangle/Tetgen?</a> mesh format. This makes checkpoints
+</li><li>Meshes written in checkpoints use a binary form of the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Triangle/Tetgen.html" rel="nofollow">Triangle/Tetgen?</a> mesh format. This makes checkpoints
 significantly smaller but will cause portability problems if checkpoints are moved between little-endian systems
 (e.g. x86) and big-endian systems (e.g. PowerPC).
 </li><li>Checkpoints may be resumed on any number of processes &mdash; you are not restricted to the number on which it was

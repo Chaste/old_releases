@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/UserProjects - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2018.1/">Release 2018.1</a>.</em>
         </p>
       </div>
     </div>
@@ -64,7 +64,7 @@
 </div><p>
 </p>
 <p>
-There are a few ways to use Chaste's source code. Professional C++ developers may wish to link to <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html#UsingChastelikeastandardlibrary">Chaste as an external C++ library</a> rather than use the User Project framework described below. People new to C++ may be tempted to directly alter code in the Chaste source folders, this should generally be avoided as we won't know whether any problems you may run into are down to Chaste or your changes to it!
+There are a few ways to use Chaste's source code. Professional C++ developers may wish to link to <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CmakeBuildGuide.html#UsingChastelikeastandardlibrary">Chaste as an external C++ library</a> rather than use the User Project framework described below. People new to C++ may be tempted to directly alter code in the Chaste source folders, this should generally be avoided as we won't know whether any problems you may run into are down to Chaste or your changes to it!
 </p>
 <p>
 Instead of these options, <strong>User Projects</strong> allow you to use Chaste source code and have the benefit of using the Chaste build/testing framework, by putting User Projects under the <a class="source" href="/trac/browser/projects">projects folder</a>. <strong>User Projects</strong> work exactly like new Chaste modules (<tt>global</tt>,<tt>heart</tt>,<tt>cell-based</tt>, etc.) and can depend on any of the Chaste modules (or indeed other User Projects). We tend to supply User Projects to accompany and reproduce research articles (some of these additionally have special wiki pages under <a class="wiki" href="/trac/wiki/PaperTutorials">PaperTutorials</a> that act as walk-throughs of the codes).
@@ -114,7 +114,7 @@ where you should replace <tt>[YourGitHubUserName]</tt> with your user name on Gi
 </pre></li></ol><p>
 answering the prompts given.
 </p>
-<ol start="4"><li>To check that your user project compiles correctly, at the command line navigate to a build folder (outside the Chaste or project source folder - see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeBuildGuide.html">ChasteGuides/CmakeBuildGuide</a>) and run
+<ol start="4"><li>To check that your user project compiles correctly, at the command line navigate to a build folder (outside the Chaste or project source folder - see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CmakeBuildGuide.html">ChasteGuides/CmakeBuildGuide</a>) and run
 <pre class="wiki">ccmake path/to/Chaste
 </pre></li></ol><p>
 Type <tt>c</tt> to configure; when this process is complete, type <tt>e</tt> to exit the configuration.
@@ -135,7 +135,7 @@ and check that <tt>TestHello</tt> passes.
 </p>
 <h2 id="ReleasingaUserProject">Releasing a User Project</h2>
 <p>
-See <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/UserProjects/ReleasingUserProjects.html">ChasteGuides/UserProjects/ReleasingUserProjects</a>.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/UserProjects/ReleasingUserProjects.html">ChasteGuides/UserProjects/ReleasingUserProjects</a>.
 </p>
 <h2 id="OldSVNinformation">Old SVN information</h2>
 <p>

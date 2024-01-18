@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/InstallGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -71,40 +71,40 @@
 </div><p>
 </p>
 <p>
-This is the place to start if you want to be able to build the Chaste source code, to run your own tests or simulations on your machine. These instructions are not needed for an executable 'XML User' (see <a class="wiki" href="/chaste/tutorials/release_3.4/GettingStarted.html">GettingStarted</a>).
+This is the place to start if you want to be able to build the Chaste source code, to run your own tests or simulations on your machine. These instructions are not needed for an executable 'XML User' (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/GettingStarted.html">GettingStarted</a>).
 </p>
 <p>
 The easiest ways to install Chaste are:
 </p>
-<ul><li>On Ubuntu - use the <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/UbuntuPackage.html">Ubuntu .deb package</a>.
-</li><li>Other Linux systems - try following the minimal instructions provided <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/InstallGuide.html#BasicInstallation">lower down this page</a>.
-</li><li>Mac OS X 'Mountain Lion' (and possibly newer releases) - see <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/ChasteInstallationOnMountainLion.html">InstallGuides/ChasteInstallationOnMountainLion</a>, but note you'll need to use the latest development version of Chaste, not release 3.1 or earlier.
-</li><li>Any system - install a virtual machine (e.g. using <a class="ext-link" href="https://www.virtualbox.org/"><span class="icon">​</span>VirtualBox</a>) running the latest long-term support Ubuntu Linux, and install the <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/UbuntuPackage.html">Ubuntu package</a> as above.
+<ul><li>On Ubuntu - use the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/UbuntuPackage.html">Ubuntu .deb package</a>.
+</li><li>Other Linux systems - try following the minimal instructions provided <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/InstallGuide.html#BasicInstallation">lower down this page</a>.
+</li><li>Mac OS X 'Mountain Lion' (and possibly newer releases) - see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/ChasteInstallationOnMountainLion.html">InstallGuides/ChasteInstallationOnMountainLion</a>, but note you'll need to use the latest development version of Chaste, not release 3.1 or earlier.
+</li><li>Any system - install a virtual machine (e.g. using <a class="ext-link" href="https://www.virtualbox.org/"><span class="icon">​</span>VirtualBox</a>) running the latest long-term support Ubuntu Linux, and install the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/UbuntuPackage.html">Ubuntu package</a> as above.
 </li></ul><p>
-Then either download the latest <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/download.html"><span class="icon">​</span>code release</a> (if you have not done so already), or see the section on <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/AccessCodeRepository.html">checking out the code</a>.
+Then either download the latest <a class="ext-link" href="http://www.cs.ox.ac.uk/chaste/download.html"><span class="icon">​</span>code release</a> (if you have not done so already), or see the section on <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/AccessCodeRepository.html">checking out the code</a>.
 </p>
 <p>
-If you encounter any problems, or have/want an unusual setup, then the full <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>, or alternative guides listed at <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides.html">InstallGuides</a>, may be useful.
+If you encounter any problems, or have/want an unusual setup, then the full <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>, or alternative guides listed at <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides.html">InstallGuides</a>, may be useful.
 </p>
 <hr />
 <h2 id="BasicInstallation">Basic Installation</h2>
 <p>
-The following instructions detail an installation using the preferred versions of our dependencies, for a non-root user. For a full list of the compatibility of various versions of our dependencies see <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a>. Some alternative versions of the libraries are incompatible, and others may have minor bugs. 
+The following instructions detail an installation using the preferred versions of our dependencies, for a non-root user. For a full list of the compatibility of various versions of our dependencies see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a>. Some alternative versions of the libraries are incompatible, and others may have minor bugs. 
 </p>
 <p>
-<strong>NB: </strong> The newest versions of the libraries may not have been tested yet, so don't simply install the top one on each external download page! Ideally follow these instructions, if this isn't possible (or you have pre-installed versions) then check <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a> first.
+<strong>NB: </strong> The newest versions of the libraries may not have been tested yet, so don't simply install the top one on each external download page! Ideally follow these instructions, if this isn't possible (or you have pre-installed versions) then check <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a> first.
 </p>
 <h3 id="Somepre-requisites">Some pre-requisites</h3>
 <p>
 The following tools are required or useful, most systems will already have these installed, or provide an easy way to set them up:
 </p>
 <ul><li><tt>gcc</tt> and <tt>g++</tt>
-</li><li><tt>gfortran</tt> --- if you want to build PETSc with HYPRE support (<tt>--download-hypre</tt> option <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/InstallGuide.html#PETSc">below</a>).
+</li><li><tt>gfortran</tt> --- if you want to build PETSc with HYPRE support (<tt>--download-hypre</tt> option <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/InstallGuide.html#PETSc">below</a>).
 </li><li><tt>wget</tt>
 </li><li><tt>python-devel</tt>
 </li><li><tt>svn</tt> --- subversion, for <em>Code Developers</em> or <em>Code Users</em> of development version.
 </li><li><tt>valgrind</tt> --- for memory testing - optional.
-</li><li><tt>cmake</tt> --- for <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/InstallGuide.html#VTK">VTK installation from source</a> - optional.
+</li><li><tt>cmake</tt> --- for <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/InstallGuide.html#VTK">VTK installation from source</a> - optional.
 </li></ul><p>
 You need to know whether you are running a 32 or 64 bit system. In the terminal, type
 </p>
@@ -124,7 +124,7 @@ Many systems will also include some of the below Chaste dependencies already. Yo
 </p>
 <div class="code"><pre>locate petsc
 </pre></div><p>
-If you find pre-existing versions, then check <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a> to see if they are compatible with Chaste, if so you may be able to skip their installation below, but make sure that you have the 'includes' and 'libraries' where required (if you don't know what this means then just follow all the below instructions!).
+If you find pre-existing versions, then check <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/DependencyVersions.html">DependencyVersions</a> to see if they are compatible with Chaste, if so you may be able to skip their installation below, but make sure that you have the 'includes' and 'libraries' where required (if you don't know what this means then just follow all the below instructions!).
 </p>
 <h3 id="Defineafoldertoinstallallthedependenciesin">Define a folder to install all the dependencies in</h3>
 <p>
@@ -281,7 +281,7 @@ Save, quit and then re-load <tt>.bashrc</tt> (or log out and back in again):
 </pre><hr />
 <h2 id="ConfiguringChaste">Configuring Chaste</h2>
 <p>
-Once you've installed the dependencies as above, you need to get hold of the Chaste code. See <a class="wiki" href="/chaste/tutorials/release_3.4/GettingStarted.html">GettingStarted</a> for the options to pick here.
+Once you've installed the dependencies as above, you need to get hold of the Chaste code. See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/GettingStarted.html">GettingStarted</a> for the options to pick here.
 </p>
 <p>
 Again, machines that use the Ubuntu package are handled automatically - you are ready to go.
@@ -290,10 +290,10 @@ Again, machines that use the Ubuntu package are handled automatically - you are 
 Otherwise, you need to get <tt>scons</tt> configured to build Chaste on your machine, basically to tell it where all the <em>libraries</em> and <em>includes</em> that you installed above are situated. 
 </p>
 <p>
-The configuration ("hostconfig") files you need to look at are in <tt>python/hostconfig</tt> in the source code. An example file is attached to this wiki page, but you may need to edit it slightly to change installation paths to match those you used. Additional tweaks may be required if you installed different versions of the dependencies to those discussed above. See <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">ChasteGuides/HostconfigSystem</a> for full details of what can go into the hostconfig file to configure the <tt>scons</tt> build system.
+The configuration ("hostconfig") files you need to look at are in <tt>python/hostconfig</tt> in the source code. An example file is attached to this wiki page, but you may need to edit it slightly to change installation paths to match those you used. Additional tweaks may be required if you installed different versions of the dependencies to those discussed above. See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/HostconfigSystem.html">ChasteGuides/HostconfigSystem</a> for full details of what can go into the hostconfig file to configure the <tt>scons</tt> build system.
 </p>
 <p>
-Once you've done this, you are ready to build and run the test suite, see <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/RunningFirstTests.html">ChasteGuides/RunningFirstTests</a>.
+Once you've done this, you are ready to build and run the test suite, see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/RunningFirstTests.html">ChasteGuides/RunningFirstTests</a>.
 </p>
 </div>
           

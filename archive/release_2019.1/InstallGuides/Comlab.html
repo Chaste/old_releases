@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/Comlab - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2019.1/">Release 2019.1</a>.</em>
         </p>
       </div>
     </div>
@@ -51,7 +51,7 @@ A large number of dependencies are available as packages. Some on this list will
 <pre class="wiki">sudo yum install scons gcc-gfortran gcc-c++ boost-devel boost-serialization valgrind xerces-c-devel xsd subversion eclipse-subclipse eclipse-cdt eclipse-pydev subversion-javahl vtk-devel python-lxml python-amara python-rdflib python-dateutil
 </pre><h2 id="PETSc">PETSc</h2>
 <p>
-The following are slightly modified from the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/InstallGuide#PETSc">PETSc install instructions</a> in the main install guide. Other <a class="ext-link" href="http://www.mcs.anl.gov/petsc/download/index.html"><span class="icon">​</span>versions of PETSc</a> should be very similar, but check compatibility first (<a class="wiki" href="/chaste/tutorials/release_2019.1/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a>).
+The following are slightly modified from the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/InstallGuide#PETSc">PETSc install instructions</a> in the main install guide. Other <a class="ext-link" href="http://www.mcs.anl.gov/petsc/download/index.html"><span class="icon">​</span>versions of PETSc</a> should be very similar, but check compatibility first (<a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/InstallGuides/DependencyVersions.html">InstallGuides/DependencyVersions</a>).
 </p>
 <pre class="wiki">cd $base
 wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.4.5.tar.gz
@@ -82,7 +82,7 @@ Set preferences:
 </strong></li><li>Under C/C++-&gt;Code Style-&gt;Formatter, select 'BSD/Allman', then Edit... and set the Tab policy to 'Spaces only'.    <strong>Please make sure you do this'''  Alter the name of the Profile (e.g.g to "BSD/Allman Chaste") in order to save it.
 </strong></li><li>Other options under C/C++-&gt;Editor are worth browsing through.
 </li></ul></li></ul><h2 id="SetupChaste">Set up Chaste</h2>
-<ul><li>Use these guides to connect Eclipse to the subversion repository and checkout the source code: <a class="wiki" href="/chaste/tutorials/release_2019.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>
+<ul><li>Use these guides to connect Eclipse to the subversion repository and checkout the source code: <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>
 </li><li>You may need to make changes to the <a class="missing wiki">hostconfig system?</a> if you used different versions or paths to the above.  By default computers in the department will automatically pick up <tt>python/hostconfig/machines/comlab.py</tt>, so if you need to make changes either edit this file, or copy it to <tt>python/hostconfig/local.py</tt> and make changes there.
 </li><li>Very often, new users are unable to access the <tt>/python/hostconfig/machines</tt> directory to get the machines file. If this is you, copy and paste the following into <tt>python/hostconfig/local.py</tt> manually:
 <pre class="wiki"># Configuration for machines following Comlab install guide located at

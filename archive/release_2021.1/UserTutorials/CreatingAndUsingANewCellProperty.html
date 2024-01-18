@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/CreatingAndUsingANewCellProperty - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2021.1/">Release 2021.1</a>.</em>
         </p>
       </div>
     </div>
@@ -27,10 +27,10 @@ Note that the code is given in full at the bottom of the page.
 <h1 id="Anexampleshowinghowtocreateanewcellpropertyanduseitinacell-basedsimulation">An example showing how to create a new cell property and use it in a cell-based simulation</h1>
 <h2 id="Introduction">Introduction</h2>
 <p>
-This tutorial assumes you have already read <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewForce.html">UserTutorials/CreatingAndUsingANewForce</a>.
+This tutorial assumes you have already read <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/CreatingAndUsingANewForce.html">UserTutorials/CreatingAndUsingANewForce</a>.
 </p>
 <p>
-In the  <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellMutationState.html">UserTutorials/CreatingAndUsingANewCellMutationState</a> we showed how to create a new cell mutation
+In the  <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/CreatingAndUsingANewCellMutationState.html">UserTutorials/CreatingAndUsingANewCellMutationState</a> we showed how to create a new cell mutation
 state class, and how this can be used in a cell-based simulation. As well as
 mutation states, cells may be given much more general properties, using the cell
 property class hierarchy. In this tutorial, we show how to create a new cell property
@@ -217,7 +217,7 @@ we associate cells with nodes in the force calculation. However, this could easi
     <span class="p">}</span>
 
 </pre></div><p>
-Just as we encountered in <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
+Just as we encountered in <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
 a method that outputs any member variables to a specified results file <tt>rParamsFile</tt>.
 In our case, we output the member variable <tt>mStrength</tt>, then call the method on the base class.
 </p>
@@ -297,7 +297,7 @@ We can also test whether our cell property is of a given type, as follows.
 </pre></div><p>
 We can also test that archiving is implemented correctly for our cell
 property, as follows (further details on how to implement and
-test archiving can be found at <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a>).
+test archiving can be found at <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/ChasteGuides/BoostSerialization.html">ChasteGuides/BoostSerialization</a>).
 </p>
 <div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
         std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"property.arch"</span><span class="p">;</span>

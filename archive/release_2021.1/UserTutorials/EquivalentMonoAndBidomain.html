@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/EquivalentMonoAndBidomain - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2021.1/">Release 2021.1</a>.</em>
         </p>
       </div>
     </div>
@@ -59,7 +59,7 @@ In this tutorial we show how Chaste is used to run a standard mono and a standar
 With equivalent parameters so that the bidomain could be reduced to the monodomain case.
 </p>
 <p>
-The bulk of this tutorial is the same as <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a>, so for details of each line see that page.
+The bulk of this tutorial is the same as <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a>, so for details of each line see that page.
 </p>
 <div class="code"><pre><span class="cp">#include &lt;cxxtest/TestSuite.h&gt;
 </span><span class="c1">// The main classes to be used for running simulations.
@@ -161,11 +161,11 @@ The bulk of this tutorial is the same as <a class="wiki" href="/chaste/tutorials
 </span>    <span class="kt">void</span> TestCompareMonoAndBidomain<span class="p">()</span>
     <span class="p">{</span>
 </pre></div><p>
-The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides.html">ChasteGuides</a> page
+The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/ChasteGuides.html">ChasteGuides</a> page
 for information on default parameter values.
 </p>
 <p>
-See <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a> for more details.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/RunningBidomainSimulations.html">UserTutorials/RunningBidomainSimulations</a> for more details.
 </p>
 <div class="code"><pre>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetSimulationDuration<span class="p">(</span><span class="mf">5.0</span><span class="p">);</span> <span class="c1">//ms
 </span>        HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetMeshFileName<span class="p">(</span><span class="s">"mesh/test/data/2D_0_to_1mm_800_elements"</span><span class="p">);</span>

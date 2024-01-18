@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/GitGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2017.1/">Release 2017.1</a>.</em>
         </p>
       </div>
     </div>
@@ -157,7 +157,7 @@ Before you start, if you are Chaste User, and never want to contribute back to t
 This page is a brief guide on using Git, designed primarily for developers that are already used to Subversion. 
 </p>
 <p>
-For instructions on installation and global config of git see <a class="wiki" href="/chaste/tutorials/release_2017.1/InstallGuides/InstallGit.html">InstallGuides/InstallGit</a>.
+For instructions on installation and global config of git see <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/InstallGuides/InstallGit.html">InstallGuides/InstallGit</a>.
 </p>
 <p>
 Before you let yourself loose in the depths of Chaste and git, you might like to read some of this <a class="ext-link" href="https://git-scm.com/book/en/v2/Getting-Started-Git-Basics"><span class="icon">​</span>Git Guide</a>.
@@ -196,7 +196,7 @@ All Chaste development should occur from the <tt>develop</tt> branch. If you wan
 </p>
 <pre class="wiki">$ git clone -b develop https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
 </pre><p>
-Note that only really minor changes should directly edit <tt>develop</tt>, most ticket work should proceed as per <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/GitGuide.html#Ticketworkflow">the ticket workflow</a>
+Note that only really minor changes should directly edit <tt>develop</tt>, most ticket work should proceed as per <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/GitGuide.html#Ticketworkflow">the ticket workflow</a>
 </p>
 <h3 id="Codeuser">Code user</h3>
 <pre class="wiki">$ git clone -b release https://chaste.cs.ox.ac.uk/git/chaste.git Chaste
@@ -430,7 +430,7 @@ If you haven't just opened the trac ticket so you aren't sure whether it exists,
 </p>
 <pre class="wiki">$ git branch -a
 </pre><p>
-which will display all local and remote branches that are available. If &lt;ticket_XXXX&gt; does exist, skip down to the <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/GitGuide.html#Workingonapre-existingticket">next section</a>.
+which will display all local and remote branches that are available. If &lt;ticket_XXXX&gt; does exist, skip down to the <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/GitGuide.html#Workingonapre-existingticket">next section</a>.
 </p>
 <h3 id="Localrepo">Local repo</h3>
 <p>
@@ -533,7 +533,7 @@ works on recent git clients. If your <tt>git --version</tt> is &lt; 1.7.0 you ne
 </p>
 <h1 id="Userprojects">User projects</h1>
 <p>
-See <a class="wiki" href="/chaste/tutorials/release_2017.1/InstallGuides/CheckoutUserProject.html">InstallGuides/CheckoutUserProject</a> for a guide on how to make new git user projects, or to convert existing svn ones to git.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/InstallGuides/CheckoutUserProject.html">InstallGuides/CheckoutUserProject</a> for a guide on how to make new git user projects, or to convert existing svn ones to git.
 </p>
 <h1 id="Tipstricksandtroubleshooting">Tips, tricks and troubleshooting</h1>
 <ul><li><strong>"Local <tt>.gitignore</tt>"</strong>: The <tt>.gitignore</tt> file tells a repository the names of any files that should always be ignored for any/all copies of the repository. But sometimes it's useful to have some local changes that you don't want to involve in commits, or force on everyone with <tt>.gitignore</tt>.

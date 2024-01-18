@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>UserTutorials/RunningBidomainSimulations - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningBidomainSimulations" href="/chaste/tutorials/release_3.2/UserTutorials/RunningBidomainSimulations.html">RunningBidomainSimulations</a>
+        <a class="pathentry" title="View UserTutorials" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/RunningBidomainSimulations" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/RunningBidomainSimulations.html">RunningBidomainSimulations</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -74,7 +74,7 @@ a class called <tt>Cell&lt;CELLMODEL&gt;FromCellML</tt>. So to use a particular 
 given the cellml, you just have to do two things: include this <tt>.hpp</tt> file, and then use the class.
 For example, we will use the LuoRudy1991 model, so we have to include the following, and
 later on use <tt>CellLuoRudy1991FromCellML</tt> as the cell model class.
-See <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on this process.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on this process.
 </p>
 <div class="code"><pre><span class="cp">#include "LuoRudy1991.hpp"
 </span></pre></div><h2 id="Definingacellfactory">Defining a cell factory</h2>
@@ -169,7 +169,7 @@ might not get printed out.
 <div class="code"><pre>    <span class="kt">void</span> TestSimpleSimulation<span class="p">()</span> <span class="k">throw</span><span class="p">(</span>Exception<span class="p">)</span>
     <span class="p">{</span>
 </pre></div><p>
-The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides.html">ChasteGuides</a> page
+The <tt>HeartConfig</tt> class is used to set various parameters (see the main <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides.html">ChasteGuides</a> page
 for information on default parameter values. Parameters in this file can be re-set
 with <tt>HeartConfig</tt> if the user wishes, and other parameters such as end time must be set
 using <tt>HeartConfig</tt>. Let us begin by setting the end time (in ms), the mesh to use, and the
@@ -181,7 +181,7 @@ so that mesh 2D_0_to_1mm_800_elements is a mesh over [0,0.1]x[0,0.1].
         HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputDirectory<span class="p">(</span><span class="s">"BidomainTutorial"</span><span class="p">);</span>
         HeartConfig<span class="o">::</span>Instance<span class="p">()</span><span class="o">-&gt;</span>SetOutputFilenamePrefix<span class="p">(</span><span class="s">"results"</span><span class="p">);</span>
 </pre></div><p>
-There is an alternate method of loading a mesh that can be seen in <a class="wiki" href="/chaste/tutorials/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a>,
+There is an alternate method of loading a mesh that can be seen in <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a>,
 using <tt>DistributedTetrahedralMesh</tt>.
 </p>
 <p>
@@ -255,7 +255,7 @@ In order to visualise the results, go to one of the sub-folders
 where you should find the geometric mesh data and simulation output.
 </li></ul><p>
  
-Please see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/VisualisationGuides.html">ChasteGuides/VisualisationGuides</a> for details of using Meshalyzer/Cmgui/Paraview.
+Please see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/VisualisationGuides.html">ChasteGuides/VisualisationGuides</a> for details of using Meshalyzer/Cmgui/Paraview.
 </p>
 <p>
 Note: the easiest way to look at the resultant voltage values from the code

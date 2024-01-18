@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ChasteGuides/DeveloperBuildGuide - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2.1/">Release 2.1</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/DeveloperBuildGuide" href="/chaste/tutorials/release_2.1/ChasteGuides/DeveloperBuildGuide.html">DeveloperBuildGuide</a>
+        <a class="pathentry" title="View ChasteGuides" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/DeveloperBuildGuide" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/DeveloperBuildGuide.html">DeveloperBuildGuide</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -71,7 +71,7 @@ Various options can be passed to customise the build.  Some also have short form
 <ul><li><tt>static=1</tt> to compile the Chaste libraries statically rather than making them shared libraries.  Requires <tt>chaste_libs=1</tt> to be useful.
 </li><li><tt>test_summary=0</tt> will prevent the build summarising the output of any tests run. By default it produces an index.html file in the output directory (the name of which will be printed to stdout in case you are unsure).
 </li><li><tt>run_time_flags="&lt;x&gt;"</tt> will pass a list of flags to the executables in the build.  For example, <tt>run_time_flags="-get_total_flops"</tt> will enable PETSc flop logging. <a class="ext-link" href="http://www.tu-harburg.de/~htmar/petsc_options.html"><span class="icon">&nbsp;</span>More PETSc flags</a>
-</li><li><tt>debug=1</tt> will turn on some limited build script debugging.  It is particularly useful to check your <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>.
+</li><li><tt>debug=1</tt> will turn on some limited build script debugging.  It is particularly useful to check your <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>.
 </li></ul></li><li>Experimental options:
 <ul><li><tt>install_prefix</tt> can be used to specify where to install the Chaste headers and libraries, if the <tt>install</tt> target is given.  See <a class="missing ticket">#1467</a>.
 </li></ul></li><li>Some options exist for the benefit of the build system:

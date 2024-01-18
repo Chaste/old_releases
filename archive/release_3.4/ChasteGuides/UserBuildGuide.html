@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/UserBuildGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -23,7 +23,7 @@
           <div id="wikipage" class="trac-content"><h1 id="Userbuildguide">User build guide</h1>
 <h2 id="UsingSCons">Using SCons</h2>
 <p>
-We use <a class="ext-link" href="http://www.scons.org/"><span class="icon">​</span>SCons</a> to control the build process. The <a class="missing source">source:trunk/SConstruct</a> file configures what needs to be built, and is worth a look if this document leaves unanswered questions.  The file <a class="missing source">source:trunk/python/infra/SConsTools.py</a> also contains much of the build logic.  You need to have <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">set up paths to the libraries that Chaste uses</a> before attempting to build.
+We use <a class="ext-link" href="http://www.scons.org/"><span class="icon">​</span>SCons</a> to control the build process. The <a class="missing source">source:trunk/SConstruct</a> file configures what needs to be built, and is worth a look if this document leaves unanswered questions.  The file <a class="missing source">source:trunk/python/infra/SConsTools.py</a> also contains much of the build logic.  You need to have <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/HostconfigSystem.html">set up paths to the libraries that Chaste uses</a> before attempting to build.
 </p>
 <p>
 <tt>scons</tt> can be used to run a single test, or multiple tests, in debug or optimised mode, and with number of other options. This page lists the <tt>scons</tt> commands that users should be aware of. In order to run <tt>scons</tt>, open a terminal, <tt>cd</tt> into the main chaste directory, and run one of the following commands. Or better, create a 'Make target' in eclipse using that given command.
@@ -74,7 +74,7 @@ scons build=GccOpt_ndebug heart/test/bidomain/TestBidomainProblem.hpp   # highly
 scons build=GccOptNative_ndebug heart/test/bidomain/TestBidomainProblem.hpp   # highly optimised for that machine with NDEBUG defined, recommended for longer-running simulations
 scons build=IntelProduction heart/test/bidomain/TestBidomainProblem.hpp # (see below)
 </pre><p>
-Building with <tt>IntelProduction</tt> requires an Intel compiler and extra libraries (see <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/IntelCompiler.html">InstallGuides/IntelCompiler</a>). This provides the fastest code but the compilation time can be very long.
+Building with <tt>IntelProduction</tt> requires an Intel compiler and extra libraries (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/IntelCompiler.html">InstallGuides/IntelCompiler</a>). This provides the fastest code but the compilation time can be very long.
 </p>
 <h2 id="Otheroptions">Other options</h2>
 <p>
@@ -95,7 +95,7 @@ for example:
 </p>
 <pre class="wiki">scons co=1 b=GccOpt_ndebug ts=heart/test/bidomain/TestBidomainProblem.hpp
 </pre><p>
-See <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for a complete list of options.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for a complete list of options.
 </p>
 <h2 id="Viewingtestresults">Viewing test results</h2>
 <p>

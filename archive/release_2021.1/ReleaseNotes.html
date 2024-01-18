@@ -3,16 +3,16 @@
   <head>
     <title>ReleaseNotes - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2021.1/">Release 2021.1</a>.</em>
         </p>
       </div>
     </div>
@@ -79,7 +79,7 @@ The real definitive release notes will be written in <a class="source" href="/tr
 <ul><li>Chaste now supports PETSc up to 3.12, Boost up to 1.74, SUNDIALS up to 4.1.0 and VTK up to 8.2.
 </li></ul><h3 id="Core">Core</h3>
 <h3 id="Heart">Heart</h3>
-<ul><li>The CellML to Chaste hpp/cpp converter was <tt>PyCML</tt> (based on Python 2) this has been replaced by <tt>chaste_codegen</tt> (<a class="ext-link" href="https://github.com/ModellingWebLab/chaste-codegen"><span class="icon">​</span>https://github.com/ModellingWebLab/chaste-codegen</a>, based on Python 3). See <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides.html">ChasteGuides</a>/CodeGenerationFromCellML for info on how to use this new library at the command line, but no changes needed unless you were using PyCML manually before. There are a couple of nice new features with this:
+<ul><li>The CellML to Chaste hpp/cpp converter was <tt>PyCML</tt> (based on Python 2) this has been replaced by <tt>chaste_codegen</tt> (<a class="ext-link" href="https://github.com/ModellingWebLab/chaste-codegen"><span class="icon">​</span>https://github.com/ModellingWebLab/chaste-codegen</a>, based on Python 3). See <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/ChasteGuides.html">ChasteGuides</a>/CodeGenerationFromCellML for info on how to use this new library at the command line, but no changes needed unless you were using PyCML manually before. There are a couple of nice new features with this:
 <ul><li>You no longer need to manually use the proprietary software Maple to compute Analytic Jacobians for CVODE to get speed ups, we now use the free software <a class="ext-link" href="https://www.sympy.org/en/index.html"><span class="icon">​</span>SymPy</a> behind the scenes to do this on the fly. <strong>N.B. these are now generated and used automatically, but are known to cause issues in a handful of models, so use the <tt>ForceUseOfNumericalJacobian()</tt> method if CVODE errors suddenly appear and you hadn't heard of using Maple or analytic Jacobians before. See <a href="https://chaste.cs.ox.ac.uk/trac/wiki/UserTutorials/SingleCellSimulation">https://chaste.cs.ox.ac.uk/trac/wiki/UserTutorials/SingleCellSimulation</a> for more info.</strong>
 </li><li>We now automatically analyse your model to detect singularities in <a class="ext-link" href="https://en.wikipedia.org/wiki/Goldman%E2%80%93Hodgkin%E2%80%93Katz_flux_equation"><span class="icon">​</span>GHK equations</a>, and apply an interpolation fix so that they don't cause any problems at the voltages of concern (often, but not always, V=0). From now on, <strong>manual fixes for these singularities should be removed from CellML files</strong>. We'll be writing a note on how exactly we've done this, but you can examine the results of the fixes <a class="ext-link" href="https://github.com/ModellingWebLab/chaste-codegen/blob/assets/singularity_fixes.md"><span class="icon">​</span>here</a> for a range of models (grey=original, red=fix, orange shaded region=voltage range where interpolation is used). As a nice side-effect, lookup tables no longer need to go from offset voltages like -150.00001mV to 100.00001mV to avoid hitting these singularities, and have been moved to nice round numbers!
 </li></ul></li></ul><h3 id="CellBased">Cell Based</h3>

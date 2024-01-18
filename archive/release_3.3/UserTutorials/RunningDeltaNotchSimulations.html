@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/RunningDeltaNotchSimulations - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.3/">Release 3.3</a>.</em>
         </p>
       </div>
     </div>
@@ -24,11 +24,11 @@
 This tutorial is automatically generated from the file trunk/cell_based/test/tutorial/TestRunningDeltaNotchSimulationsTutorial.hpp at revision <a class="missing changeset" title="No permission to view changeset 23343 on (default)">r23343</a>.
 Note that the code is given in full at the bottom of the page.
 </p>
-<h1 id="AnexampleshowinghowtorunDeltaNotchsimulations">An example showing how to run <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> simulations</h1>
+<h1 id="AnexampleshowinghowtorunDeltaNotchsimulations">An example showing how to run <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> simulations</h1>
 <h2 id="Introduction">Introduction</h2>
 <p>
 In this tutorial we show how Chaste can be used to simulate a growing cell monolayer culture
-into which a simple model of <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling is incorporated. This model was developed
+into which a simple model of <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling is incorporated. This model was developed
 by Collier et al. ("Pattern formation by lateral inhibition with feedback: a mathematical
 model of delta-notch intercellular signalling", J. Theor. Biol. 183:429-446) and comprises
 two ODEs to describe the evolution in concentrations of Delta and Notch in each cell. The ODE
@@ -67,9 +67,9 @@ or <tt>CellBasedSimulationArchiver.hpp</tt> must be included the first Chaste he
 #include "PetscSetupAndFinalize.hpp"
 </span></pre></div><p>
 The next header file defines a simple stochastic cell-cycle model that includes the functionality
-for solving each cell's <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling ODE system at each time step, using information about neighbouring
+for solving each cell's <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling ODE system at each time step, using information about neighbouring
 cells through the <tt>CellData</tt> class. We note that in this simple cell-cycle model, the
-proliferative status of each cell is unaffected by its <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity; such dependence could
+proliferative status of each cell is unaffected by its <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity; such dependence could
 easily be introduced given an appropriate model of this coupling.
 </p>
 <div class="code"><pre><span class="cp">#include "DeltaNotchCellCycleModel.hpp"
@@ -91,10 +91,10 @@ Having included all the necessary header files, we proceed by defining the test 
 <span class="p">{</span>
 <span class="nl">public:</span>
 
-</pre></div><h2 id="Test1:avertex-basedmonolayerwithDeltaNotchsignalling">Test 1: a vertex-based monolayer with <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
+</pre></div><h2 id="Test1:avertex-basedmonolayerwithDeltaNotchsignalling">Test 1: a vertex-based monolayer with <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
 <p>
 In the first test, we demonstrate how to simulate a monolayer that incorporates
-<a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling, using a vertex-based approach.
+<a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling, using a vertex-based approach.
 </p>
 <div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedMonolayerWithDeltaNotch</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
     <span class="p">{</span>
@@ -111,7 +111,7 @@ First we create a regular vertex mesh.
 
 </pre></div><p>
 We then create some cells, each with a cell-cycle model, <tt>DeltaNotchCellCycleModel</tt>, which
-incorporates a <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system. In this example we choose to make each cell differentiated,
+incorporates a <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system. In this example we choose to make each cell differentiated,
 so that no cell division occurs.
 </p>
 <div class="code"><pre>        std<span class="o">::</span>vector<span class="o">&lt;</span>CellPtr<span class="o">&gt;</span> cells<span class="p">;</span>
@@ -144,9 +144,9 @@ output to file.
 
 </pre></div><p>
 As we are using the <tt>CellData</tt> class to store the information about each cell required to
-solve the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system, we must first instantiate this singleton and associate it with the
+solve the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> ODE system, we must first instantiate this singleton and associate it with the
 cell population. Note that we set the number of variables to 3. This is because each cell's ODE system
-comprises two ODEs describing <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity, and an additional 'dummy' ODE with zero reaction term
+comprises two ODEs describing <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> activity, and an additional 'dummy' ODE with zero reaction term
 that describes how the mean concentration of Delta among neighbouring cells changes. This latter quantity
 remains constant for the purposes of solving the ODE system over each time step, but is updated at the
 end of the time step by a method on <tt>DeltaNotchOffLatticeSimulation</tt>.
@@ -190,12 +190,12 @@ This modifier assigns target areas to each cell, which are required by the <tt>N
     <span class="p">}</span>
 
 </pre></div><p>
-To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+To visualize the results, use Paraview. See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
 </p>
 <p>
 Load the file <tt>/tmp/$USER/testoutput/TestVertexBasedMonolayerWithDeltaNotch/results_from_time_0/results.pvd</tt>.
 </p>
-<h2 id="Test2-anode-basedmonolayerwithDeltaNotchsignalling">Test 2 - a node-based monolayer with <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
+<h2 id="Test2-anode-basedmonolayerwithDeltaNotchsignalling">Test 2 - a node-based monolayer with <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> signalling</h2>
 <p>
 In the next test we run a similar simulation as before, but this time with node-based
 'overlapping spheres' model.
@@ -203,7 +203,7 @@ In the next test we run a similar simulation as before, but this time with node-
 <div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestNodeBasedMonolayerWithDeltaNotch</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
     <span class="p">{</span>
 </pre></div><p>
-We include the next line because <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/HoneycombMeshGenerator.html" rel="nofollow">HoneycombMeshGenerator?</a>, used in this test, is not
+We include the next line because <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/HoneycombMeshGenerator.html" rel="nofollow">HoneycombMeshGenerator?</a>, used in this test, is not
 yet implemented in parallel.
 </p>
 <div class="code"><pre>        EXIT_IF_PARALLEL<span class="p">;</span>
@@ -217,7 +217,7 @@ except we now create a 'nodes-only mesh' and <tt>NodeBasedCellPopulation</tt>.
         NodesOnlyMesh<span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span> mesh<span class="p">;</span>
 </pre></div><p>
 The mechanics cut-off length (second argument) is used in this simulation to determine nearest
-neighbours for the purpose of the <a class="missing wiki" href="/chaste/tutorials/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> intercellular signalling model.
+neighbours for the purpose of the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/Delta/Notch.html" rel="nofollow">Delta/Notch?</a> intercellular signalling model.
 </p>
 <div class="code"><pre>        mesh<span class="p">.</span>ConstructNodesWithoutMesh<span class="p">(</span><span class="o">*</span>p_generating_mesh<span class="p">,</span> <span class="mf">1.5</span><span class="p">);</span>
 
@@ -276,7 +276,7 @@ As we are using a node-based cell population, we use an appropriate force law.
         simulator<span class="p">.</span>Solve<span class="p">();</span>
     <span class="p">}</span>
 </pre></div><p>
-To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information
+To visualize the results, use Paraview. See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information
 </p>
 <p>
 Load the file <tt>/tmp/$USER/testoutput/TestNodeBasedMonolayerWithDeltaNotch/results_from_time_0/results.pvd</tt>,

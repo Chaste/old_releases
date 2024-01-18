@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ReleaseNotes - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,8 +27,8 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
@@ -62,14 +62,14 @@ This is a minor release, but includes new support for many recent versions of de
 </p>
 <h3 id="Headlinefeatures">Headline features</h3>
 <h4 id="General">General</h4>
-<ul><li>The non-cardiac portions of Chaste have now been ported to Windows.  See <a class="wiki" href="/chaste/tutorials/release_3.2/InstallGuides/Windows.html">InstallGuides/Windows</a> for install and usage instructions.
+<ul><li>The non-cardiac portions of Chaste have now been ported to Windows.  See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/InstallGuides/Windows.html">InstallGuides/Windows</a> for install and usage instructions.
 </li><li>Chaste has been ported to Mac OS X and continuous integration tests are performed on OS X v10.8 "Mountain Lion".
 </li><li>The Ubuntu package now also supports up to Trusty Tahr (14.04 Long-Term Support edition). 
 </li><li>Chaste works with most recent PETSc versions up to and including PETSc 3.4.
 </li><li>Chaste works with most recent VTK versions up to and including VTK 6.1.
 </li><li>Chaste works with most recent Boost versions up to and including Boost 1.54.
 </li><li>We no longer test Chaste on a 32-bit machine, so some tests may fail if run in a 32-bit context. We no longer provide a 32-bit stand-alone cardiac executable. 
-</li><li>We now allow access to the latest development version of the code (see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>), provide resources for external developers (see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a>), and allow public registration on the trac wiki to view and open 'tickets'.
+</li><li>We now allow access to the latest development version of the code (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/AccessCodeRepository.html">ChasteGuides/AccessCodeRepository</a>), provide resources for external developers (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/ExternalDeveloperGuide.html">ChasteGuides/ExternalDeveloperGuide</a>), and allow public registration on the trac wiki to view and open 'tickets'.
 </li><li>Chaste includes a CITATION.txt file for easy citation.
 </li></ul><h4 id="Cardiac">Cardiac</h4>
 <ul><li>Analytic Jacobians can now be auto-generated for cardiac cell models, using maple, and used by CVODE solvers to provide between 5-30% speed up in ODE solving. These can be used in single cell and tissue. If present, the analytic Jacobian is used by default (see <a class="closed ticket" href="/trac/ticket/1795" title="user story: Set up analytic jacobians for Cvode systems (closed: fixed)">#1795</a> for some benchmarking).

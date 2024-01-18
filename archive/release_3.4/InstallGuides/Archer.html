@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/Archer - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -231,7 +231,7 @@ Here we set <tt>MPICH_MPIIO_HINTS</tt> so that new .h5 files are striped over al
 The final line (<tt>CRAYPE_LINK_TYPE</tt>) tells the compiler to use dynamic linking. I'd <strong>strongly</strong> recommend using this (i.e. uncomment the line), but do read what it means first <a class="ext-link" href="http://www.archer.ac.uk/documentation/user-guide/development.php#sec-4.6"><span class="icon">​</span>here</a>. The main effect is smaller executables that use much less memory, but be aware that it means the executable will use the versions of libraries specified by the module, which might change in future.
 </p>
 <p>
-On a related note, the <tt>module load</tt> line loads the default versions, which change over time and may not be the <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/DependencyVersions.html">recommended versions</a>. You can see which versions of things are installed using 
+On a related note, the <tt>module load</tt> line loads the default versions, which change over time and may not be the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/DependencyVersions.html">recommended versions</a>. You can see which versions of things are installed using 
 </p>
 <p>
 <tt>module avail [modulefile]</tt>
@@ -316,7 +316,7 @@ From <tt>/work/.../</tt> check out a working copy of the source code using:
 (Make sure you followed the I/O instructions earlier first!)
 </p>
 <p>
-Edit your SConscript file, see <a class="wiki" href="/chaste/tutorials/release_3.4/InstallGuides/CheckoutUserProject.html#Important:touseexistingChastecode">InstallGuides/CheckoutUserProject#Important:touseexistingChastecode</a>.
+Edit your SConscript file, see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/InstallGuides/CheckoutUserProject.html#Important:touseexistingChastecode">InstallGuides/CheckoutUserProject#Important:touseexistingChastecode</a>.
 </p>
 <p>
 If the profile has loaded correctly then svn and scons should be in your PATH and you can check out the code and compile with:
@@ -329,7 +329,7 @@ or if you used my example bashrc you can use the handy alias <tt>Sco</tt>. Eithe
 <strong>Note</strong> that the IntelHpc build type has CC flags <tt>-DNDEBUG -O3 -no-prec-div</tt> which mean "turn off asserts", "aggressive optimisation", and "use less-accurate divisions", respectively. In my testing they have a large effect on performance (especially <tt>-DNDEBUG</tt>) but they might not be suitable for all simulations (especially <tt>-no-prec-div</tt>).
 </p>
 <p>
-See <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for more on the SCons arguments.
+See <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a> for more on the SCons arguments.
 </p>
 <h2 id="RunningChaste">Running Chaste</h2>
 <p>

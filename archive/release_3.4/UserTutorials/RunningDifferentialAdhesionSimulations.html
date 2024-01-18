@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/RunningDifferentialAdhesionSimulations - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -29,7 +29,7 @@ Note that the code is given in full at the bottom of the page.
 <p>
 In this tutorial we show how Chaste can be used to simulate a growing cell monolayer culture
 comprising two distinct cell types, which exhibit differential adhesion. We encountered a
-similar implementation in the second test in the <a class="missing wiki" href="/chaste/tutorials/release_3.4/UserTutorials/TestRunningPottsBasedSimulationsTutorial.html" rel="nofollow">TestRunningPottsBasedSimulationsTutorial?</a>,
+similar implementation in the second test in the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/TestRunningPottsBasedSimulationsTutorial.html" rel="nofollow">TestRunningPottsBasedSimulationsTutorial?</a>,
 which used a cellular Potts model of cell interactions; here we use a vertex-based model.
 </p>
 <h2 id="Thetest">The test</h2>
@@ -81,7 +81,7 @@ Having included all the necessary header files, we proceed by defining the test 
 </pre></div><p>
 In this test, we demonstrate how to simulate a heterotypic monolayer that incorporates
 differential adhesion, using a vertex-based approach. This may be compared with the
-second test in the <a class="missing wiki" href="/chaste/tutorials/release_3.4/UserTutorials/TestRunningPottsBasedSimulationsTutorial.html" rel="nofollow">TestRunningPottsBasedSimulationsTutorial?</a>, which implements a similar
+second test in the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/TestRunningPottsBasedSimulationsTutorial.html" rel="nofollow">TestRunningPottsBasedSimulationsTutorial?</a>, which implements a similar
 simulation using a cellular Potts model.
 </p>
 <div class="code"><pre>    <span class="kt">void</span> <span class="nf">TestVertexBasedDifferentialAdhesionSimulation</span><span class="p">()</span> <span class="k">throw</span> <span class="p">(</span>Exception<span class="p">)</span>
@@ -145,7 +145,7 @@ We can make the simulation run for longer to see more cell sorting by increasing
 
 </pre></div><p>
 Next we create the differential adhesion force law. This builds upon the model of Nagai, Honda and co-workers
-encounted in the <a class="missing wiki" href="/chaste/tutorials/release_3.4/UserTutorials/TestRunningVertexBasedSimulationsTutorial.html" rel="nofollow">TestRunningVertexBasedSimulationsTutorial?</a> by allowing different values of the adhesion
+encounted in the <a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/TestRunningVertexBasedSimulationsTutorial.html" rel="nofollow">TestRunningVertexBasedSimulationsTutorial?</a> by allowing different values of the adhesion
 energy parameters depending on the types of two neighbouring cells. Here we interpret the 'type' of a cell
 as whether or not it has the cell property <tt>CellLabel</tt>; it would be straightforward to create a similar
 force law that took account of a cell's mutation state, for example. Having created the force law, we set the
@@ -177,7 +177,7 @@ Finally, we run the simulation.
     <span class="p">}</span>
 
 </pre></div><p>
-To visualize the results, use Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+To visualize the results, use Paraview. See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
 </p>
 <p>
 Load the file <tt>/tmp/$USER/testoutput/TestVertexBasedDifferentialAdhesionSimulation/results_from_time_0/results.pvd</tt>.

@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/Monodomain3dExampleWithCvode - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2018.1/">Release 2018.1</a>.</em>
         </p>
       </div>
     </div>
@@ -27,9 +27,9 @@ Note that the code is given in full at the bottom of the page.
 </p>
 <h1 id="a3DmonodomainexampleusingCVODEforODEsolution">3D monodomain example using CVODE for ODE solution</h1>
 <p>
-This tutorial is based on <a class="wiki" href="/chaste/tutorials/release_2018.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> except this time we will
+This tutorial is based on <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> except this time we will
 use CVODE solvers. To highlight the changes needed to run with CVODE we omit the usual
-explanations of the rest of the code - see <a class="wiki" href="/chaste/tutorials/release_2018.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> for these.
+explanations of the rest of the code - see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> for these.
 </p>
 <p>
 First include the headers
@@ -42,7 +42,7 @@ Chaste actually has two ways of using CVODE for solution of cardiac action poten
 <ol><li>via a <tt>CvodeAdaptor</tt> solver - this would work on the usual cell model as in the previous tutorial.
 </li></ol><ol start="2"><li>via an <tt>AbstractCvodeCell</tt> instead of an <tt>AbstractCardiacCell</tt> - this class uses native CVODE vectors.
 </li></ol><p>
-In order to generate CVODE cells please see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">CodeGenerationFromCellML</a>.
+In order to generate CVODE cells please see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">CodeGenerationFromCellML</a>.
 </p>
 <p>
 <strong>NB:</strong> recent improvements (becoming available from release 3.2) mean that
@@ -63,7 +63,7 @@ then include the rest of the headers as usual
 </span>
 </pre></div><p>
 Since CVODE is an optional extra dependency for Chaste - albeit now
-one that is highly recommended - see the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html">InstallGuide</a>.
+one that is highly recommended - see the <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/InstallGuide.html">InstallGuide</a>.
 </p>
 <p>
 We guard any code that relies upon it with the following <tt>#ifdef</tt>.

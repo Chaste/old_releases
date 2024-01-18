@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>InstallGuides/TestingMultipleVersions - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,22 +27,22 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View InstallGuides" href="/chaste/tutorials/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/TestingMultipleVersions" href="/chaste/tutorials/release_3.2/InstallGuides/TestingMultipleVersions.html">TestingMultipleVersions</a>
+        <a class="pathentry" title="View InstallGuides" href="https://chaste.github.io/old_releases/release_3.2/InstallGuides.html">InstallGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View InstallGuides/TestingMultipleVersions" href="https://chaste.github.io/old_releases/release_3.2/InstallGuides/TestingMultipleVersions.html">TestingMultipleVersions</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
         
           <h1 id="InstallingmultipleversionsofChastesdependenciesfortestingcompatibility">Installing multiple versions of Chaste's dependencies for testing compatibility</h1>
 <p>
-As part of Chaste's automated testing, we build and run our main test packs with a range of different library versions, to ensure we do not inadvertently break support.  This page describes the steps used to set up the machine that runs these tests, and hence needs many different versions of the dependencies installed.  Note that using different dependency versions also requires support in the <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>, a snippet of which is included below (the definitive version is at <a class="source" href="/trac/browser/trunk/python/hostconfig/machines/chaste64.py">source:trunk/python/hostconfig/machines/chaste64.py</a>, and is not publicly accessible).
+As part of Chaste's automated testing, we build and run our main test packs with a range of different library versions, to ensure we do not inadvertently break support.  This page describes the steps used to set up the machine that runs these tests, and hence needs many different versions of the dependencies installed.  Note that using different dependency versions also requires support in the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>, a snippet of which is included below (the definitive version is at <a class="source" href="/trac/browser/trunk/python/hostconfig/machines/chaste64.py">source:trunk/python/hostconfig/machines/chaste64.py</a>, and is not publicly accessible).
 </p>
 <p>
 A pre-requisite to the instructions below is that a 'bob' account has been set up as a normal automated build account, and the <tt>.bashrc</tt> file of the account running the instructions contains the following (at the top):

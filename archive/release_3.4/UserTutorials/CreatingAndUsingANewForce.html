@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/CreatingAndUsingANewForce - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -143,7 +143,7 @@ We also add a get method for <tt>mStrength</tt>, to allow for testing.
     <span class="p">}</span>
 
 </pre></div><p>
-Just as we encountered in <a class="wiki" href="/chaste/tutorials/release_3.4/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
+Just as we encountered in <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/CreatingAndUsingANewCellKiller.html">UserTutorials/CreatingAndUsingANewCellKiller</a>, here we must override
 a method that outputs any member variables to a specified results file <tt>rParamsFile</tt>.
 In our case, we output the member variable <tt>mStrength</tt>, then call the method on the base class.
 </p>
@@ -230,7 +230,7 @@ in a similar way to previous cell-based Chaste tutorials:
 Note that it is important to test archiving by using an abstract
 pointer, so that you check that boost can identify and record which
 concrete class it should be dealing with.
-This tests the CHASTE_CLASS_EXPORT(<a class="missing wiki" href="/chaste/tutorials/release_3.4/UserTutorials/MyForce.html" rel="nofollow">MyForce?</a>) lines are implemented correctly.
+This tests the CHASTE_CLASS_EXPORT(<a class="missing wiki" href="https://chaste.github.io/old_releases/release_3.4/UserTutorials/MyForce.html" rel="nofollow">MyForce?</a>) lines are implemented correctly.
 </p>
 <div class="code"><pre>        OutputFileHandler <span class="nf">handler</span><span class="p">(</span><span class="s">"archive"</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
         std<span class="o">::</span>string archive_filename <span class="o">=</span> handler<span class="p">.</span>GetOutputDirectoryFullPath<span class="p">()</span> <span class="o">+</span> <span class="s">"my_force.arch"</span><span class="p">;</span>

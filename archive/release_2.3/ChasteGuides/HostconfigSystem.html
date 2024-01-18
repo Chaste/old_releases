@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ChasteGuides/HostconfigSystem - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2.3/">Release 2.3</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2.3/">Release 2.3</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.3/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/HostconfigSystem" href="/chaste/tutorials/release_2.3/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a>
+        <a class="pathentry" title="View ChasteGuides" href="https://chaste.github.io/old_releases/release_2.3/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/HostconfigSystem" href="https://chaste.github.io/old_releases/release_2.3/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -45,7 +45,7 @@
 The source release of Chaste relies on many libraries for core functionality.  These can be found in different locations on different systems, and several different versions are supported.  The hostconfig system, consisting of the files in <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig">python/hostconfig</a>, is used to specify the settings for the current system.
 </p>
 <p>
-The file used by the build system is <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/hostconfig.py">hostconfig.py</a>.  This is not intended for user editing however, but loads a settings file.  For core developers, it will try loading stored settings from the <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/machines">machines</a> folder (see <a class="wiki" href="/chaste/tutorials/release_2.3/ChasteGuides/HostconfigSystem.html#Themachinesfolder">below</a>).  For other users, it will first try to find settings for your Linux distribution (currently only Ubuntu is supported, for the benefit of users installing the Ubuntu package), and if that files, will use the file <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/default.py">default.py</a>.
+The file used by the build system is <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/hostconfig.py">hostconfig.py</a>.  This is not intended for user editing however, but loads a settings file.  For core developers, it will try loading stored settings from the <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/machines">machines</a> folder (see <a class="wiki" href="https://chaste.github.io/old_releases/release_2.3/ChasteGuides/HostconfigSystem.html#Themachinesfolder">below</a>).  For other users, it will first try to find settings for your Linux distribution (currently only Ubuntu is supported, for the benefit of users installing the Ubuntu package), and if that files, will use the file <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/hostconfig/default.py">default.py</a>.
 </p>
 <h2 id="Configuringthehostconfigsystem">Configuring the hostconfig system</h2>
 <p>
@@ -62,7 +62,7 @@ Several variables are used to specify which PETSc installation to use.  Four var
 At least one of these must be defined.  If you specify more than one, Chaste will by default attempt to use the newest version of PETSc it can find.  If none of these variables specifies a usable PETSc installation, an error message will be given.
 </p>
 <p>
-A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="/chaste/tutorials/release_2.3/ChasteGuides/DeveloperBuildGuide.html">build types</a>:
+A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="https://chaste.github.io/old_releases/release_2.3/ChasteGuides/DeveloperBuildGuide.html">build types</a>:
 </p>
 <ul><li><tt>petsc_build_name_production</tt> - for the <tt>IntelProduction</tt> build
 </li><li><tt>petsc_build_name_optimized</tt> - for <tt>GccOpt</tt> and <tt>Intel</tt> (and other optimized builds)
@@ -110,7 +110,7 @@ Since the settings file is a Python program, it may define functions.  Three fun
 The first is <tt>ModifyBuild</tt>, which if defined will be called at the end of the configuration step.  It is passed a single argument: the <tt>BuildType</tt> instance (see <a class="source" href="/cgi-bin/trac.cgi/browser/trunk/python/BuildTypes.py">source:trunk/python/BuildTypes.py</a>) for this build.  This allows arbitrary modification of that object.
 </p>
 <p>
-The other two functions allow easy switching between different versions of the libraries Chaste uses.  As described briefly <a class="wiki" href="/chaste/tutorials/release_2.3/ChasteGuides/DeveloperBuildGuide.html">here</a>, a <tt>hostconfig</tt> option may be appended to the build type, something like <tt>build=default_hostconfig,boost=1-37,petsc=3-0,hdf5=1-8,xsd=3-2,use-cvode=1,use-vtk=0</tt>.
+The other two functions allow easy switching between different versions of the libraries Chaste uses.  As described briefly <a class="wiki" href="https://chaste.github.io/old_releases/release_2.3/ChasteGuides/DeveloperBuildGuide.html">here</a>, a <tt>hostconfig</tt> option may be appended to the build type, something like <tt>build=default_hostconfig,boost=1-37,petsc=3-0,hdf5=1-8,xsd=3-2,use-cvode=1,use-vtk=0</tt>.
 </p>
 <p>
 For this build type option to work, one of the functions <tt>Configure</tt> or <tt>SetPreferedVersions</tt> must be defined in the hostconfig settings file.  They differ in their signature and when they are called, but have a very similar purpose, and typically at most one will be defined.  Both, if defined, will be called <i>before</i> attempting to read any of the variables described above, and thus can set those variables to appropriate values.

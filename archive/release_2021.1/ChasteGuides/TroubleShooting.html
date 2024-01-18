@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/TroubleShooting - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2021.1/">Release 2021.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2021.1/">Release 2021.1</a>.</em>
         </p>
       </div>
     </div>
@@ -187,7 +187,7 @@ Also, if files are output to the current directory rather than <tt>/tmp/chaste/t
 </p>
 <h2 id="AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</h2>
 <p>
-If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <em>outward</em> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="/chaste/tutorials/release_2021.1/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
+If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <em>outward</em> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
 </p>
 <h2 id="LotsofHDF5errorsfollowedimmediatelybytheprogramaborting">Lots of HDF5 errors followed immediately by the program aborting</h2>
 <p>
@@ -305,7 +305,7 @@ The first case occurs most often if you are saving and loading a simulation in d
 On older versions of Boost (before 1.37) this can also arise if you are using a "non-standard" cell model in a cardiac simulation, i.e. one that is hard-coded but not one of those available via the XML configuration file.  To resolve this you unfortunately have to include the header for the relevant cell model in <tt>CardiacSimulationArchiver.cpp</tt>; after the inclusion of <tt>HeartConfigRelatedCellFactory.hpp</tt> is a sensible location.
 </p>
 <p>
-See also <a class="wiki" href="/chaste/tutorials/release_2021.1/ChasteGuides/BoostSerialization.html">the Boost Serialization guide</a>.
+See also <a class="wiki" href="https://chaste.github.io/old_releases/release_2021.1/ChasteGuides/BoostSerialization.html">the Boost Serialization guide</a>.
 </p>
 <a id="PyCmlerrors"></a>
 <h1 id="chaste_codegenErrors">chaste_codegen Errors</h1>

@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/IntelCompiler - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2018.1/">Release 2018.1</a>.</em>
         </p>
       </div>
     </div>
@@ -52,7 +52,7 @@ The 2016 compiler release has changed folder structure, and you probably need so
 </p>
 <p>
 The other variables support using a PETSc built with the Intel compilers, and possibly production builds of PETSc using Intel's MKL libraries.
-A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build types</a>, and the relevant ones for Intel are:
+A particular PETSc installation may support multiple architectures/settings, by setting the <tt>PETSC_ARCH</tt> environment variable when compiling PETSc.  You must tell Chaste which architecture to use by setting the <tt>petsc_build_name</tt> variables.  There are 4 of these variables, allowing the use of different PETSc compilation options for different Chaste <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build types</a>, and the relevant ones for Intel are:
 </p>
 <ul><li><tt>petsc_build_name_production</tt> - for the <tt>IntelProduction</tt> build type;
 </li><li><tt>petsc_build_name_optimized</tt> - for a normal <tt>Intel</tt> build, since the compiler uses optimisation by default;
@@ -86,7 +86,7 @@ See <a class="missing wiki">ChasteGuides/HostconfigSystem?</a> for the full refe
 </p>
 <h3 id="Buildflags">Build flags</h3>
 <p>
-The most important thing to remember when using the Intel compilers is to use a Chaste <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build type</a> that enables Intel support.
+The most important thing to remember when using the Intel compilers is to use a Chaste <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">build type</a> that enables Intel support.
 What this means is that your <tt>scons</tt> invocations should include an argument such as <tt>build=Intel</tt> (or <tt>b=Intel</tt> for short).
 This sets additional compiler flags (e.g. disabling some warnings) and extra library search paths for libraries shipped with the compiler.
 It also ensures the Intel compiler tools are used.
@@ -95,7 +95,7 @@ It also ensures the Intel compiler tools are used.
 To run a production build, use <tt>build=IntelProduction</tt> in place of <tt>build=Intel</tt>, which will enable further optimisations and link against the MKL.
 </p>
 <p>
-For more details about build options see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a>.
+For more details about build options see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/DeveloperBuildGuide.html">ChasteGuides/DeveloperBuildGuide</a>.
 </p>
 </div>
           

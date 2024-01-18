@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/DeveloperBuildGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.4/">Release 3.4</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.4/">Release 3.4</a>.</em>
         </p>
       </div>
     </div>
@@ -50,7 +50,7 @@ Various options can be passed to customise the build.  Some also have short form
 </li><li><tt>brief=1</tt> (<tt>br=1</tt>) to reduce the length of C++ compilation lines printed by scons.
 </li><li><tt>exe=1</tt> enables building of Chaste executables.
 </li></ul></li><li>Rarer options:
-<ul><li><tt>debug=1</tt> will turn on some limited build script debugging.  It is particularly useful to check your <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>.
+<ul><li><tt>debug=1</tt> will turn on some limited build script debugging.  It is particularly useful to check your <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/HostconfigSystem.html">hostconfig configuration</a>.
 </li><li><tt>static=1</tt> to compile the Chaste libraries statically rather than making them shared libraries.  Requires <tt>chaste_libs=1</tt> to be useful.
 </li><li><tt>run_time_flags="&lt;x&gt;"</tt> will pass a list of flags to the executables in the build.  For example, <tt>run_time_flags="-get_total_flops"</tt> will enable PETSc flop logging. <a class="ext-link" href="http://web.archive.org/web/20050214033342/http://www.tuhh.de/~htmar/petsc_options.html"><span class="icon">​</span>More PETSc flags</a>
 </li><li><tt>acceptance_suite=weekly</tt> will switch the acceptance tests run (used with <tt>exe=1</tt> and the <tt>apps</tt> target).
@@ -104,7 +104,7 @@ Some valid values for the <tt>build=&lt;x&gt;_&lt;WhateverOption1&gt;_&lt;Whatev
 </li><li><strong><tt>barriers</tt></strong> to turn on MPI barriers within <tt>BeginEvent</tt> and <tt>EndEvent</tt> calls.
 </li><li><strong><tt>warn</tt></strong> to stop compiler warnings being treated as errors.
 </li><li><strong><tt>32bit</tt></strong> - see <a class="wiki" href="/trac/wiki/Compile32bit">Compile32bit</a>
-</li><li><strong><tt>hostconfig,...</tt></strong> - can be used to select different library versions, etc. if your <a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">machine configuration</a> supports this.
+</li><li><strong><tt>hostconfig,...</tt></strong> - can be used to select different library versions, etc. if your <a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/HostconfigSystem.html">machine configuration</a> supports this.
 </li></ul><p>
 The various classes specify such things as what compiler and flags to use for building C++ code, and also what tests to run by default. They also contain methods which the build (and test summary) scripts use to determine whether a test passed or failed, and where to store the output of tests. Unless you're working on the infrastructure you shouldn't have to worry about that. All methods contain documentation on their function.
 </p>
@@ -112,8 +112,8 @@ The various classes specify such things as what compiler and flags to use for bu
 Note that different build types, if they use different compilation flags, cause the compiled object files to be stored in different directories.  Doing a clean build (<tt>scons -c . build=&lt;whatever&gt;</tt>) will only remove object files in the directories corresponding to the given build type.
 </p>
 <h2 id="SeeAlso">See Also</h2>
-<ul><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/UserBuildGuide.html">UserBuildGuide</a> -- for a simplified version of this page.
-</li><li><a class="wiki" href="/chaste/tutorials/release_3.4/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a> -- for how to configure <tt>scons</tt> to work with your machine.
+<ul><li><a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/UserBuildGuide.html">UserBuildGuide</a> -- for a simplified version of this page.
+</li><li><a class="wiki" href="https://chaste.github.io/old_releases/release_3.4/ChasteGuides/HostconfigSystem.html">HostconfigSystem</a> -- for how to configure <tt>scons</tt> to work with your machine.
 </li></ul></div>
           
 

@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/CellBasedDemo - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.3/">Release 3.3</a>.</em>
         </p>
       </div>
     </div>
@@ -84,7 +84,7 @@ once in each simulation and will be covered in detail in later tutorials.
 Since we are using <tt>AbstractCellBasedTestSuite</tt> the singleton <tt>SimulationTime</tt> is initialised to zero at the beginning of the test and destroyed at the end
 of the test; <tt>RandomNumberGenerator</tt> is re-seeded with zero at the beginning and destroyed at the end of the test;
 and <tt>CellPropertyRegistry</tt> (which stores <tt>CellProperties</tt>, you learn about these in a later tutorial
-<a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>) is cleared at the beginning of the test.
+<a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>) is cleared at the beginning of the test.
 This makes for cleaner code.
 </p>
 <div class="code"><pre><span class="k">class</span> <span class="nc">TestCellBasedDemoTutorial</span> <span class="o">:</span> <span class="k">public</span> AbstractCellBasedTestSuite
@@ -169,7 +169,7 @@ We may have to do: <tt>javac Visualize2dVertexCells.java</tt> beforehand to crea
 java executable.
 </p>
 <p>
-Results can also be visualized using Paraview. See the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
+Results can also be visualized using Paraview. See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial for more information.
 </p>
 <h2 id="Test2-basicnode-basedsimulation">Test 2 - basic node-based simulation</h2>
 <p>
@@ -275,7 +275,7 @@ This time we create a <tt>MeshBasedCellPopulation</tt> as we are using a <tt>Mut
 </span>
 </pre></div><p>
 To view the results of this and the subsequent mesh based tutorials in Paraview it is necessary to explicitly
-generate the required .vtu files. This is detailed in the <a class="wiki" href="/chaste/tutorials/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial.
+generate the required .vtu files. This is detailed in the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/UserTutorials/VisualizingWithParaview.html">UserTutorials/VisualizingWithParaview</a> tutorial.
 Note that the results in Paraview may appear different to those in the java based visualizer. This is related
 to the different methods used to generate voronoi tesselations in each and is resolved through the use of
 'ghost nodes', as shown in the next test.

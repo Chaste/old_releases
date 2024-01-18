@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/InstallGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2018.1/">Release 2018.1</a>.</em>
         </p>
       </div>
     </div>
@@ -79,16 +79,16 @@ This is the place to start if you want to be able to build the Chaste source cod
 <p>
 The easiest ways to install Chaste are:
 </p>
-<ul><li>On Ubuntu - use the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu .deb package</a>.
-</li><li>On any platform - using <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/Docker.html">Docker</a>.
-</li><li>Other Linux systems - try following the instructions provided <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html#BasicInstallation">lower down this page</a>
+<ul><li>On Ubuntu - use the <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu .deb package</a>.
+</li><li>On any platform - using <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/Docker.html">Docker</a>.
+</li><li>Other Linux systems - try following the instructions provided <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/InstallGuide.html#BasicInstallation">lower down this page</a>
 </li><li>Mac OS X 'Yosemite' (and possibly other versions) - see <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/ChasteInstallationOnOSXYosemite">InstallGuides/ChasteInstallationOnOSXYosemite</a>, currently testing on Mojave <a href="https://chaste.cs.ox.ac.uk/trac/wiki/InstallGuides/ChasteInstallationOnMacOSMojave">InstallGuides/ChasteInstallationOnMacOSMojave</a>
-</li><li>Any system - install a virtual machine (e.g. using <a class="ext-link" href="https://www.virtualbox.org/"><span class="icon">​</span>VirtualBox</a>) running the latest long-term support Ubuntu Linux, and install the <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu package</a> as above
+</li><li>Any system - install a virtual machine (e.g. using <a class="ext-link" href="https://www.virtualbox.org/"><span class="icon">​</span>VirtualBox</a>) running the latest long-term support Ubuntu Linux, and install the <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/UbuntuPackage.html">Ubuntu package</a> as above
 </li></ul><p>
-Then obtain the source code, deciding whether you are a <em>user</em> or <em>developer</em>; see <a class="wiki" href="/chaste/tutorials/release_2018.1/GettingStarted.html">GettingStarted</a>.
+Then obtain the source code, deciding whether you are a <em>user</em> or <em>developer</em>; see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/GettingStarted.html">GettingStarted</a>.
 </p>
 <p>
-If you encounter any problems, or have/want an unusual setup, then the full <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>, or alternative guides listed at <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides.html">InstallGuides</a>, may be useful.
+If you encounter any problems, or have/want an unusual setup, then the full <a class="wiki" href="/trac/wiki/DeveloperInstallGuide">DeveloperInstallGuide</a>, or alternative guides listed at <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides.html">InstallGuides</a>, may be useful.
 </p>
 <hr />
 <h2 id="BasicInstallation">Basic Installation</h2>
@@ -98,10 +98,10 @@ These instructions have been tried successfully on:
 <ul><li>Fedora 24 (May 2017)
 </li><li>Fedora 25 (June 2017)
 </li></ul><p>
-The following instructions detail an installation using the preferred versions of our dependencies, for a non-root user. For a full list of the compatibility of various versions of our dependencies see <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a>. Some alternative versions of the libraries are incompatible, and others may have minor bugs. 
+The following instructions detail an installation using the preferred versions of our dependencies, for a non-root user. For a full list of the compatibility of various versions of our dependencies see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a>. Some alternative versions of the libraries are incompatible, and others may have minor bugs. 
 </p>
 <p>
-<strong>NB: </strong> The newest versions of the libraries may not have been tested yet, so don't simply install the top one on each external download page! Ideally follow these instructions, but if this isn't possible (or you have pre-installed versions) then check <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> first.
+<strong>NB: </strong> The newest versions of the libraries may not have been tested yet, so don't simply install the top one on each external download page! Ideally follow these instructions, but if this isn't possible (or you have pre-installed versions) then check <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> first.
 </p>
 <h3 id="Somepre-requisites">Some pre-requisites</h3>
 <p>
@@ -109,7 +109,7 @@ The following tools are required or useful.
 Most systems will already have these installed, or provide an easy way to set them up:
 </p>
 <ul><li><tt>gcc</tt> and <tt>g++</tt>
-</li><li><tt>gfortran</tt> --- if you want to build PETSc with HYPRE support (<tt>--download-hypre</tt> option <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/InstallGuide.html#PETSc">below</a>).
+</li><li><tt>gfortran</tt> --- if you want to build PETSc with HYPRE support (<tt>--download-hypre</tt> option <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/InstallGuide.html#PETSc">below</a>).
 </li><li><tt>wget</tt>
 </li><li><tt>python-devel</tt>
 </li><li><tt>git</tt> --- git, for <em>Code Developers</em> or <em>Code Users</em> of development branches.
@@ -127,7 +127,7 @@ Many systems will also include some of the below Chaste dependencies already. Yo
 </p>
 <div class="code"><pre>locate petsc
 </pre></div><p>
-If you find pre-existing versions, then check <a class="wiki" href="/chaste/tutorials/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> to see if they are compatible with Chaste, if so you may be able to skip their installation below, but make sure that you have the 'includes' and 'libraries' where required (if you don't know what this means then just follow all the below instructions!).
+If you find pre-existing versions, then check <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/InstallGuides/DependencyVersions.html">DependencyVersions</a> to see if they are compatible with Chaste, if so you may be able to skip their installation below, but make sure that you have the 'includes' and 'libraries' where required (if you don't know what this means then just follow all the below instructions!).
 </p>
 <h3 id="Defineafoldertoinstallallthedependenciesin">Define a folder to install all the dependencies in</h3>
 <p>
@@ -330,13 +330,13 @@ Save, quit and then re-load <tt>.bashrc</tt> (or log out and back in again):
 </pre></div><hr />
 <h2 id="ConfiguringChaste">Configuring Chaste</h2>
 <p>
-Once you've installed the dependencies as above, you need to get hold of the Chaste code. See <a class="wiki" href="/chaste/tutorials/release_2018.1/GettingStarted.html">GettingStarted</a> for the options to pick here.
+Once you've installed the dependencies as above, you need to get hold of the Chaste code. See <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/GettingStarted.html">GettingStarted</a> for the options to pick here.
 </p>
 <p>
 Again, machines that use the Ubuntu package are handled automatically - you are ready to go.
 </p>
 <p>
-Once you've done this, you are ready to build and run the test suite, see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>.
+Once you've done this, you are ready to build and run the test suite, see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>.
 </p>
 </div>
           

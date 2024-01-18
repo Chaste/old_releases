@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>UserTutorials/Monodomain3dExampleWithCvode - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/Monodomain3dExampleWithCvode" href="/chaste/tutorials/release_3.2/UserTutorials/Monodomain3dExampleWithCvode.html">Monodomain3dExampleWithCvode</a>
+        <a class="pathentry" title="View UserTutorials" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/Monodomain3dExampleWithCvode" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/Monodomain3dExampleWithCvode.html">Monodomain3dExampleWithCvode</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -46,9 +46,9 @@ Note that the code is given in full at the bottom of the page.
 </p>
 <h1 id="a3DmonodomainexampleusingCVODEforODEsolution">3D monodomain example using CVODE for ODE solution</h1>
 <p>
-This tutorial is based on <a class="wiki" href="/chaste/tutorials/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> except this time we will
+This tutorial is based on <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> except this time we will
 use CVODE solvers. To highlight the changes needed to run with CVODE we omit the usual
-explanations of the rest of the code - see <a class="wiki" href="/chaste/tutorials/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> for these.
+explanations of the rest of the code - see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/Monodomain3dExample.html">Monodomain3dExample</a> for these.
 </p>
 <p>
 First include the headers
@@ -65,7 +65,7 @@ Chaste actually has two ways of using CVODE for solution of cardiac action poten
 2. via an <tt>AbstractCvodeCell</tt> instead of an <tt>AbstractCardiacCell</tt> - this class uses native CVODE vectors.
 </p>
 <p>
-In order to generate CVODE cells please see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">CodeGenerationFromCellML</a>.
+In order to generate CVODE cells please see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">CodeGenerationFromCellML</a>.
 </p>
 <p>
 <strong>NB:</strong> recent improvements (becoming available from release 3.2) mean that
@@ -84,7 +84,7 @@ then include the rest of the headers as usual
 #include "PetscSetupAndFinalize.hpp"
 </span></pre></div><p>
 Since CVODE is an optional extra dependency for Chaste - albeit now
-one that is highly recommended - see the <a class="wiki" href="/chaste/tutorials/release_3.2/InstallGuides/InstallGuide.html">InstallGuide</a>.
+one that is highly recommended - see the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/InstallGuides/InstallGuide.html">InstallGuide</a>.
 </p>
 <p>
 We guard any code that relies upon it with the following <tt>#ifdef</tt>.

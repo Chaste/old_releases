@@ -3,16 +3,16 @@
   <head>
     <title>InstallGuides/UbuntuBuildMachine - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.3/">Release 3.3</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.3/">Release 3.3</a>.</em>
         </p>
       </div>
     </div>
@@ -29,7 +29,7 @@ You will need to be the super user for this / have root permissions.
 The following steps are needed:
 </p>
 <ol><li>Install 64 bit Ubuntu Server Long Term Support (LTS) <a class="ext-link" href="http://www.ubuntu.com/download/server/download"><span class="icon">​</span>http://www.ubuntu.com/download/server/download</a>. The following worked for Lucid 10.04, but is expected to work for 12.04 too.
-</li><li>Install the Chaste Ubuntu package as usual via <a class="wiki" href="/chaste/tutorials/release_3.3/InstallGuides/UbuntuPackage.html">InstallGuides/UbuntuPackage</a>, following the developer instructions, be sure to get all the "suggests" too.
+</li><li>Install the Chaste Ubuntu package as usual via <a class="wiki" href="https://chaste.github.io/old_releases/release_3.3/InstallGuides/UbuntuPackage.html">InstallGuides/UbuntuPackage</a>, following the developer instructions, be sure to get all the "suggests" too.
 <ul><li>On newer Ubuntu (12.04), you'll need to install <tt>google-perftools</tt> for running a <tt>GoogleProfile</tt> build, and add the line "<tt>tools['pprof'] = '/usr/bin/google-pprof'</tt>" to your hostconfig file.
 </li></ul></li><li>Follow the instructions on <a class="wiki" href="/trac/wiki/AutomatedBuilds">AutomatedBuilds</a> for setting up a <tt>bob</tt> account, which can remotely log in to run builds (despite svn keys being set up as per <a class="wiki" href="/trac/wiki/AutomatedBuilds">AutomatedBuilds</a> we had to login from <tt>chaste.cs</tt> once manually, to say 'yes' to the fingerprint key).
 </li><li>Install Intel compiler as detailed below, and manually re-install PETSc to use the Intel compiler.

@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ChasteGuides/FiniteElementAssemblersAndSolvers - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.1/">Release 3.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.1/">Release 3.1</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/FiniteElementAssemblersAndSolvers" href="/chaste/tutorials/release_3.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>
+        <a class="pathentry" title="View ChasteGuides" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/FiniteElementAssemblersAndSolvers" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/FiniteElementAssemblersAndSolvers.html">FiniteElementAssemblersAndSolvers</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -46,7 +46,7 @@
 </p>
 <ul><li>new users should read the tutorial on solving linear PDEs before reading this; this page is more on how the assemblers and solvers work internally.
 </li><li>this page only refers to the main assemblers and solvers, which use linear basis functions, ie <strong>those in the pde folder</strong>. The continuum mechanics assemblers (in the <tt>continuum_mechanics</tt> folder) use quadratic basis functions and are outside this hierarchy, although they are going towards a similar design.
-</li><li>the lecture notes linked <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/NmoodLectureNotes.html">here</a> may also be useful
+</li><li>the lecture notes linked <a class="wiki" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/NmoodLectureNotes.html">here</a> may also be useful
 </li></ul><p>
 </p><div class="wiki-toc"><ol><li><a href="#FEMassemblersandsolvers">FEM assemblers and solvers</a></li><li>
 <a href="#QuickSummary">Quick Summary</a></li><li>
@@ -233,7 +233,7 @@ The concrete class then has to implement the <tt>Compute*Term</tt> methods as ap
 </li><li><tt>SimpleNonlinearEllipticSolver</tt>:  inherits from ("is-a") <tt>AbstractFeVolumeIntegralAssembler</tt> but is outside the solver hierarchy. See class documentation.
 </li></ul><h3 id="Cardiacassemblersandsolvers">Cardiac assemblers and solvers</h3>
 <p>
-See the <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations being set up and solved in the cardiac electro-physiology solvers.
+See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations being set up and solved in the cardiac electro-physiology solvers.
 For both monodomain and bidomain the linear system can be written as Ax=Mz, where A and M require assembling (looping over elements) but z does not, or as Ax=Mz+c, where c also has to be assembled. The "is-a" solver-assembler approach therefore cannot be used and the "has-a" design is used.
 </p>
 <p>
@@ -247,7 +247,7 @@ The assembler classes
 </li></ul></li><li><tt>MassMatrixAssembler</tt> 
 <ul><li>for assembling the mass matrix, M
 </li></ul></li><li>a <tt>NaturalNeumannSurfaceTermAssembler</tt> for Neumann BCs
-</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
+</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
 </li></ul><p>
 The solver is:
 </p>
@@ -259,7 +259,7 @@ The solver is:
 <strong>Bidomain</strong>
 </p>
 <p>
-Bidomain is a bit more complicated, due to the possibility of a bath and extra bidomain specific functions. See the <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations. The basic ideas here are the same as with monodomain though.
+Bidomain is a bit more complicated, due to the possibility of a bath and extra bidomain specific functions. See the <a class="wiki" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/FiniteElementImplementations.html">FE implementations document</a> for the discretisations. The basic ideas here are the same as with monodomain though.
 </p>
 <p>
 Assemblers:
@@ -272,7 +272,7 @@ Assemblers:
 </li></ul></li><li><tt>BidomainWithBathAssembler</tt>
 <ul><li>inherits from <tt>BidomainAssembler</tt>, overloaded method to take into account the bath when computing the LHS matrix A.
 </li></ul></li><li><tt>BidomainNeumannSurfaceTermAssembler</tt>, for the vector arising from surface stimuli contributions
-</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="/chaste/tutorials/release_3.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
+</li><li>also there is an assembler for assembling the correction term if SVI is used (see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.1/ChasteGuides/StateVariableInterpolation.html">here</a>)
 </li></ul><p>
 Solvers:
 </p>

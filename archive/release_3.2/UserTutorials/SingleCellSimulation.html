@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>UserTutorials/SingleCellSimulation - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_3.2/">Release 3.2</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_3.2/">Release 3.2</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View UserTutorials" href="/chaste/tutorials/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/SingleCellSimulation" href="/chaste/tutorials/release_3.2/UserTutorials/SingleCellSimulation.html">SingleCellSimulation</a>
+        <a class="pathentry" title="View UserTutorials" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials.html">UserTutorials</a><span class="pathentry sep">/</span><a class="pathentry" title="View UserTutorials/SingleCellSimulation" href="https://chaste.github.io/old_releases/release_3.2/UserTutorials/SingleCellSimulation.html">SingleCellSimulation</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -93,7 +93,7 @@ as usual, and the (public) test method
 </pre></div><p>
 CVODE is still an optional Chaste dependency, but it is highly recommended for
 working with single cell simulations. This tutorial code will only run if CVODE is installed and enabled
-(see <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a> and <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/HostconfigSystem.html">ChasteGuides/HostconfigSystem</a>).
+(see <a class="wiki" href="/trac/wiki/InstallCvode">InstallCvode</a> and <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/HostconfigSystem.html">ChasteGuides/HostconfigSystem</a>).
 </p>
 <div class="code"><pre><span class="cp">#ifdef CHASTE_CVODE
 </span></pre></div><h2 id="DefiningaCVODEmodel">Defining a CVODE model</h2>
@@ -186,7 +186,7 @@ refining sometimes makes things worse, as CVODE goes to look for trouble in area
 <tt>p_model-&gt;SetTolerances(1e-6,1e-8);</tt>
 </p>
 <p>
-By default we use an analytic Jacobian for CVODE cells (where available - see <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
+By default we use an analytic Jacobian for CVODE cells (where available - see <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
 for instructions on how to provide one using Maple). In some cases (the Hund-Rudy model particularly being one) the
 analytic Jacobian contains effectively divide-by-zero entries, even at resting potential. If you observe
 CVODE errors when trying to run simulations, it can be worth switching off the analytic Jacobian and resorting
@@ -201,7 +201,7 @@ following command:
 You can also change any parameters that are labelled in the cell model.
 </p>
 <p>
-Instructions for annotating parameters can be found at <a class="wiki" href="/chaste/tutorials/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
+Instructions for annotating parameters can be found at <a class="wiki" href="https://chaste.github.io/old_releases/release_3.2/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
 </p>
 <p>
 Here we show how to change the parameter dictating the maximal conductance of the IKs current.

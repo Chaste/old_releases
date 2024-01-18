@@ -3,16 +3,16 @@
   <head>
     <title>ChasteGuides/CmakeBuildGuide - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2017.1/">Release 2017.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2017.1/">Release 2017.1</a>.</em>
         </p>
       </div>
     </div>
@@ -125,15 +125,15 @@ The main CMake file is <tt>CMakeLists.txt</tt>. All the cmake macros and finder 
 </p>
 <h2 id="Workflow">Workflow</h2>
 <p>
-If you aren't familiar with this, perhaps start with <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>, and come back here for more detailed instructions...
+If you aren't familiar with this, perhaps start with <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/CmakeFirstRun.html">ChasteGuides/CmakeFirstRun</a>, and come back here for more detailed instructions...
 </p>
 <p>
 CMake is a build system generator, so splits up the compilation process into two steps:
 </p>
-<ol><li><a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">Configure</a>
-</li><li><a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeBuildGuide.html#BuildStep">Build</a> (or 'make')
+<ol><li><a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">Configure</a>
+</li><li><a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/CmakeBuildGuide.html#BuildStep">Build</a> (or 'make')
 </li></ol><p>
-In the first you call <tt>cmake</tt> to <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">configure</a> your project. During this step you can specify a Generator. By default this is a Makefile generator, so the configure step will output a bunch of Makefiles, with which you can build you project. Other Generators include one for Microsoft Visual C++, which outputs MSVC project files during the configure step. 
+In the first you call <tt>cmake</tt> to <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/CmakeBuildGuide.html#ConfigureStep">configure</a> your project. During this step you can specify a Generator. By default this is a Makefile generator, so the configure step will output a bunch of Makefiles, with which you can build you project. Other Generators include one for Microsoft Visual C++, which outputs MSVC project files during the configure step. 
 </p>
 <p>
 It is standard for CMake to build your project in a separate (empty) directory to your source tree (usually this can still be in a subdirectory within the source tree, but the Chaste CMake system will prevent you from doing in-source builds to avoid making a mess of the git repository).
@@ -154,7 +154,7 @@ Or use <tt>ctest</tt>, which is part of CMake
 </p>
 <pre class="wiki">ctest
 </pre><p>
-Look under the <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/CmakeBuildGuide.html#TestingStep">Testing Step</a> heading below for more information
+Look under the <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/CmakeBuildGuide.html#TestingStep">Testing Step</a> heading below for more information
 </p>
 <p>
 Note: CMake, <tt>cmake</tt>, <tt>ccmake</tt> and <tt>ctest</tt> are general build managers, that have many more options than we have detailed in this document. For much more detailed documentation on these tools, please consult the CMake documentation here: <a class="ext-link" href="https://cmake.org/documentation/"><span class="icon">​</span>https://cmake.org/documentation/</a>
@@ -168,7 +168,7 @@ Run the <a class="ext-link" href="https://cmake.org/runningcmake/"><span class="
 This should work on (at least) Ubuntu with all required dependencies installed. Note that the <tt>ccmake</tt> graphical user interface provides a nice way to see what options are available.
 </p>
 <p>
-If you have any problems with dependencies not being found, or if you wish to select one specific dependency when you have multiple versions installed, more information can be found on the <a class="wiki" href="/chaste/tutorials/release_2017.1/ChasteGuides/FindingChasteDependencies.html">ChasteGuides/FindingChasteDependencies</a> page.
+If you have any problems with dependencies not being found, or if you wish to select one specific dependency when you have multiple versions installed, more information can be found on the <a class="wiki" href="https://chaste.github.io/old_releases/release_2017.1/ChasteGuides/FindingChasteDependencies.html">ChasteGuides/FindingChasteDependencies</a> page.
 </p>
 <h2 id="ChasteConfigurationOptions">Chaste Configuration Options</h2>
 <p>

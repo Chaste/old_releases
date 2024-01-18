@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/CreatingAndUsingNewCellBasedWriters - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2019.1/">Release 2019.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2019.1/">Release 2019.1</a>.</em>
         </p>
       </div>
     </div>
@@ -28,10 +28,10 @@ Note that the code is given in full at the bottom of the page.
 <h1 id="Anexampleshowinghowtocreateanewcellwriteranduseitinacell-basedsimulation">An example showing how to create a new cell writer and use it in a cell-based simulation</h1>
 <h2 id="Introduction">Introduction</h2>
 <p>
-This tutorial assumes you have already read <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
+This tutorial assumes you have already read <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
 </p>
 <p>
-In <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a> we showed how to create a new cell
+In <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a> we showed how to create a new cell
 property class, <tt>MotileCellProperty</tt>, and how this can be used in a cell-based simulation.
 In this tutorial, we show how to create a new cell writer class, which can be used to output
 different data from a cell-based simulation. Our example will be a writer class for outputting
@@ -40,7 +40,7 @@ information about those cells in a simulation that have the <tt>MotileCellProper
 <h2 id="a1.Includingheaderfiles">1. Including header files</h2>
 <p>
 As in previous cell-based Chaste tutorials, we begin by including the necessary header file and
-archiving headers. For simplicity, we duplicate the code presented in <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>
+archiving headers. For simplicity, we duplicate the code presented in <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>
 that defines the <tt>MotileCellProperty</tt> class. As before, note that usually this code would be
 separated out into a declaration in a .hpp file and a definition in a .cpp file.
 We also include some header files defining classes to be used in the cell-based
@@ -199,7 +199,7 @@ a cell-based simulation.
     <span class="kt">void</span> TestOffLatticeSimulationWithMotileCellPropertyAndWriters<span class="p">()</span>
     <span class="p">{</span>
 </pre></div><p>
-We begin by creating a <tt>NodeBasedCellPopulation</tt>, just as in <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
+We begin by creating a <tt>NodeBasedCellPopulation</tt>, just as in <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>.
 We add the <tt>MotileCellProperty</tt> to a random selection of cells.
 We also add the <tt>CellLabel</tt> to these cells so that we can easily visualize the different cell types.
 </p>
@@ -267,7 +267,7 @@ Next we create a force law and pass it to the <tt>OffLatticeSimulation</tt>, and
     <span class="p">}</span>
 <span class="p">};</span>
 </pre></div><p>
-As in <a class="wiki" href="/chaste/tutorials/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>, when you visualize the results with
+As in <a class="wiki" href="https://chaste.github.io/old_releases/release_2019.1/UserTutorials/CreatingAndUsingANewCellProperty.html">UserTutorials/CreatingAndUsingANewCellProperty</a>, when you visualize the results with
 </p>
 <p>
 <tt>java Visualize2dCentreCells /tmp/$USER/testoutput/TestOffLatticeSimulationWithMotileCellPropertyAndWriters/results_from_time_0</tt>

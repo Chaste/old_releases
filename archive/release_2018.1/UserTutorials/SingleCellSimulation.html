@@ -3,16 +3,16 @@
   <head>
     <title>UserTutorials/SingleCellSimulation - Chaste</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="/trac-static/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac-static/css/wiki.css" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="/trac-static/css/site.css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://chaste.github.io/old_releases/site.css" />
   </head>
   <body>
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.cs.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2018.1/">Release 2018.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2018.1/">Release 2018.1</a>.</em>
         </p>
       </div>
     </div>
@@ -201,7 +201,7 @@ refining sometimes makes things worse, as CVODE goes to look for trouble in area
 <tt>p_model-&gt;SetTolerances(1e-6,1e-8);</tt>
 </p>
 <p>
-By default we use an analytic Jacobian for CVODE cells (where available - see <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
+By default we use an analytic Jacobian for CVODE cells (where available - see <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
 for instructions on how to provide one using Maple). In some cases (the Hund-Rudy model particularly being one) the
 analytic Jacobian contains effectively divide-by-zero entries, even at resting potential. If you observe
 CVODE errors when trying to run simulations, it can be worth switching off the analytic Jacobian and resorting
@@ -216,7 +216,7 @@ following command:
 You can also change any parameters that are labelled in the cell model.
 </p>
 <p>
-Instructions for annotating parameters can be found at <a class="wiki" href="/chaste/tutorials/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
+Instructions for annotating parameters can be found at <a class="wiki" href="https://chaste.github.io/old_releases/release_2018.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a>
 </p>
 <p>
 Here we show how to change the parameter dictating the maximal conductance of the IKs current.

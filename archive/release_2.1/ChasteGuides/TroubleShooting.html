@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
     <title>ChasteGuides/TroubleShooting - Chaste</title>
-    <link rel="stylesheet" href="/trac/css/trac.css" type="text/css" />
-    <link rel="stylesheet" href="/trac/css/wiki.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/trac.css" type="text/css" />
+    <link rel="stylesheet" href="https://chaste.github.io/old_releases/wiki.css" type="text/css" />
     <link rel="stylesheet" href="/trac/css/site.css" type="text/css" />
     <style type="text/css">
 /* Link styles */
@@ -27,15 +27,15 @@
     <div id="banner">
       <div id="header">
         <p>
-          <a id="logo" href="http://www.comlab.ox.ac.uk/chaste"><img src="/logos/chaste-266x60.jpg" alt="Chaste logo" height="60" width="266" /></a>
-          <em>Documentation for <a href="/chaste/tutorials/release_2.1/">Release 2.1</a>.</em>
+          <a id="logo" href="https://chaste.github.io/"><img src="https://chaste.github.io/chaste_0256.png" alt="Chaste logo" height="60" /></a>
+          <em>Documentation for <a href="https://chaste.github.io/old_releases/release_2.1/">Release 2.1</a>.</em>
         </p>
       </div>
     </div>
     <p>&nbsp;</p>
     <div id="content" class="wiki">
       <p class="path noprint">
-        <a class="pathentry" title="View ChasteGuides" href="/chaste/tutorials/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/TroubleShooting" href="/chaste/tutorials/release_2.1/ChasteGuides/TroubleShooting.html">TroubleShooting</a>
+        <a class="pathentry" title="View ChasteGuides" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides.html">ChasteGuides</a><span class="pathentry sep">/</span><a class="pathentry" title="View ChasteGuides/TroubleShooting" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/TroubleShooting.html">TroubleShooting</a>
         <br style="clear: both" />
       </p>
       <div class="wikipage searchable">
@@ -109,7 +109,7 @@ Also, if files are output to the current directory rather than <tt>/tmp/chaste/t
 </p>
 <h2 id="AppeartogetincorrectanswerswhensolvingaPDE">Appear to get incorrect answers when solving a PDE</h2>
 <p>
-If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <i>outward</i> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="/chaste/tutorials/release_2.1/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
+If you try to solve a simple PDE with Neumann boundary conditions, with a known solution, but appear to get incorrect answers, you may have done one of two things incorrectly. For the elliptic PDE "du/dt = div (D grad_u) + f", where D is a matrix, the Neumann boundary condition that you specify (using <tt>BoundaryConditionsContainer</tt> and <tt>ConstBoundaryConditions</tt> etc) is the value of "(D grad_u) dot n" (where n is the unit <i>outward</i> facing normal), <strong>not</strong> the value of du/dn and not du/dx in 1D. In particular, in 1D, on the left-hand side n=-1 and you need to specify "-D du/dx", not just du/dx. See <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/UserTutorials/SolvingLinearPdes.html">UserTutorials/SolvingLinearPdes</a> for an example.
 </p>
 <h1 id="Sconserrors">Scons errors</h1>
 <h2 id="NoSConstructfilefound">No SConstruct file found</h2>
@@ -149,15 +149,15 @@ If <tt>scons</tt> throws an error saying it has found a <i>dependency cycle</i> 
 <h1 id="PyCmlerrors">PyCml errors</h1>
 <h2 id="ConfigurationError:Notransmembranepotentialfoundcheckyourconfiguration">ConfigurationError: No transmembrane potential found; check your configuration</h2>
 <p>
-This occurs when PyCml cannot determine which variable in the model represents the transmembrane potential.  You can either add a <tt>for_model</tt> stanza to the PyCml config file or, better, annotate the CellML file to specify the variable.  See <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on how to do this, in particular the section on <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">Model annotation with RDF</a>.
+This occurs when PyCml cannot determine which variable in the model represents the transmembrane potential.  You can either add a <tt>for_model</tt> stanza to the PyCml config file or, better, annotate the CellML file to specify the variable.  See <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/CodeGenerationFromCellML.html">ChasteGuides/CodeGenerationFromCellML</a> for more information on how to do this, in particular the section on <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">Model annotation with RDF</a>.
 </p>
 <h2 id="ConfigurationError:NostimuluscurrentfoundyoullhavetroublegeneratingChastecode">ConfigurationError: No stimulus current found; you'll have trouble generating Chaste code</h2>
 <p>
-PyCml needs to know which variable in the model represents the stimulus current in order to replace the model's stimulus with the one defined by Chaste.  You should <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.  If the model doesn't have a stimulus (e.g. a sino-atrial node model) then <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#Self-excitatorymodels">annotate the model itself</a> accordingly.
+PyCml needs to know which variable in the model represents the stimulus current in order to replace the model's stimulus with the one defined by Chaste.  You should <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.  If the model doesn't have a stimulus (e.g. a sino-atrial node model) then <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#Self-excitatorymodels">annotate the model itself</a> accordingly.
 </p>
 <h2 id="TranslationError:CannotconvertioniccurrentfromampstouAcm2withoutknowingwhichvariableinthecellmodelrepresentsthemembranecapacitance">TranslationError: Cannot convert ionic current from amps to uA/cm<sup>2</sup> without knowing which variable in the cell model represents the membrane capacitance</h2>
 <p>
-Some cell models give ionic currents in units of amps (or microamps etc.) whereas Chaste expects amps normalised by area (microamps per centimetre squared).  In order to convert between the two, PyCml needs to use the membrane capacitance from the model, and hence needs to know which variable represents this.  You should <a class="wiki" href="/chaste/tutorials/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.
+Some cell models give ionic currents in units of amps (or microamps etc.) whereas Chaste expects amps normalised by area (microamps per centimetre squared).  In order to convert between the two, PyCml needs to use the membrane capacitance from the model, and hence needs to know which variable represents this.  You should <a class="wiki" href="https://chaste.github.io/old_releases/release_2.1/ChasteGuides/CodeGenerationFromCellML.html#ModelannotationwithRDF">annotate the relevant variable as described here</a>.
 </p>
 <h1 id="Compilationandlinkingerrors">Compilation and linking errors</h1>
 <h2 id="Thecompilercomplainsthatavariablehasnotbeendefinedwhenitclearlyhasbeeninabaseclass">The compiler complains that a variable has not been defined when it clearly has been, in a base class</h2>
